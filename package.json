@@ -1,0 +1,41 @@
+{
+  "name": "ecommerce-express",
+  "version": "0.0.0",
+  "description": "A generic Ecommerce built over Express.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "build:watch": "npm run build -- --watch",
+    "start": "npm run build && node dist/app.js",
+    "watch": "concurrently -k \"npm run build:watch\"  \"nodemon dist/app.js\"",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "npm run lint -- --fix"
+  },
+  "keywords": [
+    "express",
+    "nodejs",
+    "rest-api",
+    "web-application"
+  ],
+  "author": "Max Hernandez",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/dotenv-defaults": "^2.0.4",
+    "@types/express": "^5.0.1",
+    "@types/morgan": "^1.9.9",
+    "concurrently": "^9.1.2",
+    "cors": "^2.8.5",
+    "dotenv-defaults": "^5.0.2",
+    "eslint": "^9.23.0",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.9",
+    "tsc-alias": "^1.8.13",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@types/node": "^22.13.15"
+  }
+}
