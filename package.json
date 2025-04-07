@@ -4,12 +4,15 @@
   "description": "A generic Ecommerce built over Express.js",
   "type": "module",
   "scripts": {
+    "docker": "bash ./docker/run.sh",
+    "docker:into": "bash ./docker/into.sh",
     "build": "tsc && tsc-alias",
-    "build:watch": "npm run build -- --watch",
-    "start": "npm run build && node dist/app.js",
-    "watch": "concurrently -k \"npm run build:watch\"  \"nodemon dist/app.js\"",
+    "build:watch": "tsc --watch && tsc-alias --watch",
+    "start": "npm run build && concurrently -k \"npm run docker up\" \"tsc --watch\" \"tsc-alias --watch\"  \"nodemon dist/app.js\"",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "clean": "rm -rf dist",
+    "drizzle": "npx drizzle-kit"
   },
   "keywords": [
     "express",
@@ -24,18 +27,24 @@
     "@types/dotenv-defaults": "^2.0.4",
     "@types/express": "^5.0.1",
     "@types/morgan": "^1.9.9",
+    "@types/pg": "^8.11.11",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "dotenv-defaults": "^5.0.2",
+    "drizzle-kit": "^0.30.6",
+    "drizzle-zod": "^0.7.1",
     "eslint": "^9.23.0",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.9",
     "tsc-alias": "^1.8.13",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "zod": "^3.24.2"
   },
   "dependencies": {
-    "@types/node": "^22.13.15"
+    "@types/node": "^22.13.15",
+    "drizzle-orm": "^0.41.0",
+    "pg": "^8.14.1"
   }
 }

@@ -1,0 +1,17 @@
+
+
+services:
+  postgres:
+    container_name: ecommerce-db
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${ECOMMERCE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${ECOMMERCE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${ECOMMERCE_POSTGRES_DB}
+    ports:
+      - "${ECOMMERCE_POSTGRES_PORT}:${ECOMMERCE_POSTGRES_PORT}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+volumes:
+  postgres_data:

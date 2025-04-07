@@ -1,5 +1,15 @@
 
 export default interface Settings {
+    ENV: "production" | "development",
   PORT: number;
-  ENV: "production" | "development"
+  DB: {
+    URL: string;
+    HOST: string;
+    NAME: string;
+    PORT: number;
+    USER: string;
+    PASSWORD: string;
+  },
+  RUNTIME_FOLDER: string;
+  DEV_DATA_FOLDER: string;
 }

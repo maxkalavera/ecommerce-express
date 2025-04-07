@@ -2,7 +2,7 @@ import express, { Express } from "express";
 import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
-import errors from "@/errors";
+import error from "@/middlewares/error";
 
 export default function configureMiddlewares(app: Express) {
   app.use(morgan('dev'));
@@ -11,5 +11,5 @@ export default function configureMiddlewares(app: Express) {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   // Custom error handler
-  app.use(errors);
+  app.use(error);
 }
