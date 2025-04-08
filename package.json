@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "docker": "bash ./docker/run.sh",
+    "docker:exec": "bash ./docker/exec.sh",
     "docker:into": "bash ./docker/into.sh",
     "build": "tsc && tsc-alias",
     "build:watch": "tsc --watch && tsc-alias --watch",

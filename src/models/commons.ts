@@ -5,5 +5,5 @@ import {
 
 export const commonColumns = {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  key: uuid().defaultRandom(),
+  key: uuid().defaultRandom().notNull(),
 }
