@@ -10,7 +10,7 @@ export function buildAccessor<
   ID = number
 > (
   table: PgTable
-): Accessor<Model, ID> {
+): Accessor<Model> {
   return {
     table: table,
     async read(id) {

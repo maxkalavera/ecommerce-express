@@ -5,6 +5,10 @@ import express from 'express';
 import settings from "@/settings";
 import configureMiddlewares from "@/middlewares";
 
+import { ProductService } from './services/products';
+//ProductService.readAll();
+console.log("ProductService", await ProductService.customMethod("Hello"));
+
 /******************************************************************************
  * Configuration
  */

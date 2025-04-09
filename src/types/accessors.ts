@@ -1,10 +1,10 @@
 import { QueryResult } from "pg";
 import { SQL } from 'drizzle-orm';
 import { PgTable } from "drizzle-orm/pg-core";
+import { ID } from "@/types/db";
 
 export interface Accessor<
   Model extends { id?: number; key?: string; }, 
-  ID=number
 > {
   table: PgTable;
   // To automate the creation of the  services,
