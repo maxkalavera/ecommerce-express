@@ -4,10 +4,11 @@ import fs from "node:fs";
 import express from 'express';
 import settings from "@/settings";
 import configureMiddlewares from "@/middlewares";
+import routes from "@/routes";
 
-import { ProductService } from './services/products';
-//ProductService.readAll();
-console.log("ProductService", await ProductService.customMethod("Hello"));
+/******************************************************************************
+ * Initialization
+ */
 
 /******************************************************************************
  * Configuration
@@ -26,10 +27,7 @@ const app = express();
 
 configureMiddlewares(app);
 
-// Routes
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
-});
+app.use('/api', routes);
 
 const server = http.createServer(app);
 
