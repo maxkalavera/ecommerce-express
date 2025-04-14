@@ -1,7 +1,8 @@
 import { buildController, CRUDMixins } from "@/controllers/commons";
 
 export const productsController = buildController({}, [
-  CRUDMixins.create,
+  ...CRUDMixins.all,
 ]);
 
-type test = Parameters<typeof buildController>;
+
+productsController.create(null as any, null as any, null as any);
