@@ -1,8 +1,11 @@
 import { buildController, CRUDMixins } from "@/controllers/commons";
-
-export const productsController = buildController({}, [
-  ...CRUDMixins.all,
-]);
+import { CRUDMixinEnum } from "@/types/controllers";
 
 
-productsController.create(null as any, null as any, null as any);
+export const productsController = buildController({
+  create: async (target, req, res, next) => {
+    return {
+      message: 'create',
+    };
+  },
+});
