@@ -43,12 +43,12 @@ type UnionToIntersection<U> =
     : never;
 
 export function attachMixins<
-  Base extends { [key: string]: any; },
+  Receiver extends { [key: string]: any; },
   Mixins extends [...({ [key: string]: any; }[])],
 > (
-  base: Base, 
+  receiver: Receiver, 
   ...mixins: Mixins
-): Base & UnionToIntersection<Mixins[number]>
+): Receiver & UnionToIntersection<Mixins[number]>
 {
-  return Object.assign(base, ...mixins);
+  return Object.assign(receiver, ...mixins);
 };

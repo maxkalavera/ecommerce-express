@@ -1,6 +1,5 @@
-import { buildController, CRUDMixins } from "@/controllers/commons";
-import { CRUDMixinEnum } from "@/types/controllers";
-
+import { buildController } from "@/controllers/commons";
+import { all } from "@/controllers/mixins/crud";
 
 export const productsController = buildController({
   create: async (target, req, res, next) => {
@@ -8,4 +7,4 @@ export const productsController = buildController({
       message: 'create',
     };
   },
-});
+}, ...all);

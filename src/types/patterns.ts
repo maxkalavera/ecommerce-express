@@ -9,7 +9,8 @@ export type Contextualized<
 > = {
   [key: string]: 
     | ((...args: [Context, ...any[]]) => any)
-    | (string | number | boolean | null | undefined | symbol | bigint);
+    | (string | number | boolean | null | undefined | symbol | bigint)
+    | GenericObject;
 };
 
 export type ValidateContext<
@@ -19,14 +20,14 @@ export type ValidateContext<
 
 export type WithContext<
   Type extends GenericObject, 
-  Context extends GenericObject=(Type & GenericObject)
+  Context extends GenericObject=GenericObject,
 > = {
   [K in keyof Type]: (
     Type[K] extends (...args: infer Args) => infer Return
       ? (...args: [Context, ...Args]) => Return
       : Type[K]
   )
-} & GenericObject;
+};
 
 export type WithoutContext<Type> = {
   [K in keyof Type]: (
@@ -51,7 +52,8 @@ export type Mixin<
 > = {
   [key: string]: 
     | ((...args: [Context, ...any[]]) => any)
-    | (string | number | boolean | null | undefined | symbol | bigint);
+    | (string | number | boolean | null | undefined | symbol | bigint)
+    | GenericObject;
 };
 
 export type ValidateMixin<
@@ -60,6 +62,15 @@ export type ValidateMixin<
 > = Type;
 
 export type ToMixin<
-  Type extends GenericObject
-> = WithContext<Type> & Mixin<Type & GenericObject>;
+  Type extends GenericObject,
+  Context extends GenericObject = (
+    & Type
+    & GenericObject
+  )
+> = (
+  ValidateMixin<
+    WithContext<Type, Context>,
+    Context
+  >
+);
 
