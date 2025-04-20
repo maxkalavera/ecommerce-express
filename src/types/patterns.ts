@@ -81,3 +81,19 @@ export type ToMixin<
   >
 );
 
+type Prioritize<T extends any[]> = T extends [infer First, ...infer Rest]
+  ? First extends object
+    ? Rest extends any[]
+      ? PrioritizeHelper<First, Prioritize<Rest>>
+      : never
+    : never
+  : {};
+
+type PrioritizeHelper<T, U> = {
+  [K in keyof T | keyof U]: K extends keyof U ? U[K] : K extends keyof T ? T[K] : never;
+};
+
+export type AttachMixins<
+  Receiver extends GenericObject,
+  Mixins extends [...(GenericObject[])],
+> = Prioritize<[Receiver, ...Mixins]>;

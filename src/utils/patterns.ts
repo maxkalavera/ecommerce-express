@@ -1,5 +1,5 @@
 import { GenericObject } from "@/types/commons";
-import { Contextualized, WithoutContext } from "@/types/patterns";
+import { AttachMixins, Contextualized, WithoutContext } from "@/types/patterns";
 
 /******************************************************************************
  * Context Binding pattern utilities
@@ -37,40 +37,13 @@ export function bindContext<
  * Mixin pattern utilities
  */
 
-type UnionToIntersection<U> = (
-  (
-    U extends any ? 
-      (k: U) => void : 
-      never
-  ) extends (k: infer I) => void 
-    ? I 
-    : never
-);
-
-type Prioritize<T extends any[]> = T extends [infer First, ...infer Rest]
-  ? First extends object
-    ? Rest extends any[]
-      ? PrioritizeHelper<First, Prioritize<Rest>>
-      : never
-    : never
-  : {};
-
-type PrioritizeHelper<T, U> = {
-  [K in keyof T | keyof U]: K extends keyof U ? U[K] : K extends keyof T ? T[K] : never;
-};
-
-export type AttachMixins<
-  Receiver extends GenericObject,
-  Mixins extends [...(GenericObject[])],
-> = Prioritize<[Receiver, ...Mixins]>;
-
 export function attachMixins<
   Receiver extends GenericObject,
   Mixins extends [...(GenericObject[])],
 > (
   receiver: Receiver, 
   ...mixins: Mixins
-): Receiver & UnionToIntersection<Mixins[number]>
+): AttachMixins<Receiver, Mixins>
 {
   return Object.assign(receiver, ...mixins);
 };

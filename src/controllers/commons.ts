@@ -14,7 +14,8 @@ export function buildController<
 > (
   options: Options,
   ...mixins: Mixins[]
-) {
+) 
+{
   /*
    * Target naming here is used instead of context, because the the final builded
    * controller will be the target context to attach to every method. So target 
