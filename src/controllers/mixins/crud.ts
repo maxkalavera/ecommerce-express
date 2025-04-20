@@ -1,28 +1,36 @@
 import { GenericObject } from "@/types/commons";
+import { ControllerBase, ControllerMixin, ValidateControllerMixin } from "@/types/controllers";
 import { 
   CreateMixin, ReadMixin, ReadAllMixin, UpdateMixin, PatchMixin, DeleteMixin 
 } from "@/types/mixins/controllers/crud";
+import { WithoutContext } from "@/types/patterns";
 
 export const createMixin: CreateMixin = {
   validateCreate: async (target, data, next) => {
-    target.handleErrors(() => {
-
+    return target.handleErrors(() => {
+      return {
+        cleanedData: {},
+        success: true
+      };
     }, next);
   },
   commitCreate: async (target, data, next) => {
-    target.handleErrors(() => {
-
+    return target.handleErrors(() => {
+      return {
+        responsePayload: {},
+        success: true
+      };
     }, next);
   },
   create: async (
     target, req, res, next
   ) => {
     try {
-      const data = await target.validateCreate(req.body, next);
-      if (data !== undefined) {
-        const instance = await target.commitCreate(data, next);
-        if (instance !== undefined) {
-          return res.status(201).json(instance);
+      const validated = await target.validateCreate(req.body, next);
+      if (validated.success) {
+        const commited = await target.commitCreate(validated.cleanedData, next);
+        if (commited.success) {
+          return res.status(201).json(commited.responsePayload);
         } else {
           return res.status(400).json({ error: 'Bad Request' });
         }
@@ -36,7 +44,14 @@ export const createMixin: CreateMixin = {
 };
 
 export const readMixin: ReadMixin = {
-  commitRead: async (target, data) => {
+  lookUpAttribute: "id",
+  commitRead: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        responsePayload: {},
+        success: true
+      };
+    }, next);
   },
   read: async (target, req, res, next) => {
     try {
@@ -54,7 +69,12 @@ export const readMixin: ReadMixin = {
 
 export const readAllMixin: ReadAllMixin = {
   commitReadAll: async (target, data, next) => {
-    return { instances: {} } as GenericObject;
+    return target.handleErrors(() => {
+      return {
+        responsePayload: {},
+        success: true
+      };
+    }, next);
   },
   readAll: async (target, req, res, next) => {
     const instances = await target.commitReadAll(req.body, next);
@@ -63,8 +83,23 @@ export const readAllMixin: ReadAllMixin = {
 };
 
 export const updateMixin: UpdateMixin = {
-  validateUpdate: async (target, data, next) => {},
-  commitUpdate: async (target, data, next) => {},
+  lookUpAttribute: "id",
+  validateUpdate: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        cleanedData: {},
+        success: true
+      };
+    }, next);
+  },
+  commitUpdate: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        responsePayload: {},
+        success: true
+      };
+    }, next);
+  },
   update: async (target, req, res, next) => {
     try {
       const data = await target.validateUpdate(req.body, next);
@@ -85,8 +120,23 @@ export const updateMixin: UpdateMixin = {
 };
 
 export const patchMixin: PatchMixin = {
-  validatePatch: async (target, data, next) => {},
-  commitPatch: async (target, data, next) => {},
+  lookUpAttribute: "id",
+  validatePatch: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        cleanedData: {},
+        success: true
+      };
+    }, next);
+  },
+  commitPatch: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        responsePayload: {},
+        success: true
+      };
+    }, next);
+  },
   patch: async (target, req, res, next) => {
     try {
       const data = await target.validatePatch(req.body, next);
@@ -107,15 +157,18 @@ export const patchMixin: PatchMixin = {
 };
 
 export const deleteMixin: DeleteMixin = {
-  validateDelete: async (target, data, next) => {
-
-  },
+  lookUpAttribute: "id",
   commitDelete: async (target, data, next) => {
-    return { success: true }; 
+    return target.handleErrors(() => {
+      return {
+        responsePayload: {},
+        success: true
+      };
+    }, next);
   },
   delete: async (target, req, res, next) => {
     try {
-      const success = await target.commitDelete(req.params, next);
+      const { success } = await target.commitDelete(req.params, next);
       if (success) {
         return res.status(204).send();
       } else {
@@ -130,3 +183,10 @@ export const deleteMixin: DeleteMixin = {
 export const view = [readMixin, readAllMixin]
 export const mutate = [createMixin, updateMixin, patchMixin, deleteMixin];
 export const all = [...view, ...mutate];
+
+
+type A = {
+  foo: (a: number, b: string) => string;
+} & {
+  foo: () => number;
+}

@@ -13,6 +13,13 @@ export type Contextualized<
     | GenericObject;
 };
 
+export type ExtractContext<T> = T extends {
+  [key: string]: 
+    | ((...args: [infer Output, ...any[]]) => any)
+    | (string | number | boolean | null | undefined | symbol | bigint)
+    | GenericObject;
+  } ? Output : never;
+
 export type ValidateContext<
   Type extends Contextualized<Context>,
   Context extends GenericObject=GenericObject,

@@ -1,7 +1,7 @@
-import { NextFunction } from 'express';
 import { controllerBaseMixin } from '@/controllers/base';
 import { attachMixins, bindContext } from '@/utils/patterns';
-import { Contextualized, Mixin } from '@/types/patterns';
+import { Contextualized } from '@/types/patterns';
+import { ControllerMixin } from '@/types/controllers';
 
 /*******************************************************************************
  * Controllers
@@ -9,10 +9,10 @@ import { Contextualized, Mixin } from '@/types/patterns';
 
 
 export function buildController<
-  Target extends Contextualized,
-  Mixins extends Mixin,
+  Options extends Contextualized,
+  Mixins extends ControllerMixin,
 > (
-  target: Target,
+  options: Options,
   ...mixins: Mixins[]
 ) {
   /*
@@ -22,7 +22,7 @@ export function buildController<
    */
   //const targetBaseController = buildTargetBaseController();
   const receiver = {};
-  const fullTargetController = attachMixins(receiver, controllerBaseMixin, target, ...mixins);
+  const fullTargetController = attachMixins(receiver, controllerBaseMixin, options, ...mixins);
   const controller = bindContext(fullTargetController, fullTargetController);
   return controller;
 }

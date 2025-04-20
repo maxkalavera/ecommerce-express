@@ -2,36 +2,88 @@ import { Request, Response, NextFunction } from 'express';
 import { GenericObject } from "@/types/commons";
 import { ToControllerMixin } from '@/types/controllers';
 
+
+export type ValidateReturned<
+  CleanedData extends GenericObject
+> = {
+  cleanedData: CleanedData;
+  success: boolean;
+};
+
+export type CommitReturned<
+  ResponsePayload extends GenericObject
+> = {
+  responsePayload: ResponsePayload;
+  success: boolean;
+};
+
 export type CreateMixin = ToControllerMixin<{
-  validateCreate: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  commitCreate: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  create: (req: Request, res: Response, next: NextFunction) => Promise<any>;
+  validateCreate: <
+    CleanedData extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<ValidateReturned<CleanedData>>;
+  commitCreate: <
+    ResponsePayload extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<CommitReturned<ResponsePayload>>;
+  create: (req: Request, res: Response, next: NextFunction) 
+    => Response | Promise<Response>;
 }>;
 
 export type ReadMixin = ToControllerMixin<{
-  commitRead: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  read: (req: Request, res: Response, next: NextFunction) => Promise<any>;
+  lookUpAttribute: string;
+  commitRead: <
+    ResponsePayload extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<CommitReturned<ResponsePayload>>;
+  read: (req: Request, res: Response, next: NextFunction) 
+    => Response | Promise<Response>;
 }>;
 
 export type ReadAllMixin = ToControllerMixin<{
-  commitReadAll: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  readAll: (req: Request, res: Response, next: NextFunction) => Promise<any>;
+  commitReadAll: <
+    ResponsePayload extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<CommitReturned<ResponsePayload>>;
+  readAll: (req: Request, res: Response, next: NextFunction) 
+    => Response | Promise<Response>;
 }>;
 
 export type UpdateMixin = ToControllerMixin<{
-  validateUpdate: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  commitUpdate: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  update: (req: Request, res: Response, next: NextFunction) => Promise<any>;
+  lookUpAttribute: string;
+  validateUpdate: <
+    CleanedData extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<ValidateReturned<CleanedData>>;
+  commitUpdate: <
+    ResponsePayload extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<CommitReturned<ResponsePayload>>;
+  update: (req: Request, res: Response, next: NextFunction) 
+    => Response | Promise<Response>;
 }>;
 
 export type PatchMixin = ToControllerMixin<{
-  validatePatch: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  commitPatch: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  patch: (req: Request, res: Response, next: NextFunction) => Promise<any>;
+  lookUpAttribute: string;
+  validatePatch: <
+    CleanedData extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<ValidateReturned<CleanedData>>;
+  commitPatch: <
+    ResponsePayload extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<CommitReturned<ResponsePayload>>;
+  patch: (req: Request, res: Response, next: NextFunction) 
+    => Response | Promise<Response>;
 }>;
 
 export type DeleteMixin = ToControllerMixin<{
-  validateDelete: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  commitDelete: (data: GenericObject, next: NextFunction) => Promise<void | GenericObject>;
-  delete: (req: Request, res: Response, next: NextFunction) => Promise<any>;
+  lookUpAttribute: string;
+  commitDelete: <
+    ResponsePayload extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<CommitReturned<ResponsePayload>>;
+  delete: (req: Request, res: Response, next: NextFunction) 
+    => Response | Promise<Response>;
 }>;
+

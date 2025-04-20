@@ -9,18 +9,30 @@ import { Mixin, WithContext } from '@/types/patterns';
 
 export type ControllerBase = {
   handleErrors: <
-    ReturnType,
-    Callback extends (() => void | ReturnType) = (() => void | ReturnType),
-  >(
+    Callback extends (...args: any) => any,
+  > (
     callback: Callback, 
     next: NextFunction
   ) => (
-    ReturnType extends Promise<any>
-      ? never
-     : void | ReturnType
+    Promise<ReturnType<Callback>>
   );
   registerRoutes: (router: Router, path: string) => void;
 };
+
+type Foo = <
+  Callback extends (...args: any) => any,
+> (
+  callback: Callback
+) => Promise<ReturnType<Callback>>;
+
+const foo: Foo = async (callback) => {
+  return callback();
+};
+
+const result = await foo( () => "Hello World!" );
+
+
+export type ControllerBaseMixin = ToControllerMixin<ControllerBase>;
 
 /*******************************************************************************
  * Mixins
@@ -48,5 +60,3 @@ export type ToControllerMixin<
     Context
   >
 );
-
-export type ControllerBaseMixin = ToControllerMixin<ControllerBase>;

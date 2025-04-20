@@ -37,14 +37,36 @@ export function bindContext<
  * Mixin pattern utilities
  */
 
-type UnionToIntersection<U> = 
-  (U extends any ? (x: U) => void : never) extends (x: infer I) => void 
+type UnionToIntersection<U> = (
+  (
+    U extends any ? 
+      (k: U) => void : 
+      never
+  ) extends (k: infer I) => void 
     ? I 
-    : never;
+    : never
+);
+
+type Prioritize<T extends any[]> = T extends [infer First, ...infer Rest]
+  ? First extends object
+    ? Rest extends any[]
+      ? PrioritizeHelper<First, Prioritize<Rest>>
+      : never
+    : never
+  : {};
+
+type PrioritizeHelper<T, U> = {
+  [K in keyof T | keyof U]: K extends keyof U ? U[K] : K extends keyof T ? T[K] : never;
+};
+
+export type AttachMixins<
+  Receiver extends GenericObject,
+  Mixins extends [...(GenericObject[])],
+> = Prioritize<[Receiver, ...Mixins]>;
 
 export function attachMixins<
-  Receiver extends { [key: string]: any; },
-  Mixins extends [...({ [key: string]: any; }[])],
+  Receiver extends GenericObject,
+  Mixins extends [...(GenericObject[])],
 > (
   receiver: Receiver, 
   ...mixins: Mixins
