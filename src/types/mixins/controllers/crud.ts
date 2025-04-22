@@ -2,15 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { GenericObject } from "@/types/commons";
 import { ToControllerMixin } from '@/types/controllers';
 
-
-export type ValidateReturned<
+export type CRUDValidateReturned<
   CleanedData extends GenericObject
 > = {
   cleanedData: CleanedData;
   success: boolean;
 };
 
-export type CommitReturned<
+export type CRUDCommitReturned<
   ResponsePayload extends GenericObject
 > = {
   responsePayload: ResponsePayload;
@@ -21,11 +20,11 @@ export type CreateMixin = ToControllerMixin<{
   validateCreate: <
     CleanedData extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<ValidateReturned<CleanedData>>;
+    => Promise<CRUDValidateReturned<CleanedData>>;
   commitCreate: <
     ResponsePayload extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<CommitReturned<ResponsePayload>>;
+    => Promise<CRUDCommitReturned<ResponsePayload>>;
   create: (req: Request, res: Response, next: NextFunction) 
     => Response | Promise<Response>;
 }>;
@@ -35,7 +34,7 @@ export type ReadMixin = ToControllerMixin<{
   commitRead: <
     ResponsePayload extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<CommitReturned<ResponsePayload>>;
+    => Promise<CRUDCommitReturned<ResponsePayload>>;
   read: (req: Request, res: Response, next: NextFunction) 
     => Response | Promise<Response>;
 }>;
@@ -44,7 +43,7 @@ export type ReadAllMixin = ToControllerMixin<{
   commitReadAll: <
     ResponsePayload extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<CommitReturned<ResponsePayload>>;
+    => Promise<CRUDCommitReturned<ResponsePayload>>;
   readAll: (req: Request, res: Response, next: NextFunction) 
     => Response | Promise<Response>;
 }>;
@@ -54,11 +53,11 @@ export type UpdateMixin = ToControllerMixin<{
   validateUpdate: <
     CleanedData extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<ValidateReturned<CleanedData>>;
+    => Promise<CRUDValidateReturned<CleanedData>>;
   commitUpdate: <
     ResponsePayload extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<CommitReturned<ResponsePayload>>;
+    => Promise<CRUDCommitReturned<ResponsePayload>>;
   update: (req: Request, res: Response, next: NextFunction) 
     => Response | Promise<Response>;
 }>;
@@ -68,11 +67,11 @@ export type PatchMixin = ToControllerMixin<{
   validatePatch: <
     CleanedData extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<ValidateReturned<CleanedData>>;
+    => Promise<CRUDValidateReturned<CleanedData>>;
   commitPatch: <
     ResponsePayload extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<CommitReturned<ResponsePayload>>;
+    => Promise<CRUDCommitReturned<ResponsePayload>>;
   patch: (req: Request, res: Response, next: NextFunction) 
     => Response | Promise<Response>;
 }>;
@@ -82,7 +81,7 @@ export type DeleteMixin = ToControllerMixin<{
   commitDelete: <
     ResponsePayload extends GenericObject
   > (data: GenericObject, next: NextFunction) 
-    => Promise<CommitReturned<ResponsePayload>>;
+    => Promise<CRUDCommitReturned<ResponsePayload>>;
   delete: (req: Request, res: Response, next: NextFunction) 
     => Response | Promise<Response>;
 }>;

@@ -1,7 +1,7 @@
-import { controllerBaseMixin } from '@/controllers/base';
-import { attachMixins, bindContext } from '@/utils/patterns';
-import { Contextualized } from '@/types/patterns';
-import { ControllerMixin } from '@/types/controllers';
+import { bindContext, attachMixinsObjects } from '@/utils/patterns';
+import { AttachMixinsObjects, WithoutContext } from '@/types/patterns';
+import { Mixin } from '@/types/patterns';
+import { GenericObject } from '@/types/commons';
 
 /*******************************************************************************
  * Controllers
@@ -9,21 +9,21 @@ import { ControllerMixin } from '@/types/controllers';
 
 
 export function buildController<
-  Options extends Contextualized,
-  Mixins extends ControllerMixin,
+  Mixins extends [...Mixin[]],
+  Options extends GenericObject,
 > (
+  mixins: Mixins,
   options: Options,
-  ...mixins: Mixins[]
-) 
+  //...mixins: Mixins
+): WithoutContext<AttachMixinsObjects<Options, Mixins>> 
 {
   /*
    * Target naming here is used instead of context, because the the final builded
    * controller will be the target context to attach to every method. So target 
    * objects are objects which methods's first argument is the context.
    */
-  //const targetBaseController = buildTargetBaseController();
   const receiver = {};
-  const fullTargetController = attachMixins(receiver, controllerBaseMixin, options, ...mixins);
+  const fullTargetController = attachMixinsObjects(receiver, ...mixins, options);
   const controller = bindContext(fullTargetController, fullTargetController);
-  return controller;
+  return controller as any;
 }

@@ -1,5 +1,5 @@
 
-import { Request, Response, NextFunction, Router } from 'express';
+//import { NextFunction, Router } from 'express';
 import { GenericObject } from '@/types/commons';
 import { Mixin, WithContext } from '@/types/patterns';
 
@@ -7,7 +7,9 @@ import { Mixin, WithContext } from '@/types/patterns';
  * Controllers
  ******************************************************************************/
 
+/*
 export type ControllerBase = {
+  basePath: string;
   handleErrors: <
     Callback extends (...args: any) => any,
   > (
@@ -19,25 +21,13 @@ export type ControllerBase = {
   registerRoutes: (router: Router, path: string) => void;
 };
 
-type Foo = <
-  Callback extends (...args: any) => any,
-> (
-  callback: Callback
-) => Promise<ReturnType<Callback>>;
-
-const foo: Foo = async (callback) => {
-  return callback();
-};
-
-const result = await foo( () => "Hello World!" );
-
-
 export type ControllerBaseMixin = ToControllerMixin<ControllerBase>;
+*/
 
 /*******************************************************************************
  * Mixins
  ******************************************************************************/
-
+/*
 export type ControllerMixin<
   Context extends GenericObject=GenericObject
 > = Mixin<Context>;
@@ -52,7 +42,6 @@ export type ToControllerMixin<
   Context extends GenericObject = (
     & Type
     & GenericObject
-    & ControllerBase
   )
 > = (
   ValidateControllerMixin<
@@ -60,3 +49,4 @@ export type ToControllerMixin<
     Context
   >
 );
+*/

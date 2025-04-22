@@ -1,11 +1,8 @@
 import { buildController } from "@/controllers/commons";
-import { all, createMixin } from "@/controllers/mixins/crud";
-import { ControllerMixin } from "@/types/controllers";
+import * as crud from "@/utils/controllers/mixins/crud";
+//import { ControllerOptions } from "@/types/controllers";
+//import { createMixin } from "@/controllers/mixins/crud";
 
-export const productsController = buildController({
-  create: async (target, req, res, next) => {
-    return {
-      message: 'create',
-    };
-  },
-}, createMixin);
+export const productsController = buildController([crud.createMixin], {});
+
+productsController.validateCreate

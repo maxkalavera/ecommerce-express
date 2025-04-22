@@ -1,12 +1,12 @@
 import db from "@/db";
-import { QueryResult } from "pg";
 import { PgTable } from "drizzle-orm/pg-core";
-import { sql, SQL } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { Accessor } from "@/types/accessors";
+import { Model as ModelType } from "@/types/models";
 
 
 export function buildAccessor<
-  Model extends { id?: number; key?: string; }, 
+  Model extends ModelType, 
   ID = number
 > (
   table: PgTable
