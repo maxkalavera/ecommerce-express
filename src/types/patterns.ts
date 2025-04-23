@@ -2,7 +2,7 @@ import { GenericObject } from "@/types/commons";
 
 /******************************************************************************
  * Context Binding pattern types
- */
+ *****************************************************************************/
 
 export type Contextualized<
   Context extends GenericObject=GenericObject,
@@ -52,10 +52,10 @@ export type WithoutContext<Type> = {
 
 /******************************************************************************
  * Mixin pattern types
- */
+ *****************************************************************************/
 
 export type MixinObject<
-  Context extends GenericObject=GenericObject,
+  Context extends GenericObject,
 > = {
 [key: string]: 
   | ((...args: [Context, ...any[]]) => any)
@@ -65,22 +65,76 @@ export type MixinObject<
 
 export type MixinBuilder<
   Options extends GenericObject,
-  Context extends GenericObject = GenericObject,
+  Context extends GenericObject,
 > = (options: Options) => MixinObject<Context>;
+
+export type Mixin<
+  Options extends GenericObject = any,
+  Context extends GenericObject = any,
+> = MixinObject<Context> | MixinBuilder<Options, Context>;
+
+/******************************************************************************
+ * Attach mixins util types */
+
+export type AttachMixins<
+  Receiver extends MixinObject<any>,
+  Mixins extends [...(Mixin[])],
+  OptionsObject extends GenericObject = MixinOptionsFromMixins<Mixins>,
+> = MixinsToMixinObjects<OptionsObject, Mixins>
+
+const mixins = [
+  { a: 0 },
+  { b: 1 },
+  ((options) => ({ c: 2 })) as MixinBuilder<{ defaultA: number }, { c: number }>, 
+  ((options) => ({ d: 3 })) as MixinBuilder<{ defaultB: number }, { d: number }>
+];
+type test2 = MixinsToMixinObjects<{}, typeof mixins>;
+type test3 = AttachMixins<{}, typeof mixins>;
+
+export type AttachMixinsObjects<
+  Receiver extends MixinObject<any>,
+  Mixins extends [...(MixinObject<any>[])],
+> = Prioritize<[Receiver, ...Mixins]>;
+
+export type AttachMixinsBuilders<
+  Options extends GenericObject,
+  Receiver extends MixinObject<any>,
+  Mixins extends [...(MixinBuilder<Options, any>[])],
+> = Prioritize<[Receiver, ...(MixinBuilderResults<Options, Mixins>)]>;
 
 export type MixinBuilderResults<
   Options extends GenericObject,
-  Builders extends [...MixinBuilder<Options>[]]
+  Builders extends [...MixinBuilder<Options, any>[]]
 > = {
-  [K in keyof Builders]: Builders[K] extends MixinBuilder<Options, infer Context>
+  [K in keyof Builders]: Builders[K] extends MixinBuilder<Options, GenericObject>
     ? ReturnType<Builders[K]>
     : never
 };
 
-export type Mixin<
-  Options extends GenericObject = GenericObject,
-  Context extends GenericObject=GenericObject,
-> = MixinObject | MixinBuilder<Options, Context>;
+export type MixinsToMixinObjects<
+  OptionsObject extends GenericObject,
+  Mixins extends [...(Mixin[])],
+> = {
+  [K in keyof Mixins]: Mixins[K] extends MixinBuilder<OptionsObject, any>
+    ? ReturnType<Mixins[K]>
+    : Mixins[K]
+};
+
+export type MixinOptionsFromMixins<
+  Mixins extends [...(Mixin[])],
+> = Prioritize<{
+  [key in keyof Mixins]: Mixins[key] extends MixinBuilder<infer Options, any>
+    ? Options
+    : {}
+}>;
+
+/******************************************************************************
+ * extend mixins util types */
+
+export type ExtendMixinObject<
+  Target extends GenericObject,
+  Base extends MixinObject<any>,
+> = Prioritize<[Base, Target]>;
 
 export type ValidateMixinObject<
   Type extends Mixin<Context>,
@@ -100,6 +154,18 @@ export type ToMixinObject<
   >
 );
 
+/******************************************************************************
+ * Common pattern util types
+ *****************************************************************************/
+
+/**
+ * Prioritize type merges a tuple of objects while preserving property precedence
+ * @template T - Tuple of object types to merge
+ * @description 
+ * - Processes objects in order (first object has highest priority)
+ * - Preserves type safety while combining multiple objects
+ * - Returns a single merged type where earlier objects take precedence
+ */
 type Prioritize<T extends any[]> = T extends [infer First, ...infer Rest]
   ? First extends object
     ? Rest extends any[]
@@ -108,44 +174,15 @@ type Prioritize<T extends any[]> = T extends [infer First, ...infer Rest]
     : never
   : {};
 
+/**
+ * Helper type for Prioritize that performs the actual property merging
+ * @template T - Current object being processed
+ * @template U - Accumulated result from processing remaining objects
+ * @description
+ * - Merges properties from T and U
+ * - Properties from T take precedence over U when names conflict
+ * - Preserves all non-conflicting properties from both types
+ */
 type PrioritizeHelper<T, U> = {
-  [K in keyof T | keyof U]: K extends keyof U ? U[K] : K extends keyof T ? T[K] : never;
+  [K in keyof T | keyof U]: K extends keyof U ? U[K] : K extends keyof T ? T[K] : never
 };
-
-export type AttachMixinsObjects<
-  Receiver extends MixinObject,
-  Mixins extends [...(MixinObject[])],
-> = Prioritize<[Receiver, ...Mixins]>;
-
-export type AttachMixinsBuilders<
-  Options extends GenericObject,
-  Receiver extends MixinObject,
-  Mixins extends [...(MixinBuilder<Options>[])],
-> = Prioritize<[Receiver, ...(MixinBuilderResults<Options, Mixins>)]>;
-
-export type MixinsToMixinObjects<
-OptionsObject extends GenericObject,
-  Mixins extends [...(Mixin[])],
-> = {
-  [K in keyof Mixins]: Mixins[K] extends MixinBuilder<OptionsObject>
-    ? ReturnType<Mixins[K]>
-    : Mixins[K]
-};
-
-export type AttachMixins<
-  Receiver extends MixinObject,
-  Mixins extends [...(Mixin[])],
-  OptionsObject extends GenericObject,
-  MixinObjects extends [...(MixinObject[])] = (
-    MixinsToMixinObjects<OptionsObject, Mixins> extends [...(MixinObject[])] ? MixinsToMixinObjects<OptionsObject, Mixins> : never
-  ),
-> = AttachMixinsObjects<Receiver, MixinObjects>;
-
-export type ExtendMixinObject<
-  Target extends GenericObject,
-  Base extends MixinObject,
-> = Prioritize<[Base, Target]>;
-
-type test = AttachMixins<{}, [((context: {}) => { a: 0 }), ((context: {}) => { b: 1 })], {}>;
-
-type test2 = test extends [...GenericObject[]] ? true : false;

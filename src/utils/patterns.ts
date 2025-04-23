@@ -1,12 +1,14 @@
 import { GenericObject } from "@/types/commons";
 import { 
-  AttachMixinsObjects, 
+  Mixin, 
+  MixinObject, 
+  MixinBuilder,
   Contextualized, 
   WithoutContext, 
-  Mixin, 
-  ExtendMixinObject, 
-  MixinObject, 
-  AttachMixins
+  AttachMixins,
+  AttachMixinsObjects, 
+  ExtendMixinObject,
+  MixinOptionsFromMixins, 
 } from "@/types/patterns";
 
 /******************************************************************************
@@ -14,12 +16,12 @@ import {
  */
 
 export function buildTarget<
-  Options extends GenericObject,
-  Mixins extends [...Mixin[]],
+  Mixins extends Mixin[],
+  Options extends GenericObject = MixinOptionsFromMixins<Mixins>,
 > (
-  options: Options,
-  ...mixins: Mixins
-): WithoutContext<AttachMixins<{}, Mixins, Options>>
+  mixins: Mixins,
+  options: MixinOptionsFromMixins<Mixins>,
+): AttachMixins<{}, Mixins, Options> //WithoutContext<AttachMixins<{}, Mixins, Options>>
   {
   /*
   * Target naming here is used instead of context, because the the final builded
@@ -34,13 +36,19 @@ export function buildTarget<
   const receiver = {};
   const fullTargetController = attachMixinsObjects(receiver, ...processedMixins, options);
   const controller = bindContext(fullTargetController, fullTargetController);
-  return controller as WithoutContext<AttachMixins<{}, Mixins, Options>>;
+  return controller as any;
 }
 
+
+const mixins = [
+  { a: 0 },
+  { b: 1 },
+  ((options) => ({ c: 2 })) as MixinBuilder<{ defaultA: number }, { c: number }>, 
+  ((options) => ({ d: 3 })) as MixinBuilder<{ defaultB: number }, { d: number }>
+];
 const test2 = buildTarget(
-  { option : 0 }, 
-  (options) => ({ a: 0 }), 
-  (options) => ({ b: 1 })
+  mixins,
+  { defaultA: 0, defaultB: 1 },
 );
 
 
@@ -82,7 +90,7 @@ export function bindContext<
 
 export function attachMixinsObjects<
   Receiver extends GenericObject,
-  Mixins extends [...(MixinObject[])],
+  Mixins extends [...(MixinObject<any>[])],
 > (
   receiver: Receiver, 
   ...mixins: Mixins
@@ -92,7 +100,7 @@ export function attachMixinsObjects<
 };
 
 export function extendMixinObject<
-  Base extends MixinObject,
+  Base extends MixinObject<any>,
   Target extends GenericObject,
 > (
   baseMixin: Base, 
