@@ -1,9 +1,7 @@
-import { GenericObject, Push } from "@/types/commons";
+import { GenericObject } from "@/types/commons";
 import { 
   Mixin, 
   MixinObject, 
-  MixinBuilder,
-  Contextualized, 
   WithoutContext,
   MergeOptionsFromMixins,
   AttachMixins,
@@ -45,7 +43,7 @@ export function buildTarget<
 
 export function bindContext<
   Context extends GenericObject,
-  Target extends Contextualized<Context>,
+  Target extends MixinObject<Context>,
 > (
   target: Target = {} as Target,
   context: Context = {} as Context,
@@ -75,10 +73,15 @@ export function bindContext<
  */
 
 export function buildMixin<
-  Mixin extends MixinBuilder<any, any> | MixinObject<any>, 
-> (input: Mixin) {
-  return input;
-}
+  Target extends Mixin<GenericObject, GenericObject>,
+  Mixins extends [...Mixin<any, any>[]] = [],
+> (
+  target: Target,
+  mixins: Mixins = [] as any,
+): AttachMixins<Target, Mixins>
+{
+  return Object.assign(target, ...mixins);
+};
 
 export function attachMixins<
   Receiver extends GenericObject,

@@ -4,26 +4,22 @@ import { GenericObject, IsUnion, Prioritize, RemoveUndefined, RemoveUndefinedFro
  * Context Binding pattern types
  *****************************************************************************/
 
-export type Contextualized<
+export type AttachContext<
+  Type extends Mixin<any, any>,
   Context extends GenericObject=GenericObject,
-> = {
-  [key: string]: 
-    | ((...args: [Context, ...any[]]) => any)
-    | (string | number | boolean | null | undefined | symbol | bigint)
-    | GenericObject;
-};
+> = (
+  Type extends MixinBuilder<any, any>
+    ? (...args: Parameters<Type>) => WithContext<ReturnType<Type>, Context>
+    : WithContext<Type, Context>
+);
 
-export type ExtractContext<T> = T extends {
-  [key: string]: 
-    | ((...args: [infer Output, ...any[]]) => any)
-    | (string | number | boolean | null | undefined | symbol | bigint)
-    | GenericObject;
-  } ? Output : never;
-
-export type ValidateContext<
-  Type extends Contextualized<Context>,
-  Context extends GenericObject=GenericObject,
-> = Type;
+export type RemoveContext<
+  Type extends Mixin<any, any>,
+> = (
+  Type extends MixinBuilder<any, any>
+    ? (...args: Parameters<Type>) => WithoutContext<ReturnType<Type>>
+    : WithoutContext<Type>
+);
 
 export type WithContext<
   Type extends GenericObject, 
@@ -105,3 +101,19 @@ export type MergeOptionsFromMixins<
     ? Options
     : {}
 }>>;
+
+export type ToMixinObject<
+  T extends MixinObject<any>,
+  Context extends GenericObject = GenericObject,
+> = {
+  [K in keyof T]: (
+    T[K] extends (...args: infer Args) => infer Return
+      ? (...args: [Context, ...Args]) => Return
+      : T[K]
+  )
+};
+
+export type test = ToMixinObject<{
+  test: (a: string) => string;
+  test2: string;
+}>

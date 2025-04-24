@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { GenericObject } from "@/types/commons";
-import { ToControllerMixin } from '@/types/controllers';
+import { ToMixinObject } from '@/types/patterns';
 
 export type CRUDValidateReturned<
   CleanedData extends GenericObject
@@ -16,7 +16,7 @@ export type CRUDCommitReturned<
   success: boolean;
 };
 
-export type CreateMixin = ToControllerMixin<{
+export type CreateMixin = ToMixinObject<{
   validateCreate: <
     CleanedData extends GenericObject
   > (data: GenericObject, next: NextFunction) 
@@ -29,7 +29,7 @@ export type CreateMixin = ToControllerMixin<{
     => Response | Promise<Response>;
 }>;
 
-export type ReadMixin = ToControllerMixin<{
+export type ReadMixin = ToMixinObject<{
   lookUpAttribute: string;
   commitRead: <
     ResponsePayload extends GenericObject
@@ -39,7 +39,7 @@ export type ReadMixin = ToControllerMixin<{
     => Response | Promise<Response>;
 }>;
 
-export type ReadAllMixin = ToControllerMixin<{
+export type ReadAllMixin = ToMixinObject<{
   commitReadAll: <
     ResponsePayload extends GenericObject
   > (data: GenericObject, next: NextFunction) 
@@ -48,7 +48,7 @@ export type ReadAllMixin = ToControllerMixin<{
     => Response | Promise<Response>;
 }>;
 
-export type UpdateMixin = ToControllerMixin<{
+export type UpdateMixin = ToMixinObject<{
   lookUpAttribute: string;
   validateUpdate: <
     CleanedData extends GenericObject
@@ -62,7 +62,7 @@ export type UpdateMixin = ToControllerMixin<{
     => Response | Promise<Response>;
 }>;
 
-export type PatchMixin = ToControllerMixin<{
+export type PatchMixin = ToMixinObject<{
   lookUpAttribute: string;
   validatePatch: <
     CleanedData extends GenericObject
@@ -76,7 +76,7 @@ export type PatchMixin = ToControllerMixin<{
     => Response | Promise<Response>;
 }>;
 
-export type DeleteMixin = ToControllerMixin<{
+export type DeleteMixin = ToMixinObject<{
   lookUpAttribute: string;
   commitDelete: <
     ResponsePayload extends GenericObject

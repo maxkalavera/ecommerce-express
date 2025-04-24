@@ -1,13 +1,11 @@
 
-//import { NextFunction, Router } from 'express';
-import { GenericObject } from '@/types/commons';
-import { Mixin, WithContext } from '@/types/patterns';
+import { NextFunction, Router } from 'express';
+import { ToMixinObject } from '@/types/patterns';
 
 /*******************************************************************************
  * Controllers
  ******************************************************************************/
 
-/*
 export type ControllerBase = {
   basePath: string;
   handleErrors: <
@@ -21,8 +19,7 @@ export type ControllerBase = {
   registerRoutes: (router: Router, path: string) => void;
 };
 
-export type ControllerBaseMixin = ToControllerMixin<ControllerBase>;
-*/
+export type ControllerBaseMixin = ToMixinObject<ControllerBase>;
 
 /*******************************************************************************
  * Mixins

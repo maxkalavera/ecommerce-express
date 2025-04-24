@@ -1,7 +1,56 @@
 import { 
   CreateMixin, ReadMixin, ReadAllMixin, UpdateMixin, PatchMixin, DeleteMixin,
 } from "@/types/mixins/controllers/crud";
+import { buildMixin } from "@/utils/patterns";
 
+const baseControllerMixin = buildMixin<{ basePath: string; }>({
+  basePath: "/",
+});
+
+export const createMixin = buildMixin<
+  CreateMixin,
+  [typeof baseControllerMixin]
+>({
+  validateCreate: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        cleanedData: {},
+        success: true
+      };
+    }, next);
+  },
+  commitCreate: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        responsePayload: {},
+        success: true
+      };
+    }, next);
+  },
+  create: async (
+    target, req, res, next
+  ) => {
+    try {
+      const validated = await target.validateCreate(req.body, next);
+      if (validated.success) {
+        const commited = await target.commitCreate(validated.cleanedData, next);
+        if (commited.success) {
+          return res.status(201).json(commited.responsePayload);
+        } else {
+          return res.status(400).json({ error: 'Bad Request' });
+        }
+      } else {
+        return res.status(400).json({ error: 'Bad Request' });
+      }
+    } catch (error) {
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+}, [baseControllerMixin]);
+
+createMixin.basePath
+
+/*
 export const createMixin: CreateMixin = {
   validateCreate: async (target, data, next) => {
     return target.handleErrors(() => {
@@ -181,10 +230,4 @@ export const deleteMixin: DeleteMixin = {
 export const view = [readMixin, readAllMixin]
 export const mutate = [createMixin, updateMixin, patchMixin, deleteMixin];
 export const all = [...view, ...mutate];
-
-
-type A = {
-  foo: (a: number, b: string) => string;
-} & {
-  foo: () => number;
-}
+*/
