@@ -1,4 +1,4 @@
-import { GenericObject } from "@/types/commons";
+import { GenericObject, IsUnion, Prioritize, RemoveUndefined, RemoveUndefinedFromObjectTuple, UnionToTuple } from "@/types/commons";
 
 /******************************************************************************
  * Context Binding pattern types
@@ -77,112 +77,31 @@ export type Mixin<
  * Attach mixins util types */
 
 export type AttachMixins<
-  Receiver extends MixinObject<any>,
-  Mixins extends [...(Mixin[])],
-  OptionsObject extends GenericObject = MixinOptionsFromMixins<Mixins>,
-> = MixinsToMixinObjects<OptionsObject, Mixins>
-
-const mixins = [
-  { a: 0 },
-  { b: 1 },
-  ((options) => ({ c: 2 })) as MixinBuilder<{ defaultA: number }, { c: number }>, 
-  ((options) => ({ d: 3 })) as MixinBuilder<{ defaultB: number }, { d: number }>
-];
-type test2 = MixinsToMixinObjects<{}, typeof mixins>;
-type test3 = AttachMixins<{}, typeof mixins>;
-
-export type AttachMixinsObjects<
-  Receiver extends MixinObject<any>,
-  Mixins extends [...(MixinObject<any>[])],
-> = Prioritize<[Receiver, ...Mixins]>;
-
-export type AttachMixinsBuilders<
-  Options extends GenericObject,
-  Receiver extends MixinObject<any>,
-  Mixins extends [...(MixinBuilder<Options, any>[])],
-> = Prioritize<[Receiver, ...(MixinBuilderResults<Options, Mixins>)]>;
-
-export type MixinBuilderResults<
-  Options extends GenericObject,
-  Builders extends [...MixinBuilder<Options, any>[]]
-> = {
-  [K in keyof Builders]: Builders[K] extends MixinBuilder<Options, GenericObject>
-    ? ReturnType<Builders[K]>
-    : never
-};
-
-export type MixinsToMixinObjects<
-  OptionsObject extends GenericObject,
-  Mixins extends [...(Mixin[])],
-> = {
-  [K in keyof Mixins]: Mixins[K] extends MixinBuilder<OptionsObject, any>
-    ? ReturnType<Mixins[K]>
-    : Mixins[K]
-};
-
-export type MixinOptionsFromMixins<
-  Mixins extends [...(Mixin[])],
-> = Prioritize<{
-  [key in keyof Mixins]: Mixins[key] extends MixinBuilder<infer Options, any>
-    ? Options
-    : {}
-}>;
-
-/******************************************************************************
- * extend mixins util types */
-
-export type ExtendMixinObject<
-  Target extends GenericObject,
-  Base extends MixinObject<any>,
-> = Prioritize<[Base, Target]>;
-
-export type ValidateMixinObject<
-  Type extends Mixin<Context>,
-  Context extends GenericObject=GenericObject,
-> = Type;
-
-export type ToMixinObject<
-  Type extends GenericObject,
-  Context extends GenericObject = (
-    & Type
-    & GenericObject
-  )
+  Receiver extends GenericObject,
+  Mixins extends Mixin<any, any>[]
 > = (
-  ValidateMixinObject<
-    WithContext<Type, Context>,
-    Context
-  >
+  Prioritize<
+    RemoveUndefinedFromObjectTuple<
+      MixinsToMixinObjects<
+        [Receiver, ...UnionToTuple<Mixins[number]>]
+  >>>
 );
 
-/******************************************************************************
- * Common pattern util types
- *****************************************************************************/
-
-/**
- * Prioritize type merges a tuple of objects while preserving property precedence
- * @template T - Tuple of object types to merge
- * @description 
- * - Processes objects in order (first object has highest priority)
- * - Preserves type safety while combining multiple objects
- * - Returns a single merged type where earlier objects take precedence
- */
-type Prioritize<T extends any[]> = T extends [infer First, ...infer Rest]
-  ? First extends object
-    ? Rest extends any[]
-      ? PrioritizeHelper<First, Prioritize<Rest>>
-      : never
-    : never
-  : {};
-
-/**
- * Helper type for Prioritize that performs the actual property merging
- * @template T - Current object being processed
- * @template U - Accumulated result from processing remaining objects
- * @description
- * - Merges properties from T and U
- * - Properties from T take precedence over U when names conflict
- * - Preserves all non-conflicting properties from both types
- */
-type PrioritizeHelper<T, U> = {
-  [K in keyof T | keyof U]: K extends keyof U ? U[K] : K extends keyof T ? T[K] : never
+export type MixinsToMixinObjects<
+  MixinsTuple extends [...any[]]
+> = {
+  [key in keyof MixinsTuple]: (
+    MixinsTuple[key] extends MixinBuilder<any, any>
+     ? ReturnType<MixinsTuple[key]>
+     : MixinsTuple[key]
+  )
 };
+
+export type MergeOptionsFromMixins<
+  Mixins extends [...Mixin[]],
+  MixinTuple extends [...any[]] = UnionToTuple<Mixins[number]>
+> = Prioritize<RemoveUndefinedFromObjectTuple<{
+  [key in keyof MixinTuple]: MixinTuple[key] extends MixinBuilder<infer Options, any>
+    ? Options
+    : {}
+}>>;
