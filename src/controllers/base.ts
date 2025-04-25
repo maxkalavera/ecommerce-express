@@ -1,64 +1,26 @@
-import { 
-  ControllerBaseMixin,
-  ControllerOptions,
-} from "@/types/controllers";
+import { buildMixin } from "@/utils/patterns";
+import { controllersBaseMixin as baseMixin } from "@/utils/controllers/mixins/base";
 
-export const controllerDefaultOptions: ControllerOptions = {
-  basePath: "/",
-  lookUpAttribute: "id",
-};
+/******************************************************************************
+ * Types
+ *****************************************************************************/
 
-export const controllerBaseMixin: ControllerBaseMixin = {
-  ...controllerDefaultOptions,
-  handleErrors: (target, callback, next) => {
-    try {
-      return callback();
-    } catch (error) {
-      next(error);
-    }
-  },
-  registerRoutes: (target, router, path) => {
-    if (target.create) {
-      router.post(joinUrlPaths(path), target.create);
-    }
-    if (target.read) {
-      router.get(
-        joinUrlPaths(path, `:${target.lookUpAttribute}`), 
-        target.read
-      );
-    }
-    if (target.readAll) {
-      router.get(joinUrlPaths(path), target.readAll);
-    }
-    if (target.update) {
-      router.put(
-        joinUrlPaths(path, `:${target.lookUpAttribute}`), 
-        target.update
-      );
-    }
-    if (target.patch) {
-      router.put(
-        joinUrlPaths(path, `:${target.lookUpAttribute}`), 
-        target.patch
-      );
-    }
-    if (target.delete) {
-      router.delete(
-        joinUrlPaths(path, `:${target.lookUpAttribute}`),
-        target.delete
-      );
-    }
+type ControllersBaseMixin = {};
 
-    console.log('Registering routes for', path);
-    console.log('Target:', target);
-    console.log('Router:', router);
-    console.log('Path:', path);
-  }
-}
+/******************************************************************************
+ * Main
+ *****************************************************************************/
+
+export const controllersBaseMixin = buildMixin<
+  ControllersBaseMixin,
+  [typeof baseMixin]
+> ({
+
+}, [baseMixin]);
 
 /******************************************************************************
  * Utils
- */
+ *****************************************************************************/
 
 /**
  * Safely joins URL path segments, handling duplicate slashes and ensuring proper formatting

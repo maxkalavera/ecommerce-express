@@ -1,14 +1,17 @@
-import { bindContext, buildMixin, buildTarget, extendMixin } from '@/utils/patterns';
-import { WithoutContext } from '@/types/patterns';
-import { Mixin } from '@/types/patterns';
-import { GenericObject } from '@/types/commons';
+import { buildTarget } from "@/utils/patterns";
+import { controllersBaseMixin } from "@/controllers/base";
+import { Mixin, Target } from "@/types/patterns";
 
 /*******************************************************************************
  * Controllers
  ******************************************************************************/
 
-export function buildController (
-...args: Parameters<typeof buildTarget>
+export function buildController <
+  SelfTarget extends Target,
+  Mixins extends Mixin<any, any>[]
+> (
+target: SelfTarget,
+mixins: Mixins = [] as any,
 ) {
-  buildTarget(...args);
-}
+  return buildTarget(target, [controllersBaseMixin, ...mixins]);
+};

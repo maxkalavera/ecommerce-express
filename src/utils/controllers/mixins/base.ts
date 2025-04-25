@@ -1,9 +1,10 @@
-import { 
-  ControllerBaseMixin,
-} from "@/types/controllers";
+import { ControllerBase } from "@/types/controllers";
+import { buildMixin } from "@/utils/patterns";
 
-
-export const controllerBaseMixin: ControllerBaseMixin = () => ({
+export const controllersBaseMixin = buildMixin<
+  ControllerBase,
+  []
+> ({
   handleErrors: (target, callback, next) => {
     try {
       return callback();

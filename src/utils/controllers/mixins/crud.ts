@@ -1,3 +1,49 @@
+import { buildMixin } from "@/utils/patterns";
+import { CreateMixin } from "@/types/mixins/controllers/crud";
+import { controllersBaseMixin } from "@/utils/controllers/mixins/base";
+
+export const createMixin = buildMixin<
+  CreateMixin,
+  [typeof controllersBaseMixin]
+>({
+  validateCreate: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        cleanedData: {},
+        success: true
+      };
+    }, next);
+  },
+  commitCreate: async (target, data, next) => {
+    return target.handleErrors(() => {
+      return {
+        responsePayload: {},
+        success: true
+      };
+    }, next);
+  },
+  create: async (
+    target, req, res, next
+  ) => {
+    try {
+      const validated = await target.validateCreate(req.body, next);
+      if (validated.success) {
+        const commited = await target.commitCreate(validated.cleanedData, next);
+        if (commited.success) {
+          return res.status(201).json(commited.responsePayload);
+        } else {
+          return res.status(400).json({ error: 'Bad Request' });
+        }
+      } else {
+        return res.status(400).json({ error: 'Bad Request' });
+      }
+    } catch (error) {
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+}, [controllersBaseMixin]);
+
+/*
 import { 
   CreateMixin, ReadMixin, ReadAllMixin, UpdateMixin, PatchMixin, DeleteMixin,
 } from "@/types/mixins/controllers/crud";
@@ -49,6 +95,7 @@ export const createMixin = buildMixin<
 }, [baseControllerMixin]);
 
 createMixin.basePath
+*/
 
 /*
 export const createMixin: CreateMixin = {

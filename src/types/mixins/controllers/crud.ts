@@ -1,20 +1,35 @@
 import { Request, Response, NextFunction } from 'express';
 import { GenericObject } from "@/types/commons";
-import { ToMixinObject } from '@/types/patterns';
 
-export type CRUDValidateReturned<
+export type ValidateReturned<
   CleanedData extends GenericObject
 > = {
   cleanedData: CleanedData;
   success: boolean;
 };
 
-export type CRUDCommitReturned<
+export type CommitReturned<
   ResponsePayload extends GenericObject
 > = {
   responsePayload: ResponsePayload;
   success: boolean;
 };
+
+export type CreateMixin = {
+  validateCreate: <
+    CleanedData extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<ValidateReturned<CleanedData>>;
+  commitCreate: <
+    ResponsePayload extends GenericObject
+  > (data: GenericObject, next: NextFunction) 
+    => Promise<CommitReturned<ResponsePayload>>;
+  create: (req: Request, res: Response, next: NextFunction) 
+    => Response | Promise<Response>;
+};
+
+/*
+
 
 export type CreateMixin = ToMixinObject<{
   validateCreate: <
@@ -85,4 +100,4 @@ export type DeleteMixin = ToMixinObject<{
   delete: (req: Request, res: Response, next: NextFunction) 
     => Response | Promise<Response>;
 }>;
-
+*/

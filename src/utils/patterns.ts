@@ -1,55 +1,31 @@
-import { GenericObject } from "@/types/commons";
-import { 
-  Mixin, 
-  MixinObject, 
-  WithoutContext,
-  MergeOptionsFromMixins,
-  AttachMixins,
-} from "@/types/patterns";
-
-/******************************************************************************
- * Common pattern utilities
- */
+import { Mixin, Target, WithoutContext } from "@/types/patterns";
 
 export function buildTarget<
-  Mixins extends Mixin[],
+  SelfTarget extends Target,
+  Mixins extends Mixin<any, any>[]
 > (
-  mixins: Mixins,
-  // Global options for mixins that are not provided by the mixin itself, the type is 
-  // the union of all mixin options, it is placed in here to force the user to provide
-  // the options for the mixins that are not provided by the mixin itself.
-  options: MergeOptionsFromMixins<Mixins>,
-): AttachMixins<{}, Mixins>
-  {
-  /*
-  * Target naming here is used instead of context, because the the final builded
-  * controller will be the target context to attach to every method. So target 
-  * objects are objects which methods's first argument is the context.
-  */
-  // Split mixins into function mixins and object mixins
-  const functionMixins = mixins.filter(mixin => typeof mixin === 'function');
-  const objectMixins = mixins.filter(mixin => typeof mixin === 'object');
-  const processedMixins = [...objectMixins, ...functionMixins.map(mixin => mixin(options))];
-
-  const receiver = {};
-  const fullTargetController = attachMixins(receiver, ...processedMixins, options as MixinObject<any>);
-  const controller = bindContext(fullTargetController, fullTargetController);
-  return controller as any;
+  target: SelfTarget,
+  mixins: Mixins = [] as any,
+) {
+  return attachContext(
+    buildMixin(target, mixins),
+  );
 }
 
 /******************************************************************************
- * Context Binding pattern utilities
- */
+ * Context patterns
+ *****************************************************************************/
 
-export function bindContext<
-  Context extends GenericObject,
-  Target extends MixinObject<Context>,
+export function attachContext<
+  MixinTemplate extends Mixin<any, any>,
 > (
-  target: Target = {} as Target,
-  context: Context = {} as Context,
-): WithoutContext<Target>
+  mixin: MixinTemplate,
+): WithoutContext<MixinTemplate> 
 {
-  return Object.entries(target).reduce((wrappedController, [key, value]) => {
+  const target = {};
+  const context = target;
+
+  return Object.entries(mixin).reduce((wrappedController, [key, value]) => {
     if (typeof value === 'function') {
       const func = value as (...args: unknown[]) => unknown | Promise<unknown>;
       if (func.constructor.name === 'AsyncFunction') {
@@ -66,42 +42,20 @@ export function bindContext<
     }
     return wrappedController;
   }, target) as any;
-}
+};
 
 /******************************************************************************
- * Mixin pattern utilities
- */
+ * Mixin patterns
+ *****************************************************************************/
 
 export function buildMixin<
-  Target extends Mixin<GenericObject, GenericObject>,
-  Mixins extends [...Mixin<any, any>[]] = [],
+  SelfTarget extends Target,
+  Mixins extends Mixin<any, any>[]
 > (
-  target: Target,
+  target: Mixin<SelfTarget>,
   mixins: Mixins = [] as any,
-): AttachMixins<Target, Mixins>
+): Mixin<SelfTarget>  
 {
-  return Object.assign(target, ...mixins);
-};
-
-export function attachMixins<
-  Receiver extends GenericObject,
-  Mixins extends Mixin<any, any>[],
-> (
-  receiver: Receiver,
-  ...mixins: Mixins
-): AttachMixins<Receiver, Mixins>
-{
-  return Object.assign(receiver, ...mixins);
-};
-
-export function extendMixin<
-  Receiver extends Mixin<any, any>,
-  Mixins extends Mixin<any, any>[],
-> (
-  receiver: Receiver,
-  ...mixins: Mixins
-): AttachMixins<Receiver, Mixins>
-{
-  return Object.assign(receiver,...mixins);
+  return Object.assign({}, ...mixins, target);
 };
 
