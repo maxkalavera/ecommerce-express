@@ -8,17 +8,13 @@ export type AttachContext<
   Type extends Mixin<any, any>,
   Context extends GenericObject=GenericObject,
 > = (
-  Type extends MixinBuilder<any, any>
-    ? (...args: Parameters<Type>) => WithContext<ReturnType<Type>, Context>
-    : WithContext<Type, Context>
+  (...args: Parameters<Type>) => WithContext<ReturnType<Type>, Context>
 );
 
 export type RemoveContext<
   Type extends Mixin<any, any>,
 > = (
-  Type extends MixinBuilder<any, any>
-    ? (...args: Parameters<Type>) => WithoutContext<ReturnType<Type>>
-    : WithoutContext<Type>
+  (...args: Parameters<Type>) => WithoutContext<ReturnType<Type>>
 );
 
 export type WithContext<
@@ -50,7 +46,7 @@ export type WithoutContext<Type> = {
  * Mixin pattern types
  *****************************************************************************/
 
-export type MixinObject<
+export type MixinTarget<
   Context extends GenericObject,
 > = {
 [key: string]: 
@@ -59,15 +55,14 @@ export type MixinObject<
   | GenericObject;
 };
 
-export type MixinBuilder<
-  Options extends GenericObject,
-  Context extends GenericObject,
-> = (options: Options) => MixinObject<Context>;
+export type MixinOptions<
+  Options extends GenericObject = {},
+> = Options;
 
 export type Mixin<
   Options extends GenericObject = any,
-  Context extends GenericObject = any,
-> = MixinObject<Context> | MixinBuilder<Options, Context>;
+  Context extends MixinOptions = any,
+> = (options: Options) => MixinTarget<Context>;
 
 /******************************************************************************
  * Attach mixins util types */
@@ -87,9 +82,7 @@ export type MixinsToMixinObjects<
   MixinsTuple extends [...any[]]
 > = {
   [key in keyof MixinsTuple]: (
-    MixinsTuple[key] extends MixinBuilder<any, any>
-     ? ReturnType<MixinsTuple[key]>
-     : MixinsTuple[key]
+    ReturnType<MixinsTuple[key]>
   )
 };
 
@@ -97,13 +90,19 @@ export type MergeOptionsFromMixins<
   Mixins extends [...Mixin[]],
   MixinTuple extends [...any[]] = UnionToTuple<Mixins[number]>
 > = Prioritize<RemoveUndefinedFromObjectTuple<{
-  [key in keyof MixinTuple]: MixinTuple[key] extends MixinBuilder<infer Options, any>
+  [key in keyof MixinTuple]: MixinTuple[key] extends Mixin<infer Options, any>
     ? Options
     : {}
 }>>;
 
-export type ToMixinObject<
-  T extends MixinObject<any>,
+export type ToMixin<
+  Target extends GenericObject,
+  Context extends GenericObject = GenericObject,
+  Options extends MixinOptions = {},
+> = (options: Options) => ToMixinTarget<Target, Context>;
+
+export type ToMixinTarget<
+  T extends MixinTarget<any>,
   Context extends GenericObject = GenericObject,
 > = {
   [K in keyof T]: (
@@ -112,8 +111,3 @@ export type ToMixinObject<
       : T[K]
   )
 };
-
-export type test = ToMixinObject<{
-  test: (a: string) => string;
-  test2: string;
-}>
