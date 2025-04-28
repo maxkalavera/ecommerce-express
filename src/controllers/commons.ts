@@ -1,5 +1,4 @@
 import { buildTarget } from "@/utils/patterns";
-import { controllersBaseMixin } from "@/controllers/base";
 import { Mixin, Target } from "@/types/patterns";
 
 /*******************************************************************************
@@ -13,5 +12,5 @@ export function buildController <
 target: SelfTarget,
 mixins: Mixins = [] as any,
 ) {
-  return buildTarget(target, [controllersBaseMixin, ...mixins]);
+  return buildTarget(target, mixins);
 };

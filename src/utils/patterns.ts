@@ -1,4 +1,20 @@
-import { Mixin, Target, WithoutContext } from "@/types/patterns";
+import { ExtractTargets, Mixin, Target, WithoutContext } from "@/types/patterns";
+import { Prioritize } from "@/types/commons";
+
+/**
+ * Builds a target (Controller, Model, any entity to solve a problem) object 
+ * by combining both context binding and mixin patterns.
+ * This function serves as a high-level utility that:
+ * 1. Applies mixins to extend the target's functionality through composition
+ * 2. Binds context to all methods to ensure proper 'this' binding
+ * 
+ * The resulting object can be used to solve complex problems that require
+ * both shared functionality (mixins) and consistent context management.
+ * 
+ * @param target - The base target object to build upon
+ * @param mixins - Optional array of mixin objects to incorporate
+ * @returns A new object with combined functionality and bound context
+ */
 
 export function buildTarget<
   SelfTarget extends Target,
@@ -6,7 +22,8 @@ export function buildTarget<
 > (
   target: SelfTarget,
   mixins: Mixins = [] as any,
-) {
+): WithoutContext<Mixin<Prioritize<[ ...ExtractTargets<Mixins>, SelfTarget ]>>>
+{
   return attachContext(
     buildMixin(target, mixins),
   );
@@ -54,7 +71,7 @@ export function buildMixin<
 > (
   target: Mixin<SelfTarget>,
   mixins: Mixins = [] as any,
-): Mixin<SelfTarget>  
+): Mixin<Prioritize<[ ...ExtractTargets<Mixins>, SelfTarget ]>>
 {
   return Object.assign({}, ...mixins, target);
 };

@@ -5,6 +5,7 @@ export const controllersBaseMixin = buildMixin<
   ControllerBase,
   []
 > ({
+  basePath: "/",
   handleErrors: (target, callback, next) => {
     try {
       return callback();
@@ -14,40 +15,35 @@ export const controllersBaseMixin = buildMixin<
   },
   registerRoutes: (target, router, path) => {
     if (target.create) {
-      router.post(joinUrlPaths(path), target.create);
+      router.post(joinUrlPaths(target.basePath, path), target.create);
     }
     if (target.read) {
       router.get(
-        joinUrlPaths(path, `:${target.lookUpAttribute}`), 
+        joinUrlPaths(target.basePath, path, `:${target.lookUpAttribute}`), 
         target.read
       );
     }
     if (target.readAll) {
-      router.get(joinUrlPaths(path), target.readAll);
+      router.get(joinUrlPaths(target.basePath, path), target.readAll);
     }
     if (target.update) {
       router.put(
-        joinUrlPaths(path, `:${target.lookUpAttribute}`), 
+        joinUrlPaths(target.basePath, path, `:${target.lookUpAttribute}`), 
         target.update
       );
     }
     if (target.patch) {
       router.put(
-        joinUrlPaths(path, `:${target.lookUpAttribute}`), 
+        joinUrlPaths(target.basePath, path, `:${target.lookUpAttribute}`), 
         target.patch
       );
     }
     if (target.delete) {
       router.delete(
-        joinUrlPaths(path, `:${target.lookUpAttribute}`),
+        joinUrlPaths(target.basePath, path, `:${target.lookUpAttribute}`),
         target.delete
       );
     }
-
-    console.log('Registering routes for', path);
-    console.log('Target:', target);
-    console.log('Router:', router);
-    console.log('Path:', path);
   }
 });
 

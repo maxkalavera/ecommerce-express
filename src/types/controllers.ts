@@ -6,6 +6,7 @@ import { NextFunction, Router } from 'express';
  ******************************************************************************/
 
 export type ControllerBase = {
+  basePath: string;
   handleErrors: <
     Callback extends (...args: any) => any,
   > (

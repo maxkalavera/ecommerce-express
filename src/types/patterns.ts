@@ -11,6 +11,24 @@ export type Mixin<
   SelfContext extends Context = {},
 > = WithContext<SelfTarget, MergeObjects<[SelfTarget, SelfContext]> & GenericObject>;
 
+export type ExtractTarget<
+  SelfMixin extends Mixin<any, any>
+> = (
+  WithoutContext<SelfMixin>
+);
+
+export type ExtractTargets<
+  SelfMixins extends [...Mixin<any, any>[]]
+> = (
+  SelfMixins extends [infer Head, ...infer Tail]
+    ? (
+      Head extends Mixin<any, any>
+        ? [ExtractTarget<Head>, ...ExtractTargets<Tail extends Mixin<any, any>[]? Tail : []>]
+        : []
+    )
+    : []
+);
+
 /******************************************************************************
  * Misc Utils
  *****************************************************************************/
