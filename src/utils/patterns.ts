@@ -1,5 +1,5 @@
-import { ExtractTargets, Mixin, Target, WithoutContext } from "@/types/patterns";
-import { Prioritize } from "@/types/commons";
+import { Context, ExtractTargets, Mixin, Target, WithoutContext } from "@/types/patterns";
+import { GenericObject, Prioritize } from "@/types/commons";
 
 /**
  * Builds a target (Controller, Model, any entity to solve a problem) object 
@@ -76,3 +76,18 @@ export function buildMixin<
   return Object.assign({}, ...mixins, target);
 };
 
+/*
+export function buildMixinBuilder<
+  SelfTarget extends Target,
+  Options extends GenericObject = {},
+  SelfContext extends Context = {},
+>
+(
+  target: Mixin<SelfTarget, SelfContext>,
+): MixinBuilder<SelfTarget, Options, SelfContext>
+{
+  return (options: Options) => {
+    return target; 
+  }
+};
+*/

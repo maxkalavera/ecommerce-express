@@ -5,7 +5,7 @@ import { Mixin, Target } from "@/types/patterns";
  * Controllers
  ******************************************************************************/
 
-export function buildController <
+export function buildController<
   SelfTarget extends Target,
   Mixins extends Mixin<any, any>[]
 > (

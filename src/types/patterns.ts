@@ -6,10 +6,17 @@ import { GenericObject, Prioritize, RemoveUndefinedFromObjectTuple, UnionToTuple
 
 export type Target = GenericObject;
 export type Context = GenericObject;
+
 export type Mixin<
   SelfTarget extends Target,
   SelfContext extends Context = {},
 > = WithContext<SelfTarget, MergeObjects<[SelfTarget, SelfContext]> & GenericObject>;
+
+export type MixinBuilder<
+  SelfTarget extends Target,
+  Options extends GenericObject = GenericObject,
+  SelfContext extends Context = {},
+> = (Options: Options) => Mixin<SelfTarget, SelfContext>;
 
 export type ExtractTarget<
   SelfMixin extends Mixin<any, any>
