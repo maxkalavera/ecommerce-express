@@ -1,25 +1,7 @@
 import { buildMixin } from "@/utils/patterns";
 import * as pg from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
-
-/****************************************************************************** 
- * Types
- *****************************************************************************/
-
-export type ModelMixin<
-  Table extends pg.PgTableWithColumns<any>,
-  SelectSchema extends Record<string, any>,
-  InsertSchema extends Record<string, any>,
-  UpdateSchema extends Record<string, any>,
-> = {
-  table: Table;
-  schemas: {
-    select: SelectSchema;
-    insert: InsertSchema;
-    update: UpdateSchema;
-  },
-  method: () => 0;
-}
+import { Model as ModelType } from "@/models/types";
 
 /****************************************************************************** 
  * Mixins
@@ -47,7 +29,7 @@ export function buildModelMixin<
   };
 
   return buildMixin<
-    ModelMixin<
+    ModelType<
       typeof table, 
       typeof schemas.select,
       typeof schemas.insert,
@@ -60,7 +42,6 @@ export function buildModelMixin<
       insert: schemas.insert,
       update: schemas.update,
     },
-    method: () =>  0,
   });
 };
 

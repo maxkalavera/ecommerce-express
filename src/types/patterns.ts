@@ -1,4 +1,4 @@
-import { GenericObject, Prioritize, RemoveUndefinedFromObjectTuple, UnionToTuple } from "@/types/commons";
+import { GenericObject, Prioritize, RemoveUndefinedFromObjectTuple, Resolve, UnionToTuple } from "@/types/commons";
 
 /******************************************************************************
  * Mixin patterns
@@ -20,9 +20,9 @@ export type MixinBuilder<
 
 export type ExtractTarget<
   SelfMixin extends Mixin<any, any>
-> = (
+> = Resolve<(
   WithoutContext<SelfMixin>
-);
+)>;
 
 export type ExtractTargets<
   SelfMixins extends Mixin<any, any>[],
@@ -35,26 +35,7 @@ export type ExtractTargets<
         : []
     )
     : []
-)
-
-type Mixin1 = Mixin<{ foo: () => void; }, {}>;
-type Mixin2 = Mixin<{e: number, f: string}, {}>;
-type test = ExtractTargets<[
-  Mixin1,
-  Mixin2,
-]>;
-
-/*
-(
-  SelfMixins extends [infer Head, ...infer Tail]
-    ? (
-      Head extends Mixin<any, any>
-        ? [ExtractTarget<Head>, ...ExtractTargets<Tail extends Mixin<any, any>[]? Tail : []>]
-        : []
-    )
-    : []
 );
-*/
 
 /******************************************************************************
  * Misc Utils
@@ -62,28 +43,28 @@ type test = ExtractTargets<[
 
 export type MergeObjects<
   Objects extends GenericObject[],
-> = (
+> = Resolve<(
   Prioritize<
     RemoveUndefinedFromObjectTuple<
       UnionToTuple<
         Objects[number]
   >>>
-);
+)>;
 
 export type WithContext<
   SelfTarget extends Target, 
   SelfContext extends Context=GenericObject,
-> = {
+> = Resolve<{
   [K in keyof SelfTarget]: (
     SelfTarget[K] extends (...args: infer Args) => infer Return
       ? (...args: [SelfContext, ...Args]) => Return
       : SelfTarget[K]
   )
-};
+}>;
 
 export type WithoutContext<
   SelfTarget extends Target
-> = {
+> = Resolve<{
   [K in keyof SelfTarget]: (
     // First extends to separate union types
     SelfTarget[K] extends infer Attribute 
@@ -95,4 +76,4 @@ export type WithoutContext<
       ) 
       : never
   )
-};
+}>;

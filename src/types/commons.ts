@@ -31,13 +31,16 @@ export type GenericFunction = (...args: any[]) => any;
  * type Merged = Prioritize<[{ foo: string }, { bar: number }]>;
  * // { foo: string, bar: number }
  */
-export type Prioritize<T extends any[]> = T extends [infer First, ...infer Rest]
-  ? First extends GenericObject
-    ? Rest extends any[]
-      ? PrioritizeHelper<First, Prioritize<Rest>>
+export type Prioritize<T extends any[]> = Resolve<(
+  T extends [infer First, ...infer Rest]
+    ? First extends GenericObject
+      ? Rest extends any[]
+        ? PrioritizeHelper<First, Prioritize<Rest>>
+        : never
       : never
-    : never
-  : {};
+    : {}
+)>;
+
 
 /**
  * Helper type for Prioritize that performs the actual property merging
@@ -155,3 +158,6 @@ export type IsTuple<T> =
       ? false
       : true
     : false;
+
+
+export type Resolve<T> = T extends infer U ? { [K in keyof U]: U[K] } : never;

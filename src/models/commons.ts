@@ -3,7 +3,9 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { buildTarget } from "@/utils/patterns";
-import { buildModelMixin } from "@/models/mixins/models"
+import { 
+  buildModelMixin, 
+} from "@/models/mixins/models"
 
 export const commonColumns = {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

@@ -25,9 +25,9 @@ export function buildTarget<
 ): WithoutContext<Mixin<Prioritize<[ ...ExtractTargets<Mixins>, SelfTarget ]>>>
 {
   return attachContext(
-    buildMixin(target, mixins),
-  ) as any;
-}
+    buildMixin(target as any, mixins),
+  );
+};
 
 /******************************************************************************
  * Context patterns
