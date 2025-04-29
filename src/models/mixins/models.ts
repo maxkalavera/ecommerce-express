@@ -1,7 +1,6 @@
 import { buildMixin } from "@/utils/patterns";
 import * as pg from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
-import { buildTarget } from "@/utils/patterns";
 
 /****************************************************************************** 
  * Types
@@ -18,7 +17,8 @@ export type ModelMixin<
     select: SelectSchema;
     insert: InsertSchema;
     update: UpdateSchema;
-  }
+  },
+  method: () => 0;
 }
 
 /****************************************************************************** 
@@ -60,5 +60,7 @@ export function buildModelMixin<
       insert: schemas.insert,
       update: schemas.update,
     },
+    method: () =>  0,
   });
 };
+

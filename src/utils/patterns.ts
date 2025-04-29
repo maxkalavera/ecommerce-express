@@ -26,7 +26,7 @@ export function buildTarget<
 {
   return attachContext(
     buildMixin(target, mixins),
-  );
+  ) as any;
 }
 
 /******************************************************************************
@@ -75,19 +75,3 @@ export function buildMixin<
 {
   return Object.assign({}, ...mixins, target);
 };
-
-/*
-export function buildMixinBuilder<
-  SelfTarget extends Target,
-  Options extends GenericObject = {},
-  SelfContext extends Context = {},
->
-(
-  target: Mixin<SelfTarget, SelfContext>,
-): MixinBuilder<SelfTarget, Options, SelfContext>
-{
-  return (options: Options) => {
-    return target; 
-  }
-};
-*/

@@ -25,8 +25,27 @@ export type ExtractTarget<
 );
 
 export type ExtractTargets<
-  SelfMixins extends [...Mixin<any, any>[]]
+  SelfMixins extends Mixin<any, any>[],
+  MixinsTuple extends any[] = UnionToTuple<SelfMixins[number]>
 > = (
+  MixinsTuple extends [infer Head, ...infer Tail]
+    ? (
+      Head extends Mixin<any, any>
+        ? [ExtractTarget<Head>, ...ExtractTargets<Tail extends Mixin<any, any>[]? Tail : []>]
+        : []
+    )
+    : []
+)
+
+type Mixin1 = Mixin<{ foo: () => void; }, {}>;
+type Mixin2 = Mixin<{e: number, f: string}, {}>;
+type test = ExtractTargets<[
+  Mixin1,
+  Mixin2,
+]>;
+
+/*
+(
   SelfMixins extends [infer Head, ...infer Tail]
     ? (
       Head extends Mixin<any, any>
@@ -35,6 +54,7 @@ export type ExtractTargets<
     )
     : []
 );
+*/
 
 /******************************************************************************
  * Misc Utils

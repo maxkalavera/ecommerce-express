@@ -20,10 +20,12 @@ export function buildModel<
   extraConfig?: extraConfig
 ) {
   return buildTarget(
-    buildModelMixin<Name, Columns, extraConfig> (
-      name,
-      columns,
-      extraConfig
-    ),
+    {}, [
+      buildModelMixin<Name, Columns, extraConfig> (
+        name,
+        columns,
+        extraConfig
+      )
+    ]
   );
 };
