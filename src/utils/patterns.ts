@@ -17,27 +17,27 @@ import { GenericObject, Prioritize } from "@/types/commons";
  */
 
 export function buildTarget<
-  SelfTarget extends Target,
+  TargetParam extends Target,
   Mixins extends Mixin<any, any>[]
 > (
-  target: SelfTarget,
+  target: TargetParam,
   mixins: Mixins = [] as any,
-): WithoutContext<Mixin<Prioritize<[ ...ExtractTargets<Mixins>, SelfTarget ]>>>
+): WithoutContext<Mixin<Prioritize<[ ...ExtractTargets<Mixins>, TargetParam ]>>>
 {
-  return attachContext(
-    buildMixin(target as any, mixins),
-  );
+  return bindContext(
+    mergeMixins(...mixins, buildMixin(target as any)),
+  ) as any;
 };
 
 /******************************************************************************
  * Context patterns
  *****************************************************************************/
 
-export function attachContext<
-  MixinTemplate extends Mixin<any, any>,
+export function bindContext<
+  MixinParam extends Mixin<any, any>,
 > (
-  mixin: MixinTemplate,
-): WithoutContext<MixinTemplate> 
+  mixin: MixinParam,
+): WithoutContext<MixinParam> 
 {
   const target = {};
   const context = target;
@@ -67,11 +67,18 @@ export function attachContext<
 
 export function buildMixin<
   SelfTarget extends Target,
-  Mixins extends Mixin<any, any>[]
 > (
   target: Mixin<SelfTarget>,
-  mixins: Mixins = [] as any,
-): Mixin<Prioritize<[ ...ExtractTargets<Mixins>, SelfTarget ]>>
+): Mixin<SelfTarget>
 {
-  return Object.assign({}, ...mixins, target);
+  return Object.assign({}, target);
 };
+
+export function mergeMixins<
+  Mixins extends Mixin<any, any>[]
+> (
+  ...mixins: Mixins
+): Mixin<Prioritize<ExtractTargets<Mixins>>>
+{
+  return Object.assign({},...mixins);
+}

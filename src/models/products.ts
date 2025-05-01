@@ -2,7 +2,8 @@ import { sql } from "drizzle-orm";
 import * as pg from "drizzle-orm/pg-core";
 import { commonColumns } from "@/models/commons";
 import { z } from "zod";
-import { buildModel } from "@/models/commons";
+import { buildModel } from "@/models/mixins/models";
+import { relations } from "drizzle-orm";
 
 /*******************************************************************************
  * Products Model
@@ -20,7 +21,6 @@ export const productsModel = buildModel(
     isLabeled: pg.boolean().notNull().default(false),
     labelContent: pg.varchar({ length: 255 }).notNull().default(""),
     labelColor: pg.varchar({ length: 7 }).notNull().default("#000000"),
-    displayImageId: pg.integer().notNull().unique(),
   },
   (table) => [
     pg.check("price_check1", sql`${table.price} > 0`),
@@ -29,16 +29,45 @@ export const productsModel = buildModel(
 );
 export type Product = z.infer<typeof productsModel.schemas.select>;
 
+productsModel.setRelations(({ one, many }) => ({
+  cover: one(productImagesModel.table),
+  images: many(productImagesModel.table),
+}));
+
 /*******************************************************************************
  * Products Images Model
  *******************************************************************************/
 
-export const productsImagesModel = buildModel(
-  "products_images",
+export const productImagesModel = buildModel(
+  "product_images",
   {
     ...commonColumns,
+    productId: pg.integer().notNull().references(() => productsModel.table.id),
     name: pg.varchar({ length: 255 }).notNull(),
     path: pg.varchar({ length: 255 }).notNull(),
   }
 );
-export type ProductImage = z.infer<typeof productsImagesModel.schemas.select>;
+export type ProductImage = z.infer<typeof productImagesModel.schemas.select>;
+
+productImagesModel.setRelations(({ one }) => ({
+  product: one(productsModel.table, {
+    fields: [productItemsModel.table.productId],
+    references: [productsModel.table.id],
+  }),
+}))
+
+/*******************************************************************************
+ * Products Images Model
+ *******************************************************************************/
+
+export const productItemsModel = buildModel(
+  "product_items",
+  {
+    ...commonColumns,
+    color: pg.varchar({ length: 255 }).notNull(),
+    size: pg.varchar({ length: 255 }).notNull(),
+    quantity: pg.integer().notNull(),
+    productId: pg.integer().notNull().references(() => productsModel.table.id),
+  }
+);
+export type ProductItem = z.infer<typeof productItemsModel.schemas.select>;

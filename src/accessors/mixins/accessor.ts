@@ -1,28 +1,11 @@
 
 import { Model as ModelType } from "@/models/types";
-import { Resolve } from "@/types/commons";
 import { productsModel } from "@/models/products";
 import { buildMixin } from "@/utils/patterns";
-import { ID } from "@/types/db";
 import db from "@/db";
 import { sql } from 'drizzle-orm';
 import { z } from "zod";
-
-/******************************************************************************
- * Types
- *******************************************************************************/
-
-export type ModelAccessor<
-  ModelParam extends ModelType,
-  ModelInstance extends Record<string, any>,
-> = Resolve<{
-  model: ModelParam;
-  create(data: ModelInstance): Promise<ModelInstance>;
-  read(id: ID): Promise<ModelInstance | null>;
-  readAll(): Promise<ModelInstance[]>;
-  update(id: ID, data: Partial<ModelInstance>): Promise<ModelInstance | null>;
-  delete(id: ID): Promise<boolean>;
-}>;
+import { ModelAccessor } from "@/accessors/types";
 
 /******************************************************************************
  * Mixins
@@ -35,8 +18,9 @@ export function buildModelAccessorMixin<
 ) {
   const table = model.table;
   type ModelInstance = z.infer<typeof model.schemas.select>;
-  return buildMixin<ModelAccessor<Model, ModelInstance>, []> ({
+  return buildMixin<ModelAccessor<Model, ModelInstance>> ({
     model: model as any,
+    table: model.table as any,
 
     async create(target, data) {
       const { id, key, ...insertData } = data;

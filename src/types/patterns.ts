@@ -12,6 +12,7 @@ export type Mixin<
   SelfContext extends Context = {},
 > = WithContext<SelfTarget, MergeObjects<[SelfTarget, SelfContext]> & GenericObject>;
 
+// @deprecated
 export type MixinBuilder<
   SelfTarget extends Target,
   Options extends GenericObject = GenericObject,
