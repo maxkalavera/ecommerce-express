@@ -1,18 +1,15 @@
-import { sql } from "drizzle-orm";
 import * as pg from "drizzle-orm/pg-core";
-import { commonColumns } from "@/models/commons";
+import { sql } from "drizzle-orm";
 import { z } from "zod";
-import { buildModel } from "@/models/mixins/models";
-import { relations } from "drizzle-orm";
+import { buildModel } from "@/models/commons";
 
-/*******************************************************************************
+/******************************************************************************
  * Products Model
- *******************************************************************************/
+ *****************************************************************************/
 
 export const productsModel = buildModel(
   "products", 
   {
-    ...commonColumns,
     name: pg.varchar({ length: 255 }).notNull(),
     price: pg.numeric({ precision: 20, scale: 2 }).notNull(),
     description: pg.text().notNull().default(""),
@@ -29,19 +26,13 @@ export const productsModel = buildModel(
 );
 export type Product = z.infer<typeof productsModel.schemas.select>;
 
-productsModel.setRelations(({ one, many }) => ({
-  cover: one(productImagesModel.table),
-  images: many(productImagesModel.table),
-}));
-
-/*******************************************************************************
- * Products Images Model
- *******************************************************************************/
+/******************************************************************************
+ * Products Model
+ *****************************************************************************/
 
 export const productImagesModel = buildModel(
-  "product_images",
+  "products_images",
   {
-    ...commonColumns,
     productId: pg.integer().notNull().references(() => productsModel.table.id),
     name: pg.varchar({ length: 255 }).notNull(),
     path: pg.varchar({ length: 255 }).notNull(),
@@ -49,25 +40,36 @@ export const productImagesModel = buildModel(
 );
 export type ProductImage = z.infer<typeof productImagesModel.schemas.select>;
 
-productImagesModel.setRelations(({ one }) => ({
+productImagesModel.addRelations(({ one }) => ({
   product: one(productsModel.table, {
     fields: [productItemsModel.table.productId],
     references: [productsModel.table.id],
   }),
-}))
+}));
 
-/*******************************************************************************
- * Products Images Model
- *******************************************************************************/
+productsModel.addRelations(({ one, many }) => ({
+  cover: one(productImagesModel.table),
+  images: many(productImagesModel.table),
+}));
+
+/******************************************************************************
+ * Products Model
+ *****************************************************************************/
 
 export const productItemsModel = buildModel(
-  "product_items",
+  "products_images",
   {
-    ...commonColumns,
-    color: pg.varchar({ length: 255 }).notNull(),
-    size: pg.varchar({ length: 255 }).notNull(),
-    quantity: pg.integer().notNull(),
     productId: pg.integer().notNull().references(() => productsModel.table.id),
+    name: pg.varchar({ length: 255 }).notNull(),
+    path: pg.varchar({ length: 255 }).notNull(),
   }
 );
 export type ProductItem = z.infer<typeof productItemsModel.schemas.select>;
+
+productsModel.addRelations(({ one }) => ({
+  product: one(productsModel.table),
+}));
+
+productsModel.addRelations(({ many }) => ({
+  items: many(productImagesModel.table),
+}));
