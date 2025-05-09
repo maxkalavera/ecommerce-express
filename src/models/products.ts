@@ -1,7 +1,7 @@
 import * as pg from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
-import { buildModel } from "@/models/commons";
+import { buildModel } from "@/models/utils/utils";
 
 /******************************************************************************
  * Products Model
@@ -24,7 +24,6 @@ export const productsModel = buildModel(
     pg.check("labelColor_check1", sql`${table.labelColor} ~ '^#[0-9a-f]{6}$'`),
   ]
 );
-export type Product = z.infer<typeof productsModel.schemas.select>;
 
 /******************************************************************************
  * Products Model
@@ -38,7 +37,6 @@ export const productImagesModel = buildModel(
     path: pg.varchar({ length: 255 }).notNull(),
   }
 );
-export type ProductImage = z.infer<typeof productImagesModel.schemas.select>;
 
 productImagesModel.addRelations(({ one }) => ({
   product: one(productsModel.table, {
@@ -64,7 +62,6 @@ export const productItemsModel = buildModel(
     path: pg.varchar({ length: 255 }).notNull(),
   }
 );
-export type ProductItem = z.infer<typeof productItemsModel.schemas.select>;
 
 productsModel.addRelations(({ one }) => ({
   product: one(productsModel.table),

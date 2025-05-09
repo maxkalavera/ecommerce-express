@@ -1,4 +1,4 @@
-import { buildModel } from "@/models/commons";
+import { buildModel } from "@/models/utils/utils";
 import * as pg from "drizzle-orm/pg-core";
 import { productsModel } from "@/models/products";
 

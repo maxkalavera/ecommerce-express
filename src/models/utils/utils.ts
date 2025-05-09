@@ -5,7 +5,7 @@ import {
 import * as pg from "drizzle-orm/pg-core";
 import { Table as DrizzleTable } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
-import { Model as ModelType } from "@/models/types";
+import { Model as ModelType } from "@/models/utils/types";
 import { relations } from 'drizzle-orm';
 
 export const commonColumns = {
@@ -37,8 +37,6 @@ export function buildModel<
     extraConfig,
   );
   const schemas = createSchemas(table); 
-
-
   const tableRelations: any[] = []
   return {
     table: table as any,
