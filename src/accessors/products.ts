@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { productsModel, productImagesModel, productItemsModel } from "@/models/products";
-import { withCRUD } from "@/accessors/mixins/CRUD";
+import { withCRUD } from "@/accessors/mixins/crud";
 import { buildModelAccessor } from "@/accessors/utils/utils";
 
 export const productsAccessor = buildModelAccessor({

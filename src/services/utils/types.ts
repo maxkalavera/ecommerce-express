@@ -1,10 +1,11 @@
+import { CRUDResource } from "@/types/_resources";
 import { Accessor } from "@/accessors/utils/types";
 
 /******************************************************************************
  * Accessor types
  *****************************************************************************/
 
-export type Service = {
+export type Service = CRUDResource & {
   [key: string]: any;
 };
 

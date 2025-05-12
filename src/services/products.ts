@@ -1,6 +1,6 @@
 import { buildAccessorService } from "@/services/utils/utils";
 import { productsAccessor, productImagesAccessor, productItemsAccessor } from "@/accessors/products";
-import { withCRUD } from "@/services/mixins/CRUD";
+import { withCRUD } from "@/services/mixins/crud";
 
 export const productsService = buildAccessorService({
   accessor: productsAccessor,
