@@ -1,6 +1,5 @@
 import * as pg from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { z } from "zod";
 import { buildModel } from "@/models/utils/utils";
 
 /******************************************************************************

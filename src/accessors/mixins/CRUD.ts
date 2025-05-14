@@ -1,12 +1,11 @@
-import { ModelAccessor, AccessorValidationPayload, AccessorPayload } from "@/accessors/utils/types";
-import { CRUDResource } from "@/types/_resources";
+import { ModelAccessorStructure } from "@/accessors/utils/types";
 import { withCreate } from "@/accessors/mixins/create";
 import { withRead, withReadAll } from "@/accessors/mixins/read";
 import { withUpdate } from "@/accessors/mixins/update";
 import { withDelete } from "@/accessors/mixins/delete";
 
 export function withCRUD<
-  Source extends ModelAccessor,
+  Source extends ModelAccessorStructure
 > (
   source: Source,
 ) {
@@ -17,9 +16,6 @@ export function withCRUD<
     ...withReadAll(source),
     ...withUpdate(source),
     ...withDelete(source),
-  } as Source & CRUDResource<
-    AccessorValidationPayload,
-    AccessorPayload<Record<string, any>>
-  >;
+  };
 };
 

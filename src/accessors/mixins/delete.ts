@@ -1,38 +1,39 @@
-import { ModelAccessor, AccessorValidationPayload, AccessorPayload } from "@/accessors/utils/types";
-import { DeleteOperation } from "@/types/_resources";
+import { DeleteOperation } from "@/accessors/utils/types";
+import { ModelAccessorStructure } from "@/accessors/utils/types";
+import { withLookup } from "@/accessors/mixins/lookUp";
+import { Value } from "@sinclair/typebox/value";
+import { eq } from "drizzle-orm";
 
 export function withDelete<
-  Source extends ModelAccessor,
+  Source extends ModelAccessorStructure,
 > (
   source: Source,
-) {
+): Source & DeleteOperation
+{
   return {
-  ...source,
-    async validateDelete (data) {
-      // TODO: Implement validation
-      return { success: true, errors: [] };
-    },
-    async commitDelete (data) {
-      const { id, key,...insertData } = data;
+    ...source,
+    ...withLookup(source),
+    async commitDelete (lookupValue) {
       try {
-        // TODO: Implement read
-        const returned = {};
-        return { success: true, result: returned, errors: [] };
+        const result = await this.db
+          .delete(this.model.table)
+          .where(eq(this.getLookupColumn(), this.parseLookupValue(lookupValue)))
+          .returning();
+        const parsed = Value.Parse(this.model.schemas.select, result) as Record<string, any>;
+        return {
+          success: true,
+          result: parsed[0],
+        }
       } catch (e) {
         console.error(e);
-        return { success: false, result: null, errors: [e] };
+        return {
+          success: false,
+          errors: ["An error occurred while deleting record"]
+        };
       }
     },
-    async delete(data) {
-      const validation = await this.validateDelete(data);
-      if (!validation.success) {
-        return { success: false, result: null, errors: validation.errors };
-      }
-      return this.commitDelete(data);
+    async delete(lookupValue) {
+      return this.commitDelete(lookupValue);
     }
-  } as Source & DeleteOperation<
-    Record<string, any>,
-    AccessorValidationPayload,
-    AccessorPayload<Record<string, any>>
-  >;
+  };
 };

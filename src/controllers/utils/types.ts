@@ -17,9 +17,6 @@ export type CRUDOperations =
   | "full";
 
 export type Controller = {
-  options: {
-    lookUpAttribute: string;
-  };
   [key: string]: any;
 };
 

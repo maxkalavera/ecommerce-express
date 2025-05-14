@@ -4,7 +4,7 @@ import {
 } from "drizzle-orm/pg-core";
 import * as pg from "drizzle-orm/pg-core";
 import { Table as DrizzleTable } from "drizzle-orm";
-import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-typebox';
 import { Model as ModelType } from "@/models/utils/types";
 import { relations } from 'drizzle-orm';
 
@@ -50,9 +50,6 @@ export function buildModel<
       tableRelations.push(relations(table, relationsParam));
     },
   } as ModelType<
-    typeof table, 
-    typeof schemas.select,
-    typeof schemas.insert,
-    typeof schemas.update
+    typeof table 
   >;
 };

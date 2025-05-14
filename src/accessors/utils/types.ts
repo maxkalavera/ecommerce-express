@@ -1,141 +1,150 @@
 import { Model } from "@/models/utils/types";
 import { Database } from "@/types/db";
+import { PgColumn } from "drizzle-orm/pg-core";
+import { ErrorPayload } from "@/types/resources";
 
 /******************************************************************************
  * Accessor types
  *****************************************************************************/
 
-export type Accessor = {
+export type AccessorStructure = {
   db: Database;
-  [key: string]: any;
 };
 
-export type ModelAccessor = Accessor & {
+export type ModelAccessorStructure = AccessorStructure & {
   model: Model;
 };
+
+export type ModelAccessor = (
+  & ModelAccessorStructure
+  & CRUDAccessor
+  & Record<string, any>
+);
+
+export type CRUDAccessor = (
+  & CreateOperation
+  & ReadOperation
+  & ReadAllOperation
+  & UpdateOperation
+  & DeleteOperation
+);
 
 /******************************************************************************
  * Helper types
  *****************************************************************************/
 
-export type AccessorValidationPayload = {
-  success: boolean;
-  errors: string[];
+export type ParsedPayload = {
+  success: true;
+  result: Record<string, any>;
+} | {
+  success: false;
+  errors: ErrorPayload;
 };
 
-export type AccessorResultPayload<
+export type ValidatedPayload = { 
+  success: true 
+} | {
+  success: false;
+  errors: ErrorPayload;
+} 
+
+export type ResultPayload<
   Result extends Record<string, any>,
 > = {
   success: true;
   result: Result;
-  errors: string[];  
 } | {
   success: false;
-  result: null;
-  errors: string[];
+  errors: ErrorPayload;
 };
 
-export type CRUDAccessor = (
-  & CreateOperation<
-    Record<string, any>,
-    Record<string, any>
-  >
-  & ReadOperation<
-    Record<string, any>,
-    Record<string, any>
-  >
-  & ReadAllOperation<
-    Record<string, any>,
-    Record<string, any>
-  >
-  & UpdateOperation<
-    Record<string, any>,
-    Record<string, any>
-  >
-  & DeleteOperation<
-    Record<string, any>,
-    Record<string, any>
-  >
-);
+export type LookUpValue = string;
 
 /******************************************************************************
  * CRUD types
  *****************************************************************************/
 
+export type LookUpMixin = {
+  getLookupColumn: () => PgColumn;
+  parseLookupValue: (
+    lookupValue: LookUpValue
+  ) => any;
+}
+
 export type CreateOperation<
-  InputPayload extends Record<string, any>,
-  ResultPayload extends Record<string, any>,
+  Input extends Record<string, any> = Record<string, any>,
+  Result extends Record<string, any> = Record<string, any>,
 > = {
-  validateCreate: (
-    data: InputPayload
-  ) => Promise<AccessorValidationPayload>;
+  validateCreateInput: (
+    data: Input
+  ) => Promise<ValidatedPayload>;
+  parseCreateInput: (
+    data: Input
+  ) => Promise<ParsedPayload>;
   commitCreate: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    data: Input
+  ) => Promise<ResultPayload<Result>>;
   create: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    data: Input
+  ) => Promise<ResultPayload<Result>>;
 };
 
 export type ReadOperation<
-  InputPayload extends Record<string, any>,
-  ResultPayload extends Record<string, any>,
-> = {
-  getLookUpAttribute: () => string;
-  validateRead: (
-    data: InputPayload
-  ) => Promise<AccessorValidationPayload>;
+  Result extends Record<string, any> = Record<string, any>,
+> = LookUpMixin & {
   commitRead: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    lookupValue: LookUpValue
+  ) => Promise<ResultPayload<Result>>;
   read: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    lookupValue: LookUpValue
+  ) => Promise<ResultPayload<Result>>;
 };
 
 export type ReadAllOperation<
-  InputPayload extends Record<string, any>,
-  ResultPayload extends Record<string, any>,
+  Input extends Record<string, any> = Record<string, any>,
+  Result extends Record<string, any> = Record<string, any>,
 > = {
-  validateReadAll: (
-    data: InputPayload
-  ) => Promise<AccessorValidationPayload>;
+  validateReadAllParameters: (
+    data: Input
+  ) => Promise<ValidatedPayload>;
+  parseReadAllParameters: (
+    data: Input
+  ) => Promise<ParsedPayload>;
   commitReadAll: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    data: Input
+  ) => Promise<ResultPayload<Result>>;
   readAll: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    data: Input
+  ) => Promise<ResultPayload<Result>>;
 };
 
 export type UpdateOperation<
-  InputPayload extends Record<string, any>,
-  ResultPayload extends Record<string, any>,
-> = {
-  getLookUpAttribute: () => string;
-  validateUpdate: (
-    data: InputPayload
-  ) => Promise<AccessorValidationPayload>;
+  Input extends Record<string, any> = Record<string, any>,
+  Result extends Record<string, any> = Record<string, any>,
+> = LookUpMixin & {
+  parseUpdateInput: (
+    data: Input
+  ) => Promise<ParsedPayload>;
+  validateUpdateInput: (
+    data: Input
+  ) => Promise<ValidatedPayload>;
   commitUpdate: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    lookupValue: LookUpValue,
+    data: Input,
+  ) => Promise<ResultPayload<Result>>;
   update: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    lookupValue: LookUpValue,
+    data: Input,
+  ) => Promise<ResultPayload<Result>>;
 };
 
 export type DeleteOperation<
-  InputPayload extends Record<string, any>,
-  ResultPayload extends Record<string, any>,
-> = {
-  getLookUpAttribute: () => string;
-  validateDelete: (
-    data: InputPayload
-  ) => Promise<AccessorValidationPayload>;
+  Result extends Record<string, any> = Record<string, any>,
+> = LookUpMixin & {
   commitDelete: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    lookupValue: LookUpValue
+  ) => Promise<ResultPayload<Result>>;
   delete: (
-    data: InputPayload
-  ) => Promise<AccessorResultPayload<ResultPayload>>;
+    lookupValue: LookUpValue
+  ) => Promise<ResultPayload<Result>>;
 };

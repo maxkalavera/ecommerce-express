@@ -1,4 +1,5 @@
-import { Router, Application } from "express";
+import settings from "@/settings";
+import { Router, Application, Request } from "express";
 import { ServiceController, CRUDOperations } from "@/controllers/utils/types";
 
 /******************************************************************************
@@ -6,6 +7,8 @@ import { ServiceController, CRUDOperations } from "@/controllers/utils/types";
  *****************************************************************************/
 
 export type CRUDController = {
+  getLookUpAttribute: () => string;
+  getParametersData: (req: Request) => Record<string, any>;
   create: Application;
   read: Application;
   readAll: Application;
@@ -31,36 +34,36 @@ export function withCRUD <
 ) {
   return {
     ...source,
+    getLookUpAttribute () {
+      return settings.QUERIES_LOOK_UP_ATTRIBUTE;
+    },
+    getParametersData (req) {
+      const data = {...req.body,...req.params, requery: req.query.params };
+      return data;
+    },
     async create (req, res, next) {
-      const data = req.body;
+      const data = this.getParametersData(req);
       const result = await this.service.create(data);
       return res.json(result);
     },
     async read (req, res, next) {
-      const lookUpAttribute = this.service.getLookUpAttribute();
-      const lookUpValue = req.params[lookUpAttribute];
-      if (lookUpValue !== undefined) {
-        const result = await this.service.read(lookUpValue);
-        return res.json(result);
-      }
-      const result = await this.service.read(lookUpValue);
+      const data = this.getParametersData(req);
+      const result = await this.service.read(data);
       return res.json(result); 
     },
     async readAll (req, res, next) {
-      const result = await this.service.readAll();
+      const data = this.getParametersData(req);
+      const result = await this.service.readAll(data);
       return res.json(result);
     },
     async update (req, res, next) {
-      const lookUpAttribute = this.lookUpAttribute;
-      const lookUpValue = req.params[lookUpAttribute];
-      const data = req.body;
-      const result = await this.service.update(lookUpValue, data);
+      const data = this.getParametersData(req);
+      const result = await this.service.update(data);
       return res.json(result);
     },
     async delete (req, res, next) {
-      const lookUpAttribute = this.lookUpAttribute;
-      const lookUpValue = req.params[lookUpAttribute];
-      const result = await this.service.delete(lookUpValue);
+      const data = this.getParametersData(req);
+      const result = await this.service.delete(data);
       return res.json(result);
     },
     registerCreate (router, path, handler) {
@@ -73,7 +76,7 @@ export function withCRUD <
       if (typeof this.read!== "function") {
         throw new Error("read method not defined");
       }
-      router.get(joinUrlPaths(path, `:${this.options?.lookUpAttribute}`), handler);
+      router.get(joinUrlPaths(path, `:${this.getLookUpAttribute()}`), handler);
     },
     registerReadAll (router, path, handler) {
       if (typeof this.readAll!== "function") {
@@ -85,13 +88,13 @@ export function withCRUD <
       if (typeof this.update!== "function") {
         throw new Error("update method not defined");
       }
-      router.put(joinUrlPaths(path, `:${this.options?.lookUpAttribute}`), handler);
+      router.put(joinUrlPaths(path, `:${this.getLookUpAttribute()}`), handler);
     },
     registerDelete (router, path, handler) {
       if (typeof this.delete!== "function") {
         throw new Error("delete method not defined");
       }
-      router.delete(joinUrlPaths(path, `:${this.options?.lookUpAttribute}`), handler);
+      router.delete(joinUrlPaths(path, `:${this.getLookUpAttribute()}`), handler);
     },
     registerRoutes (router, path, methods=["full"]) {
       if (methods.includes("create") || methods.includes("mutate") || methods.includes("full")) {

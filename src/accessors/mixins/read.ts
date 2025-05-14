@@ -1,74 +1,81 @@
-import { ModelAccessor, AccessorValidationPayload, AccessorPayload } from "@/accessors/utils/types";
-import { ReadOperation, ReadAllOperation } from "@/types/_resources";
+import { ReadOperation, ReadAllOperation } from "@/accessors/utils/types";
+import { ModelAccessorStructure } from "@/accessors/utils/types";
+import { withLookup } from "@/accessors/mixins/lookUp";
+import { Value } from "@sinclair/typebox/value";
+import { eq } from "drizzle-orm";
 
 export function withRead<
-  Source extends ModelAccessor,
+  Source extends ModelAccessorStructure,
 > (
   source: Source,
 ) {
   return {
     ...source,
-    async validateRead (data) {
-      // TODO: Implement validation
-      return { success: true, errors: [] };
-    },
-    async commitRead (data) {
-      const { id, key, ...insertData } = data;
+    ...withLookup(source),
+    async commitRead (lookupValue) {
       try {
-        // TODO: Implement read
-        const returned = {};
-        return { success: true, result: returned, errors: [] };
+        const result = await this.db
+          .select()
+          .from(this.model.table)
+          .where(eq(
+            this.getLookupColumn(),
+            this.parseLookupValue(lookupValue)
+          ));
+        const parsed = Value.Parse(this.model.schemas.select, result) as Record<string, any>[];
+        return { success: true, result: parsed[0], errors: [] };
       } catch (e) {
         console.error(e);
-        return { success: false, result: null, errors: [e] };
+        return {
+          success: false, 
+          result: null, 
+          errors: ["An error occurred while fetching record"]
+        };
       }
     },
     async read(data) {
-      const validation = await this.validateRead(data);
-      if (!validation.success) {
-        return { success: false, result: null, errors: validation.errors };
-      }
       return this.commitRead(data);
     },
-  } as Source & ReadOperation<
-    Record<string, any>,
-    AccessorValidationPayload, 
-    AccessorPayload<Record<string, any>>
-  >;
+  } as Source & ReadOperation;
 };
 
 export function withReadAll<
-  Source extends ModelAccessor,
+  Source extends ModelAccessorStructure,
 > (
   source: Source,
-) {
+): Source & ReadAllOperation 
+{
   return {
-   ...source,
-    async validateReadAll (data) {
-      // TODO: Implement validation
-      return { success: true, errors: [] };
+    ...source,
+    async validateReadAllParameters (data) {
+      return { success: true};
+    },
+    async parseReadAllParameters (data) {
+      const validation = await this.validateReadAllParameters(data);
+      if (!validation.success) {
+        return { success: false, errors: validation.errors };
+      }
+
+      return { success: true, result: data };
     },
     async commitReadAll (data) {
-      const { id, key,...insertData } = data;
       try {
-        // TODO: Implement read
-        const returned = {} ;
-        return { success: true, result: returned, errors: [] };
+        const result = await this.db.select().from(this.model.table);
+        const parsed = Value.Parse(this.model.schemas.select, result) as Record<string, any>[];
+        return { success: true, result: parsed };
       } catch (e) {
         console.error(e);
-        return { success: false, result: null, errors: [e] };
+        return { 
+          success: false, 
+          errors: ["An error occurred while fetching records"]
+        };
       }
     },
     async readAll(data) {
-      const validation = await this.validateReadAll(data);
-      if (!validation.success) {
-        return { success: false, result: null, errors: validation.errors };
+      const parsed = await this.parseReadAllParameters(data);
+      if (!parsed.success) {
+        return { success: false, result: null, errors: parsed.errors };
       }
-      return this.commitReadAll(data);
+      return this.commitReadAll(parsed.result);
     }
-  } as Source & ReadAllOperation<
-    Record<string, any>,
-    AccessorValidationPayload, 
-    AccessorPayload<Record<string, any>>
-  >;
+  };
 };
