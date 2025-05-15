@@ -1,15 +1,14 @@
-import { DeleteOperation } from "@/accessors/utils/types";
+import { DeleteTarget } from "@/accessors/utils/types";
+import { Mixin } from "@/utils/patterns/nomads";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
-import { withLookup } from "@/accessors/mixins/lookUp";
+import { withLookup } from "@/accessors/mixins/lookup";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
+import { APIError } from "@/utils/errors";
 
-export function withDelete<
-  Source extends ModelAccessorStructure,
-> (
-  source: Source,
-): Source & DeleteOperation
-{
+export const withDelete: Mixin<ModelAccessorStructure, DeleteTarget> = (
+  source
+) => {
   return {
     ...source,
     ...withLookup(source),
@@ -28,7 +27,7 @@ export function withDelete<
         console.error(e);
         return {
           success: false,
-          errors: ["An error occurred while deleting record"]
+          errors: [new APIError("An error occurred while deleting record")]
         };
       }
     },

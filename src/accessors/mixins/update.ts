@@ -1,19 +1,20 @@
-import { UpdateOperation } from "@/accessors/utils/types";
-import { withLookup } from "@/accessors/mixins/lookUp";
+import { UpdateTarget } from "@/accessors/utils/types";
+import { withLookup } from "@/accessors/mixins/lookup";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
+import { Mixin } from "@/utils/patterns/nomads";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
+import { APIError } from "@/utils/errors";
 
-export function withUpdate<
-  Source extends ModelAccessorStructure,
-> (
-  source: Source,
-) {
+export const withUpdate: Mixin<ModelAccessorStructure, UpdateTarget> = (
+  source
+) => {
   return {
     ...source,
     ...withLookup(source),
     async validateUpdateInput (data) {
-      const errors = Array.from(Value.Errors(this.model.schemas.update, data));
+      const errors = APIError.fromTypeBoxErrors(
+        Value.Errors(this.model.schemas.update, data));
       if (errors.length > 0) {
         return { success: false, errors: errors };
       }
@@ -42,16 +43,16 @@ export function withUpdate<
         return {
           success: false, 
           result: null, 
-          errors: ["An error occurred while updating record"]
+          errors: [new APIError("An error occurred while updating record")]
         };
       }
     },
-    async update(lookupValue, data) {
+    async update(lookupValue, data = {}) {
       const parsed = await this.parseUpdateInput(data);
       if (!parsed.success) {
         return { success: false, result: null, errors: parsed.errors };
       }
       return this.commitUpdate(lookupValue, parsed.result);
     }
-  } as Source & UpdateOperation;
+  };
 };

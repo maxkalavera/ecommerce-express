@@ -1,7 +1,8 @@
 import { Model } from "@/models/utils/types";
 import { Database } from "@/types/db";
 import { PgColumn } from "drizzle-orm/pg-core";
-import { ErrorPayload } from "@/types/resources";
+import { APIError } from "@/utils/errors";
+import { MergeObjectsList } from "@/utils/patterns/nomads";
 
 /******************************************************************************
  * Accessor types
@@ -17,17 +18,16 @@ export type ModelAccessorStructure = AccessorStructure & {
 
 export type ModelAccessor = (
   & ModelAccessorStructure
-  & CRUDAccessor
-  & Record<string, any>
+  & CRUDAccessorTarget
 );
 
-export type CRUDAccessor = (
-  & CreateOperation
-  & ReadOperation
-  & ReadAllOperation
-  & UpdateOperation
-  & DeleteOperation
-);
+export type CRUDAccessorTarget = MergeObjectsList<[
+  CreateTarget,
+  ReadTarget,
+  ReadAllTarget,
+  UpdateTarget,
+  DeleteTarget,
+]>;
 
 /******************************************************************************
  * Helper types
@@ -38,14 +38,14 @@ export type ParsedPayload = {
   result: Record<string, any>;
 } | {
   success: false;
-  errors: ErrorPayload;
+  errors: APIError[];
 };
 
 export type ValidatedPayload = { 
   success: true 
 } | {
   success: false;
-  errors: ErrorPayload;
+  errors: APIError[];
 } 
 
 export type ResultPayload<
@@ -55,23 +55,23 @@ export type ResultPayload<
   result: Result;
 } | {
   success: false;
-  errors: ErrorPayload;
+  errors: APIError[];
 };
-
-export type LookUpValue = string;
 
 /******************************************************************************
  * CRUD types
  *****************************************************************************/
 
-export type LookUpMixin = {
+
+export type LookupTarget = {
   getLookupColumn: () => PgColumn;
   parseLookupValue: (
-    lookupValue: LookUpValue
+    lookupValue: string
   ) => any;
 }
 
-export type CreateOperation<
+
+export type CreateTarget<
   Input extends Record<string, any> = Record<string, any>,
   Result extends Record<string, any> = Record<string, any>,
 > = {
@@ -85,22 +85,25 @@ export type CreateOperation<
     data: Input
   ) => Promise<ResultPayload<Result>>;
   create: (
-    data: Input
+    data?: Input
   ) => Promise<ResultPayload<Result>>;
 };
 
-export type ReadOperation<
+export type ReadTarget<
   Result extends Record<string, any> = Record<string, any>,
-> = LookUpMixin & {
-  commitRead: (
-    lookupValue: LookUpValue
-  ) => Promise<ResultPayload<Result>>;
-  read: (
-    lookupValue: LookUpValue
-  ) => Promise<ResultPayload<Result>>;
-};
+> = MergeObjectsList<[
+  LookupTarget, 
+  {
+    commitRead: (
+      lookupValue: string
+    ) => Promise<ResultPayload<Result>>;
+    read: (
+      lookupValue: string
+    ) => Promise<ResultPayload<Result>>;
+  }
+]>;
 
-export type ReadAllOperation<
+export type ReadAllTarget<
   Input extends Record<string, any> = Record<string, any>,
   Result extends Record<string, any> = Record<string, any>,
 > = {
@@ -114,37 +117,43 @@ export type ReadAllOperation<
     data: Input
   ) => Promise<ResultPayload<Result>>;
   readAll: (
-    data: Input
+    data?: Input
   ) => Promise<ResultPayload<Result>>;
 };
 
-export type UpdateOperation<
+export type UpdateTarget<
   Input extends Record<string, any> = Record<string, any>,
   Result extends Record<string, any> = Record<string, any>,
-> = LookUpMixin & {
-  parseUpdateInput: (
-    data: Input
-  ) => Promise<ParsedPayload>;
-  validateUpdateInput: (
-    data: Input
-  ) => Promise<ValidatedPayload>;
-  commitUpdate: (
-    lookupValue: LookUpValue,
-    data: Input,
-  ) => Promise<ResultPayload<Result>>;
-  update: (
-    lookupValue: LookUpValue,
-    data: Input,
-  ) => Promise<ResultPayload<Result>>;
-};
+> = MergeObjectsList<[
+  LookupTarget, 
+  {
+    parseUpdateInput: (
+      data: Input
+    ) => Promise<ParsedPayload>;
+    validateUpdateInput: (
+      data: Input
+    ) => Promise<ValidatedPayload>;
+    commitUpdate: (
+      lookupValue: string,
+      data: Input,
+    ) => Promise<ResultPayload<Result>>;
+    update: (
+      lookupValue: string,
+      data?: Input,
+    ) => Promise<ResultPayload<Result>>;
+  }
+]>;
 
-export type DeleteOperation<
+export type DeleteTarget<
   Result extends Record<string, any> = Record<string, any>,
-> = LookUpMixin & {
-  commitDelete: (
-    lookupValue: LookUpValue
-  ) => Promise<ResultPayload<Result>>;
-  delete: (
-    lookupValue: LookUpValue
-  ) => Promise<ResultPayload<Result>>;
-};
+> = MergeObjectsList<[
+  LookupTarget,
+  {
+    commitDelete: (
+      lookupValue: string
+    ) => Promise<ResultPayload<Result>>;
+    delete: (
+      lookupValue: string
+    ) => Promise<ResultPayload<Result>>;
+  }
+]>;

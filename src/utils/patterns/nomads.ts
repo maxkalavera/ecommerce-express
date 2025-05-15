@@ -3,6 +3,23 @@
  * Types
  *****************************************************************************/
 
+export type Mutator<
+  Structure extends Record<string, any> = Record<string, any>,
+  Target extends Record<string, any> = Record<string, any>,
+  Source extends Structure = Structure,
+> = (
+  source: Source,
+) => Target;
+
+export type Mixin<
+  Structure extends Record<string, any> = Record<string, any>,
+  Target extends Record<string, any> = Record<string, any>,
+  Source extends Structure = Structure,
+> = (
+  source: Source,
+) => MergeObjects<Source, Target>;
+
+
 export type Nomad = {
   mutate: (
     mutator: (source: Record<string, any>) => Record<string, any>

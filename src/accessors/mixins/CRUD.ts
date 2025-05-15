@@ -1,21 +1,20 @@
-import { ModelAccessorStructure } from "@/accessors/utils/types";
-import { withCreate } from "@/accessors/mixins/create";
-import { withRead, withReadAll } from "@/accessors/mixins/read";
-import { withUpdate } from "@/accessors/mixins/update";
-import { withDelete } from "@/accessors/mixins/delete";
+import { ModelAccessorStructure, CRUDAccessorTarget } from "@/accessors/utils/types";
+import { Mixin } from "@/utils/patterns/nomads";
+import { withCreate } from "./create";
+import { withRead, withReadAll } from "./read";
+import { withUpdate } from "./update";
+import { withDelete } from "./delete";
 
-export function withCRUD<
-  Source extends ModelAccessorStructure
-> (
-  source: Source,
-) {
+export const withCRUD: Mixin<ModelAccessorStructure, CRUDAccessorTarget> = (
+  source
+) => {
   return {
-    ...source,
-    ...withCreate(source),
-    ...withRead(source),
-    ...withReadAll(source),
-    ...withUpdate(source),
-    ...withDelete(source),
+   ...source,
+   ...withCreate(source),
+   ...withRead(source),
+   ...withReadAll(source),
+   ...withUpdate(source),
+   ...withDelete(source),
   };
 };
 

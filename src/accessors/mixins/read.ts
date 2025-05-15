@@ -1,14 +1,14 @@
-import { ReadOperation, ReadAllOperation } from "@/accessors/utils/types";
+import { ReadTarget, ReadAllTarget } from "@/accessors/utils/types";
+import { Mixin } from "@/utils/patterns/nomads";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
-import { withLookup } from "@/accessors/mixins/lookUp";
+import { withLookup } from "@/accessors/mixins/lookup";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
+import { APIError } from "@/utils/errors";
 
-export function withRead<
-  Source extends ModelAccessorStructure,
-> (
-  source: Source,
-) {
+export const withRead: Mixin<ModelAccessorStructure, ReadTarget> = (
+  source
+) => {
   return {
     ...source,
     ...withLookup(source),
@@ -28,22 +28,19 @@ export function withRead<
         return {
           success: false, 
           result: null, 
-          errors: ["An error occurred while fetching record"]
+          errors: [new APIError("An error occurred while fetching record")]
         };
       }
     },
     async read(data) {
       return this.commitRead(data);
     },
-  } as Source & ReadOperation;
+  };
 };
 
-export function withReadAll<
-  Source extends ModelAccessorStructure,
-> (
-  source: Source,
-): Source & ReadAllOperation 
-{
+export const withReadAll: Mixin<ModelAccessorStructure, ReadAllTarget> = (
+  source
+) => {
   return {
     ...source,
     async validateReadAllParameters (data) {
@@ -66,11 +63,11 @@ export function withReadAll<
         console.error(e);
         return { 
           success: false, 
-          errors: ["An error occurred while fetching records"]
+          errors: [new APIError("An error occurred while fetching records")]
         };
       }
     },
-    async readAll(data) {
+    async readAll(data={}) {
       const parsed = await this.parseReadAllParameters(data);
       if (!parsed.success) {
         return { success: false, result: null, errors: parsed.errors };

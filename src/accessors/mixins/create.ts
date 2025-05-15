@@ -1,17 +1,18 @@
 
-import { CreateOperation } from "@/accessors/utils/types";
+import { CreateTarget } from "@/accessors/utils/types";
+import { Mixin } from "@/utils/patterns/nomads";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
+import { APIError } from "@/utils/errors";
 import { Value } from "@sinclair/typebox/value";
 
-export function withCreate<
-  Source extends ModelAccessorStructure,
-> (
-  source: Source,
-) {
+export const withCreate: Mixin<ModelAccessorStructure, CreateTarget> = (
+  source
+) => {
   return {
     ...source,
     async validateCreateInput (data) {
-      const errors = Array.from(Value.Errors(this.model.schemas.insert, data));
+      const errors = APIError.fromTypeBoxErrors(
+        Value.Errors(this.model.schemas.insert, data));
       if (errors.length > 0) {
         return { success: false, errors: errors };
       }
@@ -39,16 +40,16 @@ export function withCreate<
         return {
           success: false, 
           result: null, 
-          errors: ["An error occurred while creating record"]
+          errors: [new APIError("An error occurred while creating record")]
         };
       }
     },
     async create(data) {
-      const parsed = await this.parseCreateInput(data);
+      const parsed = await this.parseCreateInput(data = {});
       if (!parsed.success) {
         return { success: false, result: null, errors: parsed.errors };
       }
       return this.commitCreate(parsed.result);
     },
-  } as Source & CreateOperation;
-};
+  };
+}
