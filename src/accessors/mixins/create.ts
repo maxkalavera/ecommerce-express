@@ -4,12 +4,14 @@ import { Mixin } from "@/utils/patterns/nomads";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
 import { APIError } from "@/utils/errors";
 import { Value } from "@sinclair/typebox/value";
+import { withCRUDCore } from "./crud";
 
 export const withCreate: Mixin<ModelAccessorStructure, CreateTarget> = (
   source
 ) => {
   return {
     ...source,
+    ...withCRUDCore(source),
     async validateCreateInput (data) {
       const errors = APIError.fromTypeBoxErrors(
         Value.Errors(this.model.schemas.insert, data));

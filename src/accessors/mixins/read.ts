@@ -1,17 +1,17 @@
 import { ReadTarget, ReadAllTarget } from "@/accessors/utils/types";
 import { Mixin } from "@/utils/patterns/nomads";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
-import { withLookup } from "@/accessors/mixins/lookup";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
 import { APIError } from "@/utils/errors";
+import { withCRUDCore } from "./crud";
 
 export const withRead: Mixin<ModelAccessorStructure, ReadTarget> = (
   source
 ) => {
   return {
     ...source,
-    ...withLookup(source),
+    ...withCRUDCore(source),
     async commitRead (lookupValue) {
       try {
         const result = await this.db
@@ -43,21 +43,22 @@ export const withReadAll: Mixin<ModelAccessorStructure, ReadAllTarget> = (
 ) => {
   return {
     ...source,
-    async validateReadAllParameters (data) {
+    ...withCRUDCore(source),
+    async validateReadAllParameters (query) {
       return { success: true};
     },
-    async parseReadAllParameters (data) {
-      const validation = await this.validateReadAllParameters(data);
+    async parseReadAllParameters (query) {
+      const validation = await this.validateReadAllParameters(query);
       if (!validation.success) {
         return { success: false, errors: validation.errors };
       }
 
-      return { success: true, result: data };
+      return { success: true, result: query };
     },
-    async commitReadAll (data) {
+    async commitReadAll (query) {
       try {
         const result = await this.db.select().from(this.model.table);
-        const parsed = Value.Parse(this.model.schemas.select, result) as Record<string, any>[];
+        const parsed = this.parseReturned(result);
         return { success: true, result: parsed };
       } catch (e) {
         console.error(e);
@@ -67,8 +68,8 @@ export const withReadAll: Mixin<ModelAccessorStructure, ReadAllTarget> = (
         };
       }
     },
-    async readAll(data={}) {
-      const parsed = await this.parseReadAllParameters(data);
+    async readAll(query={}) {
+      const parsed = await this.parseReadAllParameters(query);
       if (!parsed.success) {
         return { success: false, result: null, errors: parsed.errors };
       }

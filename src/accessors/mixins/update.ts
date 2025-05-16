@@ -1,17 +1,17 @@
 import { UpdateTarget } from "@/accessors/utils/types";
-import { withLookup } from "@/accessors/mixins/lookup";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
 import { Mixin } from "@/utils/patterns/nomads";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
 import { APIError } from "@/utils/errors";
+import { withCRUDCore } from "./crud";
 
 export const withUpdate: Mixin<ModelAccessorStructure, UpdateTarget> = (
   source
 ) => {
   return {
     ...source,
-    ...withLookup(source),
+    ...withCRUDCore(source),
     async validateUpdateInput (data) {
       const errors = APIError.fromTypeBoxErrors(
         Value.Errors(this.model.schemas.update, data));

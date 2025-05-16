@@ -1,17 +1,17 @@
 import { DeleteTarget } from "@/accessors/utils/types";
 import { Mixin } from "@/utils/patterns/nomads";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
-import { withLookup } from "@/accessors/mixins/lookup";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
 import { APIError } from "@/utils/errors";
+import { withCRUDCore } from "./crud";
 
 export const withDelete: Mixin<ModelAccessorStructure, DeleteTarget> = (
   source
 ) => {
   return {
     ...source,
-    ...withLookup(source),
+    ...withCRUDCore(source),
     async commitDelete (lookupValue) {
       try {
         const result = await this.db

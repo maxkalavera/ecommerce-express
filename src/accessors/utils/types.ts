@@ -63,6 +63,16 @@ export type ResultPayload<
  *****************************************************************************/
 
 
+export type CRUDCoreTarget = {
+  getLookupColumn: () => PgColumn;
+  parseLookupValue: (
+    lookupValue: string
+  ) => any;
+  parseReturned: (
+    input: Record<string, any>[]
+  ) => Record<string, any>[];
+};
+
 export type LookupTarget = {
   getLookupColumn: () => PgColumn;
   parseLookupValue: (
@@ -74,25 +84,28 @@ export type LookupTarget = {
 export type CreateTarget<
   Input extends Record<string, any> = Record<string, any>,
   Result extends Record<string, any> = Record<string, any>,
-> = {
-  validateCreateInput: (
-    data: Input
-  ) => Promise<ValidatedPayload>;
-  parseCreateInput: (
-    data: Input
-  ) => Promise<ParsedPayload>;
-  commitCreate: (
-    data: Input
-  ) => Promise<ResultPayload<Result>>;
-  create: (
-    data?: Input
-  ) => Promise<ResultPayload<Result>>;
-};
+> = MergeObjectsList<[
+  CRUDCoreTarget,
+  {
+    validateCreateInput: (
+      data: Input
+    ) => Promise<ValidatedPayload>;
+    parseCreateInput: (
+      data: Input
+    ) => Promise<ParsedPayload>;
+    commitCreate: (
+      data: Input
+    ) => Promise<ResultPayload<Result>>;
+    create: (
+      data?: Input
+    ) => Promise<ResultPayload<Result>>;
+  }
+]>;
 
 export type ReadTarget<
   Result extends Record<string, any> = Record<string, any>,
 > = MergeObjectsList<[
-  LookupTarget, 
+  CRUDCoreTarget, 
   {
     commitRead: (
       lookupValue: string
@@ -106,26 +119,29 @@ export type ReadTarget<
 export type ReadAllTarget<
   Input extends Record<string, any> = Record<string, any>,
   Result extends Record<string, any> = Record<string, any>,
-> = {
-  validateReadAllParameters: (
-    data: Input
-  ) => Promise<ValidatedPayload>;
-  parseReadAllParameters: (
-    data: Input
-  ) => Promise<ParsedPayload>;
-  commitReadAll: (
-    data: Input
-  ) => Promise<ResultPayload<Result>>;
-  readAll: (
-    data?: Input
-  ) => Promise<ResultPayload<Result>>;
-};
+> = MergeObjectsList<[
+  CRUDCoreTarget,
+  {
+    validateReadAllParameters: (
+      query: Input
+    ) => Promise<ValidatedPayload>;
+    parseReadAllParameters: (
+      query: Input
+    ) => Promise<ParsedPayload>;
+    commitReadAll: (
+      query: Input
+    ) => Promise<ResultPayload<Result>>;
+    readAll: (
+      query?: Input
+    ) => Promise<ResultPayload<Result>>;
+  }
+]>;
 
 export type UpdateTarget<
   Input extends Record<string, any> = Record<string, any>,
   Result extends Record<string, any> = Record<string, any>,
 > = MergeObjectsList<[
-  LookupTarget, 
+  CRUDCoreTarget, 
   {
     parseUpdateInput: (
       data: Input
@@ -147,7 +163,7 @@ export type UpdateTarget<
 export type DeleteTarget<
   Result extends Record<string, any> = Record<string, any>,
 > = MergeObjectsList<[
-  LookupTarget,
+  CRUDCoreTarget,
   {
     commitDelete: (
       lookupValue: string
