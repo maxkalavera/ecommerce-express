@@ -3,7 +3,7 @@ import { Mixin } from "@/utils/patterns/nomads";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
-import { APIError } from "@/utils/errors";
+import { AccessorError } from "@/utils/errors";
 import { withCRUDCore } from "./crud";
 
 export const withDelete: Mixin<ModelAccessorStructure, DeleteTarget> = (
@@ -27,7 +27,7 @@ export const withDelete: Mixin<ModelAccessorStructure, DeleteTarget> = (
         console.error(e);
         return {
           success: false,
-          errors: [new APIError("An error occurred while deleting record")]
+          errors: [new AccessorError("An error occurred while deleting record")]
         };
       }
     },

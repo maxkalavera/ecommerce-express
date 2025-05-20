@@ -3,7 +3,7 @@ import { ModelAccessorStructure } from "@/accessors/utils/types";
 import { Mixin } from "@/utils/patterns/nomads";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
-import { APIError } from "@/utils/errors";
+import { AccessorError } from "@/utils/errors";
 import { withCRUDCore } from "./crud";
 
 export const withUpdate: Mixin<ModelAccessorStructure, UpdateTarget> = (
@@ -13,21 +13,21 @@ export const withUpdate: Mixin<ModelAccessorStructure, UpdateTarget> = (
     ...source,
     ...withCRUDCore(source),
     async validateUpdateInput (data) {
-      const errors = APIError.fromTypeBoxErrors(
-        Value.Errors(this.model.schemas.update, data));
-      if (errors.length > 0) {
-        return { success: false, errors: errors };
+      const input = { ...data };
+      const validate = this.validate.update;
+      const isValid = validate(input)
+      const errors = validate.errors;
+      if (!isValid) {
+        return {
+          success: false,
+          errors: AccessorError.fromAjvErrors(errors || []),
+        }
       }
-      return { success: true };
-    },
-    async parseUpdateInput (data) {
-      const validation = await this.validateUpdateInput(data);
-      if (!validation.success) {
-        return { success: false, errors: validation.errors };
-      }
-      const parsed = Value.Parse(this.model.schemas.update, data) as Record<string, any>;
-      
-      return { success: true, result: parsed };
+
+      return {
+        success: true,
+        coerced: input,
+      };
     },
     async commitUpdate (lookupValue, data) {
       try {
@@ -43,16 +43,16 @@ export const withUpdate: Mixin<ModelAccessorStructure, UpdateTarget> = (
         return {
           success: false, 
           result: null, 
-          errors: [new APIError("An error occurred while updating record")]
+          errors: [new AccessorError("An error occurred while updating record")]
         };
       }
     },
     async update(lookupValue, data = {}) {
-      const parsed = await this.parseUpdateInput(data);
-      if (!parsed.success) {
-        return { success: false, result: null, errors: parsed.errors };
+      const validated = await this.validateUpdateInput(data);
+      if (!validated.success) {
+        return { success: false, result: null, errors: validated.errors };
       }
-      return this.commitUpdate(lookupValue, parsed.result);
+      return this.commitUpdate(lookupValue, validated.coerced);
     }
   };
 };

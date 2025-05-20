@@ -2,17 +2,24 @@ import 'dotenv/config';
 import http from "node:http";
 import fs from "node:fs";
 import express from 'express';
+import swaggerUi from "swagger-ui-express";
 import settings from "@/settings";
 import configureMiddlewares from "@/middlewares";
 import routes from "@/routes";
+import SwaggerParser from "@apidevtools/swagger-parser";
 
 /******************************************************************************
  * Initialization
- */
+ *****************************************************************************/
 
-/******************************************************************************
- * Configuration
- */
+const openAPIDocument = await ((async () => {
+  try {
+    return await SwaggerParser.bundle('./src/schema/openapi.yml');
+  } catch (err) {
+    console.error('Error parsing YAML:', err);
+  }
+})());
+
 // Create runtime folder if it doesn't exist
 if (!fs.existsSync(settings.RUNTIME_FOLDER)) {
   fs.mkdirSync(settings.RUNTIME_FOLDER, { recursive: true });
@@ -27,13 +34,14 @@ const app = express();
 
 configureMiddlewares(app);
 
-app.use('/api', routes);
+app.use('/api/', routes);
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openAPIDocument));
 
 const server = http.createServer(app);
 
 /******************************************************************************
  * Main function
- */
+ *****************************************************************************/
 
 const onClose = () => {
   console.log("Closing server...");
@@ -56,3 +64,4 @@ const onClose = () => {
 
 process.on('SIGINT', onClose);
 process.on('SIGTERM', onClose);
+

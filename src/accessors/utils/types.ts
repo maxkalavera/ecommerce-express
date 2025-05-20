@@ -1,8 +1,9 @@
 import { Model } from "@/models/utils/types";
 import { Database } from "@/types/db";
 import { PgColumn } from "drizzle-orm/pg-core";
-import { APIError } from "@/utils/errors";
+import { AccessorError } from "@/utils/errors";
 import { MergeObjectsList } from "@/utils/patterns/nomads";
+import { ValidateFunction } from "ajv";
 
 /******************************************************************************
  * Accessor types
@@ -33,19 +34,22 @@ export type CRUDAccessorTarget = MergeObjectsList<[
  * Helper types
  *****************************************************************************/
 
+/*
 export type ParsedPayload = {
   success: true;
   result: Record<string, any>;
 } | {
   success: false;
-  errors: APIError[];
+  errors: AccessorError[];
 };
+*/
 
 export type ValidatedPayload = { 
-  success: true 
+  success: true,
+  coerced: Record<string, any>; // coerced value
 } | {
   success: false;
-  errors: APIError[];
+  errors: AccessorError[];
 } 
 
 export type ResultPayload<
@@ -55,7 +59,7 @@ export type ResultPayload<
   result: Result;
 } | {
   success: false;
-  errors: APIError[];
+  errors: AccessorError[];
 };
 
 /******************************************************************************
@@ -64,11 +68,16 @@ export type ResultPayload<
 
 
 export type CRUDCoreTarget = {
+  validate: {
+    select: ValidateFunction,
+    insert: ValidateFunction,
+    update: ValidateFunction,
+  }
   getLookupColumn: () => PgColumn;
   parseLookupValue: (
     lookupValue: string
   ) => any;
-  parseReturned: (
+  coerceReturned: (
     input: Record<string, any>[]
   ) => Record<string, any>[];
 };
@@ -90,9 +99,6 @@ export type CreateTarget<
     validateCreateInput: (
       data: Input
     ) => Promise<ValidatedPayload>;
-    parseCreateInput: (
-      data: Input
-    ) => Promise<ParsedPayload>;
     commitCreate: (
       data: Input
     ) => Promise<ResultPayload<Result>>;
@@ -125,9 +131,6 @@ export type ReadAllTarget<
     validateReadAllParameters: (
       query: Input
     ) => Promise<ValidatedPayload>;
-    parseReadAllParameters: (
-      query: Input
-    ) => Promise<ParsedPayload>;
     commitReadAll: (
       query: Input
     ) => Promise<ResultPayload<Result>>;
@@ -143,9 +146,6 @@ export type UpdateTarget<
 > = MergeObjectsList<[
   CRUDCoreTarget, 
   {
-    parseUpdateInput: (
-      data: Input
-    ) => Promise<ParsedPayload>;
     validateUpdateInput: (
       data: Input
     ) => Promise<ValidatedPayload>;

@@ -1,27 +1,30 @@
-import { ValueError, ValueErrorIterator } from "@sinclair/typebox/build/cjs/errors";
+import { ErrorObject } from "ajv";
 
 /******************************************************************************
  * Errors
  *****************************************************************************/
 
-export class APIError extends Error {
-  public field: string;
+export class AccessorError extends Error {
+  public message: string;
+  private field: string;
+  private value: any;
 
-  constructor (message: string, field: string = "_") {
+  constructor (message: string, field: string = "_", value: any = null) {
     super();
     this.name = 'APIError';
     this.message = message;
     this.field = field;
+    this.value = value;
   }
 
-  public static fromTypeBoxError (error: ValueError): APIError {
-    return new APIError(error.message, error.path);
+  public static fromAjvError (error: ErrorObject): AccessorError {
+    return new AccessorError(
+      error.message || "", 
+      error.propertyName || "", 
+      error.data
+    );
   }
-  public static fromTypeBoxErrors (errors: ValueError[] | ValueErrorIterator): APIError[] {
-    if (Array.isArray(errors)) {
-      return errors.map((error) => new APIError(error.message, error.path));
-    } else {
-      return this.fromTypeBoxErrors(Array.from(errors));
-    }
+  public static fromAjvErrors(errors: ErrorObject[]): AccessorError[] {
+    return errors.map((error) => AccessorError.fromAjvError(error));
   }
 }

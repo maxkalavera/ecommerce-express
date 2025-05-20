@@ -3,7 +3,7 @@ import { Mixin } from "@/utils/patterns/nomads";
 import { ModelAccessorStructure } from "@/accessors/utils/types";
 import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
-import { APIError } from "@/utils/errors";
+import { AccessorError } from "@/utils/errors";
 import { withCRUDCore } from "./crud";
 
 export const withRead: Mixin<ModelAccessorStructure, ReadTarget> = (
@@ -28,7 +28,7 @@ export const withRead: Mixin<ModelAccessorStructure, ReadTarget> = (
         return {
           success: false, 
           result: null, 
-          errors: [new APIError("An error occurred while fetching record")]
+          errors: [new AccessorError("An error occurred while fetching record")]
         };
       }
     },
@@ -45,35 +45,27 @@ export const withReadAll: Mixin<ModelAccessorStructure, ReadAllTarget> = (
     ...source,
     ...withCRUDCore(source),
     async validateReadAllParameters (query) {
-      return { success: true};
-    },
-    async parseReadAllParameters (query) {
-      const validation = await this.validateReadAllParameters(query);
-      if (!validation.success) {
-        return { success: false, errors: validation.errors };
-      }
-
-      return { success: true, result: query };
+      return { success: true, coerced: query };
     },
     async commitReadAll (query) {
       try {
         const result = await this.db.select().from(this.model.table);
-        const parsed = this.parseReturned(result);
-        return { success: true, result: parsed };
+        const coerced = this.coerceReturned(result);
+        return { success: true, result: coerced };
       } catch (e) {
         console.error(e);
         return { 
           success: false, 
-          errors: [new APIError("An error occurred while fetching records")]
+          errors: [new AccessorError("An error occurred while fetching records")]
         };
       }
     },
     async readAll(query={}) {
-      const parsed = await this.parseReadAllParameters(query);
-      if (!parsed.success) {
-        return { success: false, result: null, errors: parsed.errors };
+      const validated = await this.validateReadAllParameters(query);
+      if (!validated.success) {
+        return { success: false, result: null, errors: validated.errors };
       }
-      return this.commitReadAll(parsed.result);
+      return this.commitReadAll(validated.coerced);
     }
   };
 };
