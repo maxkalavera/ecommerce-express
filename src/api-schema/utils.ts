@@ -139,11 +139,11 @@ export class OpenAPISchemaBuilder  {
    * General methods
    ***************************************************************************/
 
-  public async getDocument() {
+  public async getDocument(): Promise<OpenAPIV3_1.Document> {
     try {
       const api = await SwaggerParser.validate(this.document);
       console.info("OpenAPI Schema is valid");
-      return api;
+      return api as OpenAPIV3_1.Document;
     } catch (error: any) {
       console.error("OpenAPI Schema is invalid");
       console.error(error.details);

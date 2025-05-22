@@ -1,0 +1,43 @@
+<!-- views/error.html or public/error.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Error <%= status %></title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f8f8;
+      color: #333;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 60px;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 20px;
+    }
+    pre {
+      background: #eee;
+      padding: 10px;
+      margin-top: 20px;
+      text-align: left;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1><%= status %></h1>
+  <p><%= message %></p>
+  <% if (error) { %>
+    <pre><%= error.stack %></pre>
+  <% } %>
+</body>
+</html>

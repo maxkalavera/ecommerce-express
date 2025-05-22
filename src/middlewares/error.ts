@@ -12,12 +12,25 @@ export default function error (
   next: NextFunction
 ): void 
 {
-  console.error(err.stack); // Log the error stack trace
+  console.error(err);
+  const acceptedTypes = req.accepts(['json', 'html', 'text']);
+  const status = 500;
+  const message = err.message || "Internal Server Error";
 
-  // Send a JSON response for APIs
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message,
-    stack: settings.ENV === 'development' ? err.stack : undefined
-  });
+  if (acceptedTypes === 'json') {
+    // Send a JSON response for APIs
+    res.status(status).json({
+      status,
+      message: message,
+      error: settings.ENV === 'development' ? err : undefined
+    });
+  } else if (acceptedTypes === 'html') {
+    res.status(status).render('error', {
+      status,
+      message: message.slice(0, 100),
+      error: err 
+    });
+  } else {
+    res.status(status).send(message);
+  }
 };

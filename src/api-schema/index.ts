@@ -10,7 +10,7 @@ export const openAPISchema = new OpenAPISchemaBuilder({
   },
   servers: [
     {
-      url: "http://localhost:3001",
+      url: "http://localhost:3001/api/",
       description: "Development server",
     }    
   ],
