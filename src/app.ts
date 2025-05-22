@@ -2,23 +2,18 @@ import 'dotenv/config';
 import http from "node:http";
 import fs from "node:fs";
 import express from 'express';
-import swaggerUi from "swagger-ui-express";
 import settings from "@/settings";
 import configureMiddlewares from "@/middlewares";
 import routes from "@/routes";
-import SwaggerParser from "@apidevtools/swagger-parser";
+import SwaggerUi from 'swagger-ui-express';
+import { openAPISchema } from '@/schema/openapi';
 
 /******************************************************************************
  * Initialization
  *****************************************************************************/
 
-const openAPIDocument = await ((async () => {
-  try {
-    return await SwaggerParser.bundle('./src/schema/openapi.yml');
-  } catch (err) {
-    console.error('Error parsing YAML:', err);
-  }
-})());
+// Build OpenAPI schema
+const openAPIDocument = await openAPISchema.getDocument();
 
 // Create runtime folder if it doesn't exist
 if (!fs.existsSync(settings.RUNTIME_FOLDER)) {
@@ -35,7 +30,7 @@ const app = express();
 configureMiddlewares(app);
 
 app.use('/api/', routes);
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openAPIDocument));
+app.use('/api-docs', SwaggerUi.serve, SwaggerUi.setup(openAPIDocument));
 
 const server = http.createServer(app);
 

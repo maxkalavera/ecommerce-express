@@ -1,6 +1,6 @@
 import * as pg from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { buildModel } from "@/models/utils/utils";
+import { buildModel } from "@/models/utils";
 
 /******************************************************************************
  * Products Model
