@@ -1,6 +1,6 @@
 import * as pg from "drizzle-orm/pg-core";
 import { sql, relations } from "drizzle-orm";
-import { commonColumns } from "@/models/utils";
+import { buildCommonColumns } from "@/models/utils";
 import { categories } from "@/models/categories";
 
 /******************************************************************************
@@ -10,7 +10,9 @@ import { categories } from "@/models/categories";
 export const products = pg.pgTable(
   "products", 
   {
-    ...commonColumns,
+    // Common columns
+    ...buildCommonColumns(),
+    // Table specific columns
     name: pg.varchar({ length: 255 }).notNull(),
     price: pg.numeric({ precision: 20, scale: 2 }).notNull(),
     description: pg.text().notNull().default(""),
@@ -47,7 +49,9 @@ export const productsRelations = relations(
 export const productImages = pg.pgTable(
   "products_images",
   {
-    ...commonColumns,
+    // Common columns
+    ...buildCommonColumns(),
+    // Table specific columns
     productId: pg.integer().notNull().references(() => products.id),
     name: pg.varchar({ length: 255 }).notNull(),
     path: pg.varchar({ length: 255 }).notNull(),
@@ -71,7 +75,9 @@ export const productImagesRelations = relations(
 export const productItems = pg.pgTable(
   "products_images",
   {
-    ...commonColumns,
+    //...commonColumns,
+    ...buildCommonColumns(),
+    // Table specific columns
     productId: pg.integer().notNull().references(() => products.id),
     name: pg.varchar({ length: 255 }).notNull(),
     path: pg.varchar({ length: 255 }).notNull(),

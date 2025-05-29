@@ -32,6 +32,7 @@ addSchema(Category, 'Category');
 export const CategoryInsert = Type.Object({
   name: Type.String(),
   description: Type.Optional(Type.String()),
+  parentKey: Type.Optional(Type.String({ format: 'base64url' })),
 });
 addSchema(CategoryInsert, 'CategoryInsert');
 

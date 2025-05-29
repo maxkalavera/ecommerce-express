@@ -1,8 +1,11 @@
 // schema/customTypes.ts
-import { customType } from 'drizzle-orm/pg-core';
+import { customType, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import base64url from 'base64url';
+import { ReturnType } from '@sinclair/typebox';
 
-export const customUUID = customType<{
+
+export const urlFriendlyUUID = customType<{
   data: string;
   driverData: string;
 }>({
@@ -18,8 +21,3 @@ export const customUUID = customType<{
     return base64url.decode(value);    
   },
 });
-
-/******************************************************************************
- * Utils
- *****************************************************************************/
-

@@ -1,5 +1,6 @@
 import { categories } from "@/models/categories";
 import base64url from 'base64url';
+import { resetSerialSequence } from "@/seeds/utils";
 
 const categoriesData = [
   /*
@@ -38,4 +39,5 @@ export async function seedCategories(db: any) {
     parentKey: row.parentKey ? base64url.encode(row.parentKey) : null,
   }));
   await db.insert(categories).values(insertCategoriesData);
+  await resetSerialSequence(db, categories, categories.id);
 }

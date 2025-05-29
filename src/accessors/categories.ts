@@ -3,16 +3,17 @@ import * as op from 'drizzle-orm';
 import { Static } from '@sinclair/typebox';
 import lodash from 'lodash';
 import { APIError } from '@/utils/errors';
-import { CoreAccessor } from '@/accessors/commons';
 import { ListCategoriesQueryParameters, CategoryInsert } from '@/typebox/categories';
 import { AccessorReturnType } from "@/accessors/utils/types";
 import { validate } from '@/utils/validator';
 import { categories } from '@/models/categories';
-import settings from '@/settings';
+import { CursorPagination } from '@/accessors/utils/CursorPagination';
 
 
 
-export const categoriesAccessor = new (class CategoriesAccessor extends CoreAccessor {
+export const categoriesAccessor = new (class CategoriesAccessor {
+  private pagination = new CursorPagination();
+
   public async create(
     data: Static<typeof CategoryInsert>,
   ): Promise<AccessorReturnType<any>> 
@@ -22,7 +23,9 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
       return validation;
     }
 
+    console.log("Data", data);
     const result = await db.insert(categories).values(data);
+    console.log("Result", result);
     return {
       success: true,
       payload: {
@@ -39,7 +42,7 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
       { cursor: null, limit: null, childrenOf: null });
 
     // Decode cursor
-    const cursorData = this.decodeCursorWithDefaults(cursor, { id: null, updatedAt: null });
+    const cursorData = this.pagination.decodeCursorWithDefaults(cursor, { id: null, updatedAt: null });
     if (!cursorData.success) {
       return cursorData as { success: false, error: APIError };
     }
@@ -67,7 +70,7 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
       success: true,
       payload: {
         items: result,
-        ...this.buildCursorAttributes(result, (data) => ({ id: data.id, updatedAt: data.updatedAt }), limit),
+        ...this.pagination.buildCursorAttributes(result, (data) => ({ id: data.id, updatedAt: data.updatedAt }), limit),
       },
     };
   }

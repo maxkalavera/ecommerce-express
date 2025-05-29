@@ -3,7 +3,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { APIError } from '@/utils/errors';
 import base64url from 'base64url';
 
-export class CoreAccessor {
+export class CursorPagination {
   protected ENCRYPTION_KEY = Buffer.from(settings.SECRET_KEY, "hex").subarray(0, 16);
   protected ENCRYPTION_IV_LENGTH = 16;
   protected ENCRYPTION_ALGORITHM = "aes-128-ctr";

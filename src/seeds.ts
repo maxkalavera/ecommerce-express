@@ -1,7 +1,7 @@
 import { db } from "@/db";
-import { PgTransaction } from "drizzle-orm/pg-core";
 import { sql } from 'drizzle-orm';
 import { seedCategories } from "@/seeds/categories";
+import { PgTransaction } from "drizzle-orm/pg-core";
 
 
 await runSeeds(async (tx) => {
