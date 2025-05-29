@@ -14,7 +14,7 @@
     "lint:fix": "npm run lint -- --fix",
     "clean": "rm -rf dist",
     "drizzle": "npx drizzle-kit",
-    "seed:db": "npm run build && node dist/scripts/seeds/index.js"
+    "seed:db": "npm run build && node dist/seeds.js"
   },
   "keywords": [
     "express",

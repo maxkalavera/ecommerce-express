@@ -4,10 +4,24 @@ import addFormats from "ajv-formats";
 import { TSchema } from "@sinclair/typebox";
 import { APIError } from "@/utils/errors";
 
+/******************************************************************************
+ * Validator
+ *****************************************************************************/
+
 export const validator = addFormats(new Ajv({
   allErrors: true,
   coerceTypes: true,
 }));
+
+validator.addFormat('base64url', {
+  type: 'string',
+  validate: (value) => /^[A-Za-z0-9_-]+$/.test(value),
+});
+
+
+/******************************************************************************
+ * Util valdation functions
+ *****************************************************************************/
 
 export function validate(
   schema: TSchema, 

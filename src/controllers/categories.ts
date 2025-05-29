@@ -70,6 +70,7 @@ categoriesRouter.post('/', async (req, res, next) => {
  *         name: childrenOf
  *         schema:
  *           type: string
+ *           format: base64url
  *         description: Filter categories that are descendants of the specified category ID
  *     responses:
  *       200:

@@ -16,15 +16,14 @@ export type CategoryType = typeof categories.$inferSelect;
 export const ListCategoriesQueryParameters = Type.Composite([
   ListQueryParamaters,
   Type.Object({
-    childrenOf: Type.Optional(Type.String({ format: 'uuid' })),
+    childrenOf: Type.Optional(Type.String({ format: 'base64url' })),
   })
 ], { additionalProperties: false });
 
 export const Category = Type.Object({
-  key: Type.String({ format: 'uuid' }),
+  key: Type.String({ format: 'base64url' }),
   name: Type.String(),
   description: Type.Optional(Type.String()),
-  parentKey: Type.Union([Type.String({ format: 'uuid' }), Type.Literal('')]),
   createdAt: Type.String({ format: 'date-time' }),
   updatedAt: Type.String({ format: 'date-time' }),
 });
@@ -33,7 +32,6 @@ addSchema(Category, 'Category');
 export const CategoryInsert = Type.Object({
   name: Type.String(),
   description: Type.Optional(Type.String()),
-  parentKey: Type.Optional(Type.String({ format: 'uuid' })),
 });
 addSchema(CategoryInsert, 'CategoryInsert');
 

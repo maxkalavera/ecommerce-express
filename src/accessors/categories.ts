@@ -8,6 +8,7 @@ import { ListCategoriesQueryParameters, CategoryInsert } from '@/typebox/categor
 import { AccessorReturnType } from "@/accessors/utils/types";
 import { validate } from '@/utils/validator';
 import { categories } from '@/models/categories';
+import settings from '@/settings';
 
 
 
@@ -34,11 +35,8 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
     query: Static<typeof ListCategoriesQueryParameters>
   ): Promise<AccessorReturnType<any>>
   {
-    const { cursor, limit, childrenOf } = lodash.defaults(query, {
-      cursor: null,
-      limit: 5,
-      childrenOf: null,
-    });
+    const { cursor, limit, childrenOf } = lodash.defaults(query, 
+      { cursor: null, limit: null, childrenOf: null });
 
     // Decode cursor
     const cursorData = this.decodeCursorWithDefaults(cursor, { id: null, updatedAt: null });
@@ -46,28 +44,10 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
       return cursorData as { success: false, error: APIError };
     }
 
-    // Get parent category
-    let parentId: number | null = null;
-    if (childrenOf) {
-      const parentQuery = await db.select()
-        .from(categories)
-        .where(op.eq(categories.key, childrenOf))
-        .limit(1);
-
-      if (!parentQuery.length) {
-        return {
-          success: false,
-          error: new APIError(400, '"childrenOf" category not found'),
-        };
-      }
-      parentId = parentQuery[0]['id'];
-    }
-
-
     const result = await db.select()
       .from(categories)
       .where(op.and(
-        op.or(op.isNull(op.sql`${parentId}::INT`), op.eq(categories.parentId, parentId)),
+        op.or(op.isNull(op.sql`${childrenOf}::TEXT`), op.eq(categories.parentKey, childrenOf)),
         // Cursor paging filters
         op.and(
           op.or(

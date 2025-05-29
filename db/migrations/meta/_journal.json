@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1748273823999,
-      "tag": "0000_awesome_darkhawk",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1748275279466,
-      "tag": "0001_black_mojo",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1748319706989,
-      "tag": "0002_magical_hiroim",
+      "when": 1748486466083,
+      "tag": "0000_mute_madame_masque",
       "breakpoints": true
     }
   ]

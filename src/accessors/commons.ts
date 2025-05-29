@@ -97,9 +97,13 @@ export class CoreAccessor {
   public buildCursorAttributes (
     data: Record<string, any>[],
     mapper: (data: Record<string, any>) => Record<string, any>,
-    limit: number = 20
+    limit: number | null = null,
   ): { nextCursor: string, hasMore: boolean } 
   {
+    if (typeof limit !== 'number') {
+      limit = settings.PAGINATION_DEFAULT_LIMIT;
+    }
+
     if (data.length === limit) {
       const lastItem = data[data.length - 1];
       const nextCursor = this.generateCursor(mapper(lastItem));
