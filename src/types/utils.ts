@@ -1,4 +1,3 @@
-import { GenericObject } from "@/types/commons";
 
 /**
  * Merges a tuple of object types while preserving property precedence (first object has highest priority)
@@ -13,7 +12,7 @@ import { GenericObject } from "@/types/commons";
  */
 export type Prioritize<T extends any[]> = Resolve<(
   T extends [infer First, ...infer Rest]
-    ? First extends GenericObject
+    ? First extends Record<string, any>
       ? Rest extends any[]
         ? PrioritizeHelper<First, Prioritize<Rest>>
         : never
@@ -101,7 +100,7 @@ export type RemoveUndefinedFromObjectTuple<
   T extends [...any[]]
 > = (
   T extends [infer First, ...infer Rest]
-    ? First extends GenericObject
+    ? First extends Record<string, any>
       ? Rest extends any[]
         ? [RemoveUndefined<First>, ...RemoveUndefinedFromObjectTuple<Rest>]
         : never

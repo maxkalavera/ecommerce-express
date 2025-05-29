@@ -1,17 +1,27 @@
-/******************************************************************************
- * Types
- *****************************************************************************/
+import { APIError } from "@/utils/errors";
 
-/**
- * A generic object type that allows any string key with any value
- * @example
- * const obj: GenericObject = { foo: 'bar', num: 42 };
- */
-export type GenericObject = Record<string, any>;
+export type ReturnSingle<
+  Instance extends Record<string, any>
+> = {
+  data: Instance;
+}
 
-/**
- * A generic function type that accepts any arguments and returns any value
- * @example
- * const fn: GenericFunction = (a, b) => a + b;
- */
-export type GenericFunction = (...args: any[]) => any;
+export type ReturnMany<
+  Instance extends Record<string, any>
+> = {
+  items: Instance[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export type LayersReturnType<
+  Instance extends Record<string, any>,
+> = (
+  {
+    success: true,
+    payload: ReturnSingle<Instance> | ReturnMany<Instance>,
+  } | {
+    success: false,
+    error: APIError,
+  }
+);

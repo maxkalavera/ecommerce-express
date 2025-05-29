@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { registerProductsController } from '@/controllers/products';
+import { categoriesRouter } from '@/controllers/categories';
 
 const router: Router = express.Router();
 console.info("Atacching routes to controllers...");
@@ -8,7 +8,7 @@ console.info("Atacching routes to controllers...");
  * Place all routes here.
  *****************************************************************************/
 
-registerProductsController(router);
+router.use('/categories', categoriesRouter);
 
 /*****************************************************************************/
 console.info("Routes attached.");

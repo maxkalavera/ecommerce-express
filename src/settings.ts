@@ -19,6 +19,7 @@ export type Settings = {
   RUNTIME_FOLDER: string;
   DEV_DATA_FOLDER: string;
   QUERIES_LOOK_UP_ATTRIBUTE: string;
+  SECRET_KEY: string;
 };
 
 /******************************************************************************
@@ -36,6 +37,7 @@ const initials: Settings = {
   RUNTIME_FOLDER: path.resolve(process.cwd(), ".runtime"),
   DEV_DATA_FOLDER: path.resolve(process.cwd(), ".runtime/data"),
   QUERIES_LOOK_UP_ATTRIBUTE: "id",
+  SECRET_KEY: "",
 };
 
 const fromEnvSettings: Partial<Settings> = {
@@ -49,6 +51,7 @@ const fromEnvSettings: Partial<Settings> = {
     USER: envs.POSTGRES_USER,
     PASSWORD: envs.POSTGRES_PASSWORD,
   },
+  SECRET_KEY: envs.SECRET_KEY,
 };
 
 export default Object.assign(

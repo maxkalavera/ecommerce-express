@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { APIError } from '@/utils/errors';
 import settings from "@/settings";
 
 /******************************************************************************
@@ -8,29 +9,19 @@ import settings from "@/settings";
 export default function error (
   err: Error, 
   req: Request, 
-  res: Response, 
+  res: Response,
   next: NextFunction
 ): void 
 {
-  console.error(err);
-  const acceptedTypes = req.accepts(['json', 'html', 'text']);
-  const status = 500;
-  const message = err.message || "Internal Server Error";
+  const apiError = err !instanceof APIError ? err : APIError.fromError(err);
+  const acceptedTypes = req.accepts(['json', 'html']);
 
-  if (acceptedTypes === 'json') {
-    // Send a JSON response for APIs
-    res.status(status).json({
-      status,
-      message: message,
-      error: settings.ENV === 'development' ? err : undefined
-    });
-  } else if (acceptedTypes === 'html') {
-    res.status(status).render('error', {
-      status,
-      message: message.slice(0, 100),
-      error: err 
-    });
+  //console.log("----------------------------------------------------------------------");
+  //console.error(apiError.toLoggerText());
+
+  if (acceptedTypes === 'html') {
+    res.status(apiError.statusCode).render('error', apiError.toHTMLContext());
   } else {
-    res.status(status).send(message);
+    res.status(apiError.statusCode).json(apiError.toResponseObject());
   }
 };

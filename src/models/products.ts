@@ -1,14 +1,16 @@
 import * as pg from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
-import { buildModel } from "@/models/utils";
+import { sql, relations } from "drizzle-orm";
+import { commonColumns } from "@/models/utils";
+import { categories } from "@/models/categories";
 
 /******************************************************************************
  * Products Model
  *****************************************************************************/
 
-export const productsModel = buildModel(
+export const products = pg.pgTable(
   "products", 
   {
+    ...commonColumns,
     name: pg.varchar({ length: 255 }).notNull(),
     price: pg.numeric({ precision: 20, scale: 2 }).notNull(),
     description: pg.text().notNull().default(""),
@@ -17,6 +19,7 @@ export const productsModel = buildModel(
     isLabeled: pg.boolean().notNull().default(false),
     labelContent: pg.varchar({ length: 255 }).notNull().default(""),
     labelColor: pg.varchar({ length: 7 }).notNull().default("#000000"),
+    categoryId: pg.integer().notNull().references(() => categories.id),
   },
   (table) => [
     pg.check("price_check1", sql`${table.price} > 0`),
@@ -24,48 +27,63 @@ export const productsModel = buildModel(
   ]
 );
 
-/******************************************************************************
- * Products Model
- *****************************************************************************/
-
-export const productImagesModel = buildModel(
-  "products_images",
-  {
-    productId: pg.integer().notNull().references(() => productsModel.table.id),
-    name: pg.varchar({ length: 255 }).notNull(),
-    path: pg.varchar({ length: 255 }).notNull(),
-  }
+export const productsRelations = relations(
+  products,
+  ({ one, many }) => ({
+    category: one(categories, {
+      fields: [products.categoryId],
+      references: [categories.id],
+    }),
+    cover: one(productImages),
+    images: many(productImages),
+    items: many(productItems),
+  })
 );
-
-productImagesModel.addRelations(({ one }) => ({
-  product: one(productsModel.table, {
-    fields: [productItemsModel.table.productId],
-    references: [productsModel.table.id],
-  }),
-}));
-
-productsModel.addRelations(({ one, many }) => ({
-  cover: one(productImagesModel.table),
-  images: many(productImagesModel.table),
-}));
 
 /******************************************************************************
  * Products Model
  *****************************************************************************/
 
-export const productItemsModel = buildModel(
+export const productImages = pg.pgTable(
   "products_images",
   {
-    productId: pg.integer().notNull().references(() => productsModel.table.id),
+    ...commonColumns,
+    productId: pg.integer().notNull().references(() => products.id),
     name: pg.varchar({ length: 255 }).notNull(),
     path: pg.varchar({ length: 255 }).notNull(),
   }
 );
 
-productsModel.addRelations(({ one }) => ({
-  product: one(productsModel.table),
-}));
+export const productImagesRelations = relations(
+  productImages,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [productImages.productId],
+      references: [products.id],
+    }),
+  })
+);
 
-productsModel.addRelations(({ many }) => ({
-  items: many(productImagesModel.table),
-}));
+/******************************************************************************
+ * Products Model
+ *****************************************************************************/
+
+export const productItems = pg.pgTable(
+  "products_images",
+  {
+    ...commonColumns,
+    productId: pg.integer().notNull().references(() => products.id),
+    name: pg.varchar({ length: 255 }).notNull(),
+    path: pg.varchar({ length: 255 }).notNull(),
+  }
+);
+
+export const productItemsRelations = relations(
+  productItems,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [productItems.productId],
+      references: [products.id],
+    }),
+  })
+);

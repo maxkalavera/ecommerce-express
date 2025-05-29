@@ -6,20 +6,12 @@ import express from 'express';
 import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
-import * as OpenApiValidator from 'express-openapi-validator';
 import settings from "@/settings";
 import error from "@/middlewares/error";
 import routes from "@/routes";
 import SwaggerUi from 'swagger-ui-express';
-import { openAPISchema } from '@/api-schema';
 import { initializeExpressApp } from '@/utils/lifecycle';
-
-/******************************************************************************
- * Constants
- *****************************************************************************/
-
-// Build OpenAPI schema
-const openAPIDocument = await openAPISchema.getDocument();
+import { specs } from '@/openapi';
 
 /******************************************************************************
  * Initialization
@@ -29,7 +21,6 @@ const app = initializeExpressApp({
   beforeCreateApp: () => {
     // Create runtime files
     createRuntimeFolder();
-    writeOpenAPIDocument(JSON.stringify(openAPIDocument, null, 2));
 
     if (settings.ENV === "development") {
       console.log("Running in development mode");
@@ -49,20 +40,10 @@ const app = initializeExpressApp({
     app.use(morgan('dev'));
     app.use(helmet());
     app.use(cors());
-  
-    settings.ENV !== "production" && app.use(
-      OpenApiValidator.middleware({
-        apiSpec: openAPIDocument as any,
-        validateRequests: true,
-        validateResponses: true,
-        ignoreUndocumented: true,
-      }),
-    );
   },
   setRoutes: (app) => {
     app.use('/api/', routes);
-    app.use('/api-docs', SwaggerUi.serve, SwaggerUi.setup(openAPIDocument));
-
+    app.use('/api-docs', SwaggerUi.serve, SwaggerUi.setup(specs));
   },
   setErrorMiddlewares: (app) => {
     app.use(error);  // Custom error handler
@@ -94,6 +75,16 @@ process.on('SIGTERM', onClose);
  * Start server
  *****************************************************************************/
 
+if (
+  Buffer.from(settings.SECRET_KEY, "hex").length < 32
+) {
+  console.error("SECRET_KEY has to be set in environment variables (.env)");
+  console.error("SECRET_KEY has to be at least 32 characters long");
+  console.error("SECRET_KEY has to be a hex string");
+  process.exit(1);
+}
+
+
 (async () => {
   server.listen(settings.PORT, () => {
     console.log(`Server is running on http://localhost:${settings.PORT}`);
@@ -110,8 +101,4 @@ function createRuntimeFolder() {
   if (!fs.existsSync(settings.RUNTIME_FOLDER)) {
     fs.mkdirSync(settings.RUNTIME_FOLDER, { recursive: true });
   }
-}
-
-function writeOpenAPIDocument(openAPIDocument: string) {
-  fs.writeFileSync(path.resolve(settings.RUNTIME_FOLDER, "openapi.json"), openAPIDocument);
 }

@@ -1,11 +1,3 @@
-import { Router } from 'express';
-import { productsAccessor } from '@/accessors/products';
+import express from 'express';
 
-export function registerProductsController(router: Router) {
-  router.get('/products', async (req, res, next) => {
-    const products = await productsAccessor.readAll();    
-    res.json({
-      data: products,
-    });
-  });
-}
+export const productsRouter = express.Router();

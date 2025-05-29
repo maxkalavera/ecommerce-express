@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Error <%= status %></title>
+  <title>Error <%= statusCode %></title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -34,10 +34,13 @@
   </style>
 </head>
 <body>
-  <h1><%= status %></h1>
+  <h1><%= statusCode %></h1>
   <p><%= message %></p>
-  <% if (error) { %>
-    <pre><%= error.stack %></pre>
+  <h3>Details:</h3>
+  <pre><%= details %></pre>
+  <h3>Stack:</h3>
+  <% if (stack) { %>
+    <pre><%= stack %></pre>
   <% } %>
 </body>
 </html>
