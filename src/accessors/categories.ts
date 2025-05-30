@@ -8,11 +8,12 @@ import { AccessorReturnType } from "@/accessors/utils/types";
 import { validate } from '@/utils/validator';
 import { categories } from '@/models/categories';
 import { CursorPagination } from '@/accessors/utils/CursorPagination';
+import { CoreAccessor } from '@/accessors/common';
 
 
-
-export const categoriesAccessor = new (class CategoriesAccessor {
+export const categoriesAccessor = new (class CategoriesAccessor extends CoreAccessor {
   private pagination = new CursorPagination();
+  public excludeColumns: string[] = ['id', 'parentId'];
 
   public async create(
     data: Static<typeof CategoryInsert>,
@@ -23,9 +24,11 @@ export const categoriesAccessor = new (class CategoriesAccessor {
       return validation;
     }
 
-    console.log("Data", data);
-    const result = await db.insert(categories).values(data);
-    console.log("Result", result);
+    const result = await db
+      .insert(categories)
+      .values(data)
+      .returning(this.getColumns(categories));
+
     return {
       success: true,
       payload: {
