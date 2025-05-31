@@ -25,3 +25,19 @@ export type LayersReturnType<
     error: APIError,
   }
 );
+
+export type OperationReturnType<
+  Data extends any = Record<string, any>,
+> = (
+  {
+    success: true,
+    data: Data,
+  } | {
+    success: false,
+    error: APIError,
+  }
+);
+
+export type InputData = Record<string, any>;
+
+export type LookupIdentifiers = Record<string, any>;

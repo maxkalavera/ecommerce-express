@@ -42,6 +42,122 @@ categoriesRouter.post('/', async (req, res, next) => {
 });
 
 /******************************************************************************
+ * Read category
+ *****************************************************************************/
+
+/**
+ * @openapi
+ * /categories/{id}:
+ *   get:
+ *     summary: Get category by ID
+ *     description: Retrieves a single category by its ID
+ *     tags:
+ *       - Categories
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Category ID
+ *     responses:
+ *       200:
+ *         description: Category retrieved successfully
+ *       404:
+ *         description: Category not found
+ *       500:
+ *         description: Internal server error
+ */
+
+categoriesRouter.get('/:id', async (req, res, next) => {
+  const result = await categoriesService.read({ id: req.params.id });
+  if (!result.success) {
+    return next(result.error);
+  }
+  res.json(result.payload);
+});
+
+/******************************************************************************
+ * Update category
+ *****************************************************************************/
+
+/**
+ * @openapi
+ * /categories/{id}:
+ *   put:
+ *     summary: Update category
+ *     description: Updates an existing category by its ID
+ *     tags:
+ *       - Categories
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Category ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CategoryUpdate'
+ *     responses:
+ *       200:
+ *         description: Category updated successfully
+ *       400:
+ *         description: Invalid request body
+ *       404:
+ *         description: Category not found
+ *       500:
+ *         description: Internal server error
+ */
+
+categoriesRouter.put('/:id', async (req, res, next) => {
+  const result = await categoriesService.update({ id: req.params.id }, req.body);
+  if (!result.success) {
+    return next(result.error);
+  }
+  res.json(result.payload);
+});
+
+/******************************************************************************
+ * Update category
+ *****************************************************************************/
+
+/**
+ * @openapi
+ * /categories/{id}:
+ *   delete:
+ *     summary: Delete category
+ *     description: Deletes an existing category by its ID
+ *     tags:
+ *       - Categories
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Category ID
+ *     responses:
+ *       200:
+ *         description: Category deleted successfully
+ *       404:
+ *         description: Category not found
+ *       500:
+ *         description: Internal server error
+ */
+
+categoriesRouter.delete('/:id', async (req, res, next) => {
+  const result = await categoriesService.delete({ id: req.params.id });
+  if (!result.success) {
+    return next(result.error);
+  }
+  res.json(result.payload);
+});
+
+/******************************************************************************
  * List categories
  *****************************************************************************/
 

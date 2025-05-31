@@ -2,44 +2,63 @@ import settings from '@/settings';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { APIError } from '@/utils/errors';
 import base64url from 'base64url';
+import { OperationReturnType } from '@/types/commons';
+import { CoreAccessor } from '@/accessors/common';
 
 export class CursorPagination {
   protected ENCRYPTION_KEY = Buffer.from(settings.SECRET_KEY, "hex").subarray(0, 16);
   protected ENCRYPTION_IV_LENGTH = 16;
   protected ENCRYPTION_ALGORITHM = "aes-128-ctr";
+  protected parent;
 
-  serializeObject(data: Record<string, any>): string {
+  constructor(parent: CoreAccessor) {
+    this.parent = parent;
+  }
+
+  protected _serializeObject(data: Record<string, any>): string {
     return Buffer.from(JSON.stringify(data), 'utf8').toString('base64');
   }
   
-  deserializeObject(str: string): Record<string, any> {
+  protected _deserializeObject(str: string): Record<string, any> {
     return JSON.parse(Buffer.from(str, 'base64').toString('utf8'));
   }
 
-  generateCursor (
+  public generateCursor (
     data: Record<string, any>
-  ): string 
+  ): OperationReturnType<string> 
   {
-    // Configuration
-    const serialized = this.serializeObject(data);
-    const iv = randomBytes(this.ENCRYPTION_IV_LENGTH);
-    const cipher = createCipheriv(
-      this.ENCRYPTION_ALGORITHM, 
-      this.ENCRYPTION_KEY, 
-      iv
-    );
+    try {
+      // Configuration
+      const serialized = this._serializeObject(data);
+      const iv = randomBytes(this.ENCRYPTION_IV_LENGTH);
+      const cipher = createCipheriv(
+        this.ENCRYPTION_ALGORITHM, 
+        this.ENCRYPTION_KEY, 
+        iv
+      );
 
-    // Encrypt the serialized data
-    const encrypted = Buffer.concat([
-      cipher.update(serialized, 'utf8'),
-      cipher.final(),
-    ]);
+      // Encrypt the serialized data
+      const encrypted = Buffer.concat([
+        cipher.update(serialized, 'utf8'),
+        cipher.final(),
+      ]);
 
-    // Combine IV + encrypted data and return as Base64
-    return base64url.fromBase64(Buffer.concat([iv, encrypted]).toString('base64'));
+      // Combine IV + encrypted data and return as Base64
+      const cursor = base64url.fromBase64(Buffer.concat([iv, encrypted]).toString('base64'));
+      return {
+        success: true,
+        data: cursor,
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: new APIError(400, 'Could not generate pagination cursor'),
+      }      
+    }
+
   }
 
-  decodeCursor (
+  public decodeCursor (
     cursor: string,
   ): { success: true, data: Record<string, any> } | { success: false, error: APIError} 
   { 
@@ -66,7 +85,7 @@ export class CursorPagination {
       // Deserialize back to object
       return {
         success: true,
-        data: this.deserializeObject(decrypted),
+        data: this._deserializeObject(decrypted),
       };
     } catch (error) {
       console.error("Error decoding cursor:", error);
@@ -98,7 +117,7 @@ export class CursorPagination {
     data: Record<string, any>[],
     mapper: (data: Record<string, any>) => Record<string, any>,
     limit: number | null = null,
-  ): { nextCursor: string, hasMore: boolean } 
+  ): OperationReturnType<{ nextCursor: string, hasMore: boolean }> 
   {
     if (typeof limit !== 'number') {
       limit = settings.PAGINATION_DEFAULT_LIMIT;
@@ -108,15 +127,25 @@ export class CursorPagination {
       const lastItem = data[data.length - 1];
       const nextCursor = this.generateCursor(mapper(lastItem));
       const hasMore = data.length === limit;
-      console.info(`Cursor: {${nextCursor}}`);
-      return {
-        nextCursor: nextCursor,
-        hasMore: hasMore,
-      };
+
+      if (!nextCursor.success) {
+        throw nextCursor;
+      } else {
+        return {
+          success: true,
+          data: {
+            nextCursor: nextCursor.data,
+            hasMore: hasMore,
+          },
+        };
+      }
     }
     return {
-      nextCursor: "",
-      hasMore: false,
+      success: true,
+      data: {
+        nextCursor: "",
+        hasMore: false,
+      },
     };
   }
 

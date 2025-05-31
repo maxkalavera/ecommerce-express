@@ -1,40 +1,95 @@
-import { db } from '@/db';
+import { db, Database } from '@/db';
 import * as op from 'drizzle-orm';
 import { Static } from '@sinclair/typebox';
 import lodash from 'lodash';
 import { APIError } from '@/utils/errors';
 import { ListCategoriesQueryParameters, CategoryInsert } from '@/typebox/categories';
 import { AccessorReturnType } from "@/accessors/utils/types";
-import { validate } from '@/utils/validator';
 import { categories } from '@/models/categories';
 import { CursorPagination } from '@/accessors/utils/CursorPagination';
 import { CoreAccessor } from '@/accessors/common';
-
+import { CRUD } from '@/accessors/utils/CRUD';
 
 export const categoriesAccessor = new (class CategoriesAccessor extends CoreAccessor {
-  private pagination = new CursorPagination();
+  private pagination;
+  private crud;
   public excludeColumns: string[] = ['id', 'parentId'];
+
+  constructor() {
+    super();
+    this.pagination = new CursorPagination(this);
+    this.crud = new CRUD(this, db, categories);
+  }
 
   public async create(
     data: Static<typeof CategoryInsert>,
   ): Promise<AccessorReturnType<any>> 
   {
-    const validation = validate(CategoryInsert, data);
-    if (!validation.success) {
-      return validation;
+    const createResult = await this.crud.create(data, CategoryInsert);
+
+    if (!createResult.success) {
+      return createResult;
+    } else {
+      return {
+        success: true,
+        payload: {
+          data: createResult.data,
+        },
+      };
     }
+  }
 
-    const result = await db
-      .insert(categories)
-      .values(data)
-      .returning(this.getColumns(categories));
+  public async read(
+    indentifiers: { id: string }
+  ): Promise<AccessorReturnType<any>> 
+  {
+    const readResult = await this.crud.read(indentifiers);
+    
+    if (!readResult.success) {
+      return readResult;
+    } else {
+      return {
+        success: true,
+        payload: {
+          data: readResult.data,
+        },
+      };
+    }
+  }
 
-    return {
-      success: true,
-      payload: {
-        data: result,
-      },
-    };
+  public async update(
+    indentifiers: { id: string },
+    data: Static<typeof CategoryInsert>,
+  ): Promise<AccessorReturnType<any>>
+  {
+    const updateResult = await this.crud.update(indentifiers, data, CategoryInsert);
+    if (!updateResult.success) {
+      return updateResult;
+    } else {
+      return {
+        success: true,
+        payload: {
+          data: updateResult.data,
+        },
+      };
+    }
+  }
+
+  public async delete(
+    indentifiers: { id: string }
+  ): Promise<AccessorReturnType<any>>
+  {
+    const deleteResult = await this.crud.delete(indentifiers);
+    if (!deleteResult.success) {
+      return deleteResult;
+    } else {
+      return {
+        success: true,
+        payload: {
+          data: deleteResult.data,
+        },
+      };
+    }
   }
 
   public async list(
@@ -69,11 +124,17 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
       .orderBy(op.desc(categories.updatedAt), op.asc(categories.id))
       .limit(limit);
 
+    const cursorAttributes = this.pagination.buildCursorAttributes(
+      result, (data) => ({ id: data.id, updatedAt: data.updatedAt }), limit);
+    if (!cursorAttributes.success) {
+      return cursorAttributes as { success: false, error: APIError };
+    }
+
     return {
       success: true,
       payload: {
         items: result,
-        ...this.pagination.buildCursorAttributes(result, (data) => ({ id: data.id, updatedAt: data.updatedAt }), limit),
+        ...cursorAttributes,
       },
     };
   }
