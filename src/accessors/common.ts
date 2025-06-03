@@ -1,5 +1,5 @@
 import lodash from 'lodash';
-import { getTableColumns, Table } from 'drizzle-orm';
+import { getTableColumns, Table, Column } from 'drizzle-orm';
 import { OperationReturnType } from '@/types/commons';
 import { APIError } from '@/utils/errors';
 
@@ -7,18 +7,14 @@ export class CoreAccessor {
   public includecolumns: string[] = [];
   public excludeColumns: string[] = [];
 
-  protected _assertResult () {
-
-  }
-
-  public getDisplayColumns (
+  protected getDisplayColumns (
     table: Table, 
     options: {
       all?: boolean;
       include?: string[];
       exclude?: string[];
     } = {}
-  ): OperationReturnType<ReturnType<typeof getTableColumns>>
+  ): OperationReturnType<Record<string, Column<any, object, object>>>
   {
     try {
       const _options = lodash.defaults(options, {

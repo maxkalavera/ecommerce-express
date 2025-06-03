@@ -6,26 +6,28 @@ import { APIError } from '@/utils/errors';
 import { ListCategoriesQueryParameters, CategoryInsert } from '@/typebox/categories';
 import { AccessorReturnType } from "@/accessors/utils/types";
 import { categories } from '@/models/categories';
-import { CursorPagination } from '@/accessors/utils/CursorPagination';
 import { CoreAccessor } from '@/accessors/common';
-import { CRUD } from '@/accessors/utils/CRUD';
+import cursorPagination from '@/accessors/utils/CursorPagination';
+import crudOperations from '@/accessors/utils/CRUD';
+import settings from '@/settings';
 
 export const categoriesAccessor = new (class CategoriesAccessor extends CoreAccessor {
-  private pagination;
-  private crud;
   public excludeColumns: string[] = ['id', 'parentId'];
 
   constructor() {
     super();
-    this.pagination = new CursorPagination(this);
-    this.crud = new CRUD(this, db, categories);
   }
 
   public async create(
     data: Static<typeof CategoryInsert>,
   ): Promise<AccessorReturnType<any>> 
   {
-    const createResult = await this.crud.create(data, CategoryInsert);
+    const displayColumns = this.getDisplayColumns(categories);
+    if (!displayColumns.success) {
+      return displayColumns;
+    }
+
+    const createResult = await crudOperations.create(categories, data, CategoryInsert, displayColumns.data);
 
     if (!createResult.success) {
       return createResult;
@@ -43,7 +45,11 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
     indentifiers: { id: string }
   ): Promise<AccessorReturnType<any>> 
   {
-    const readResult = await this.crud.read(indentifiers);
+    const displayColumns = this.getDisplayColumns(categories);
+    if (!displayColumns.success) {
+      return displayColumns;
+    }
+    const readResult = await crudOperations.read(categories, indentifiers, displayColumns.data);
     
     if (!readResult.success) {
       return readResult;
@@ -62,7 +68,14 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
     data: Static<typeof CategoryInsert>,
   ): Promise<AccessorReturnType<any>>
   {
-    const updateResult = await this.crud.update(indentifiers, data, CategoryInsert);
+    const displayColumns = this.getDisplayColumns(categories);
+    if (!displayColumns.success) {
+      return displayColumns;
+    }
+
+    const updateResult = await crudOperations.update(
+        categories, indentifiers, data, CategoryInsert, displayColumns.data);
+
     if (!updateResult.success) {
       return updateResult;
     } else {
@@ -79,7 +92,14 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
     indentifiers: { id: string }
   ): Promise<AccessorReturnType<any>>
   {
-    const deleteResult = await this.crud.delete(indentifiers);
+    const displayColumns = this.getDisplayColumns(categories);
+    if (!displayColumns.success) {
+      return displayColumns;
+    }
+
+    const deleteResult = await crudOperations.delete(
+      categories, indentifiers, displayColumns.data);
+
     if (!deleteResult.success) {
       return deleteResult;
     } else {
@@ -96,47 +116,42 @@ export const categoriesAccessor = new (class CategoriesAccessor extends CoreAcce
     query: Static<typeof ListCategoriesQueryParameters>
   ): Promise<AccessorReturnType<any>>
   {
-    const { cursor, limit, childrenOf } = lodash.defaults(query, 
-      { cursor: null, limit: null, childrenOf: null });
-
-    // Decode cursor
-    const cursorData = this.pagination.decodeCursorWithDefaults(cursor, { id: null, updatedAt: null });
-    if (!cursorData.success) {
-      return cursorData as { success: false, error: APIError };
+    const { cursor, limit, childrenOf }: { 
+      cursor: string, 
+      limit: number, 
+      childrenOf: string | null
+    } = lodash.defaults(query, { 
+      cursor: "", 
+      limit: settings.PAGINATION_DEFAULT_LIMIT, 
+      childrenOf: null 
+    });
+    
+    const displayColumns = this.getDisplayColumns(categories);
+    if (!displayColumns.success) {
+      return displayColumns;
     }
 
-    const result = await db.select()
+    const basequery = db.select()
       .from(categories)
-      .where(op.and(
-        op.or(op.isNull(op.sql`${childrenOf}::TEXT`), op.eq(categories.parentKey, childrenOf)),
-        // Cursor paging filters
-        op.and(
-          op.or(
-            op.isNull(op.sql`${cursorData.data.updatedAt}::TIMESTAMP`),
-            op.sql`DATE_TRUNC('milliseconds', ${categories.updatedAt}) <= ${cursorData.data.updatedAt}::TIMESTAMP`
-          ),
-          op.or(
-            op.isNull(op.sql`${cursorData.data.id}::INT`), 
-            op.sql`${categories.id} > ${cursorData.data.id}::INT`
-          ),
-        )
-      ))
-      .orderBy(op.desc(categories.updatedAt), op.asc(categories.id))
-      .limit(limit);
+      .where(
+        op.or(op.isNull(op.sql`${childrenOf}::TEXT`), op.eq(categories.parentKey, childrenOf))
+      );
 
-    const cursorAttributes = this.pagination.buildCursorAttributes(
-      result, (data) => ({ id: data.id, updatedAt: data.updatedAt }), limit);
-    if (!cursorAttributes.success) {
-      return cursorAttributes as { success: false, error: APIError };
+    const enhacedQuery = await crudOperations.executeWithCursorPagination(
+      basequery, 
+      cursor,
+      [['updatedAt', 'desc'], ['id', 'asc']],
+      limit,
+    );
+    
+    if (!enhacedQuery.success) {
+      return enhacedQuery;
+    } else {
+      return {
+        success: true,
+        payload: enhacedQuery.data as { items: any[], nextCursor: string | null, hasMore: boolean },
+      };
     }
-
-    return {
-      success: true,
-      payload: {
-        items: result,
-        ...cursorAttributes,
-      },
-    };
   }
 
 })();

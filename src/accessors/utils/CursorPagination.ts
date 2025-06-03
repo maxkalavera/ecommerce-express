@@ -5,15 +5,10 @@ import base64url from 'base64url';
 import { OperationReturnType } from '@/types/commons';
 import { CoreAccessor } from '@/accessors/common';
 
-export class CursorPagination {
+export const cursorPagination = new (class CursorPagination {
   protected ENCRYPTION_KEY = Buffer.from(settings.SECRET_KEY, "hex").subarray(0, 16);
   protected ENCRYPTION_IV_LENGTH = 16;
   protected ENCRYPTION_ALGORITHM = "aes-128-ctr";
-  protected parent;
-
-  constructor(parent: CoreAccessor) {
-    this.parent = parent;
-  }
 
   protected _serializeObject(data: Record<string, any>): string {
     return Buffer.from(JSON.stringify(data), 'utf8').toString('base64');
@@ -97,7 +92,8 @@ export class CursorPagination {
   }
 
   public decodeCursorWithDefaults (
-    cursor: string | null, defaults: Record<string, any> = {},
+    cursor: string | null, 
+    defaults: Record<string, any> = {},
   ): { success: true, data: Record<string, any> } | { success: false, error: APIError} 
   {
     if (typeof cursor === 'string' && cursor) {
@@ -113,40 +109,6 @@ export class CursorPagination {
     }
   }
 
-  public buildCursorAttributes (
-    data: Record<string, any>[],
-    mapper: (data: Record<string, any>) => Record<string, any>,
-    limit: number | null = null,
-  ): OperationReturnType<{ nextCursor: string, hasMore: boolean }> 
-  {
-    if (typeof limit !== 'number') {
-      limit = settings.PAGINATION_DEFAULT_LIMIT;
-    }
+})();
 
-    if (data.length === limit) {
-      const lastItem = data[data.length - 1];
-      const nextCursor = this.generateCursor(mapper(lastItem));
-      const hasMore = data.length === limit;
-
-      if (!nextCursor.success) {
-        throw nextCursor;
-      } else {
-        return {
-          success: true,
-          data: {
-            nextCursor: nextCursor.data,
-            hasMore: hasMore,
-          },
-        };
-      }
-    }
-    return {
-      success: true,
-      data: {
-        nextCursor: "",
-        hasMore: false,
-      },
-    };
-  }
-
-}
+export default cursorPagination;
