@@ -9,7 +9,7 @@ import CoreAccessor from '@/utils/accessors/CoreAccessor';
 import { AccessorReturnType } from "@/types/accessors";
 import { categories, categoriesImages } from '@/models/categories';
 import { validate } from '@/utils/validator';
-import { toDisplayFields } from '@/utils/accessors/displayFields';
+//import { toDisplayFields } from '@/utils/accessors/displayFields';
 import { getLookups } from '@/utils/accessors/lookups';
 import { 
   ListCategoriesQueryParameters, 
@@ -26,6 +26,7 @@ class CategoriesAccessor extends CoreAccessor {
   protected insertSchema = CategoryInsert;
   protected updateSchema = CategoryUpdate;
 
+  /*
   async _create(
     data: Static<typeof this.insertSchema> & { parentKey: string | null },
   ) {
@@ -48,11 +49,11 @@ class CategoriesAccessor extends CoreAccessor {
       .values(coercedData)
       .returning();
 
-    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
-
-    return displayFields[0];
+    return result[0];
   }
+  */
 
+  /*
   protected async _update(
     identifiers: Record<string, any>, 
     data: Record<string, any>
@@ -78,38 +79,9 @@ class CategoriesAccessor extends CoreAccessor {
       .where(lookups.all)
       .returning();
 
-    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
-    return displayFields[0];
+    return result[0];
   }
-
-  protected async _delete(
-    identifiers: Record<string, any>,
-  ): Promise<any> {
-    const lookups = getLookups(this.table, identifiers);
-
-    const result = await db
-      .delete(this.table)
-      .where(lookups.all)
-      .returning();
-    
-    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
-    return displayFields[0];
-  }
-
-  protected async _read(
-    identifiers: Record<string, any>,
-  ): Promise<any> {
-    const lookups = getLookups(this.table, identifiers);
-
-    const result = await db
-      .select()
-      .from(this.table)
-      .where(lookups.all)
-      .execute();
-
-    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
-    return displayFields[0];
-  }
+  */
 
   protected _buildBaseQuery(
     params: Record<string, any> = {},
@@ -146,7 +118,6 @@ class CategoriesAccessor extends CoreAccessor {
   }
 
 };
-
 export const categoriesAccessor = new CategoriesAccessor();
 
 export class CategoriesImagesAccessor extends CoreAccessor {

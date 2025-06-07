@@ -1,15 +1,14 @@
 import * as op from 'drizzle-orm';
 import lodash from 'lodash';
 import { Table } from 'drizzle-orm';
-import { PgColumn, PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
+import { PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
 import { Type, TSchema } from '@sinclair/typebox';
 import { db } from '@/db';
 import settings from '@/settings';
 import { APIError } from '@/utils/errors';
 import { AccessorReturnType } from "@/types/accessors";
 import { validate } from '@/utils/validator';
-import { toDisplayFields } from '@/utils/accessors/displayFields';
-import { getLookups } from '@/utils/accessors/lookups';
+import { getLookups, LookupsObject } from '@/utils/accessors/lookups';
 import { buildCursor, decodeCursor } from '@/utils/accessors/cursorPagination';
 
 /******************************************************************************
@@ -30,6 +29,7 @@ export class CoreAccessor {
   protected table: PgTableWithColumns<any> = null as any;
   protected excludeFields: string[] = ['id'];
   protected insertSchema: TSchema = null as any;
+  protected updateSchema: TSchema = null as any;
 
   protected _getColumnsFromIdentifiers(
     table: Table, 
@@ -43,37 +43,56 @@ export class CoreAccessor {
       .filter(([key, value]) => key !== null && value !== undefined);
   }
 
+  /*
   protected _reshapeMutateResult(
     result: Record<string, any>[]
   ): Record<string, any>[]
   {
     return result;
   }
+  */
 
+  /*
   protected _reshapeViewResult(
     result: Record<string, any>[]
   ): Record<string, any>[]
   {
     return result;
   }
+  */
+
+  protected _get_lookups(
+    identifiers: Record<string, any>
+  ): LookupsObject 
+  {
+    return getLookups(this.table, identifiers);
+  }
 
   /****************************************************************************
    * Create operations
    ***************************************************************************/
 
-  protected async _create(
-    data: any,
-  ): Promise<any>
-  {
-    const coercedData = validate(this.insertSchema, data);
+  protected _validateCreateData(data: Record<string, any>, schema=this.insertSchema) {
+    return validate(schema, data);
+  }
 
+  protected async _executeCreate(
+    data: Record<string, any>
+  ): Promise<Record<string, any>> {
     const result = await db
       .insert(this.table)
-      .values(coercedData)
+      .values(data)
       .returning();
+    return result[0];
+  }
 
-    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
-    return displayFields[0];
+  protected async _create(
+    data: Record<string, any>,
+  ): Promise<any>
+  {
+    const coercedData = this._validateCreateData(data);
+    const result = await this._executeCreate(coercedData);
+    return result;
   }
 
   public async create (
@@ -98,22 +117,35 @@ export class CoreAccessor {
    * Update operations
    ***************************************************************************/
 
+  protected _validateUpdateData(
+    data: Record<string, any>,
+    schema=this.updateSchema,
+  ) {
+    return validate(schema, data);
+  }
+
+  protected async _executeUpdate(
+    data: Record<string, any>,
+    lookups: LookupsObject,
+  ) {
+    const result = await db
+      .update(this.table)
+      .set(data)
+      .where(lookups.all)
+      .returning();
+
+  return result[0];
+  }
+
   protected async _update(
     identifiers: Record<string, any>,
     data: Record<string, any>,
   ): Promise<any>
   {
-    const lookups = getLookups(this.table, identifiers);
-    const coercedData = validate(this.insertSchema, data);
-
-    const result = await db
-      .update(this.table)
-      .set(coercedData)
-      .where(lookups.all)
-      .returning();
-
-    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
-    return displayFields[0];
+    const lookups = this._get_lookups(identifiers);
+    const coercedData = this._validateUpdateData(data);
+    const result = await this._executeUpdate(coercedData, lookups);
+    return result;
   }
 
   public async update (
@@ -139,19 +171,23 @@ export class CoreAccessor {
    * Delete operations
    ***************************************************************************/
 
+  protected async _executeDelete (
+    lookups: LookupsObject,
+  ) {
+    const result = await db
+      .delete(this.table)
+      .where(lookups.all)
+      .returning();
+    return result[0];
+  }
+
   protected async _delete (
     identifiers: Record<string, any>,
   ): Promise<any>
   {
     const lookups = getLookups(this.table, identifiers);
-
-    const result = await db
-      .delete(this.table)
-      .where(lookups.all)
-      .returning();
-    
-    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
-    return displayFields[0];
+    const result = await this._executeDelete(lookups);
+    return result;
   }
 
   public async delete (
@@ -182,14 +218,12 @@ export class CoreAccessor {
   {
     const lookups = getLookups(this.table, identifiers);
 
-    const result = await db
-      .select()
-      .from(this.table)
+    const result = await this._buildBaseQuery()
+      .$dynamic()
       .where(lookups.all)
       .execute();
 
-    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
-    return displayFields[0];
+    return result[0];
   }
 
   public async read (
@@ -243,7 +277,7 @@ export class CoreAccessor {
 
     const decodedCursorArtifacts = this._decodeCursorArtifacts(cursor, limit);
 
-    const baseQuery = this._buildBaseQuery()
+    const baseQuery = this._buildBaseQuery();
     const cursorPaginatedQuery = this._withCursorPagination(baseQuery, decodedCursorArtifacts);
     
     const result = await cursorPaginatedQuery.execute(queryParams);
