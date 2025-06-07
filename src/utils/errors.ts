@@ -1,10 +1,27 @@
 import http from "node:http";
 import { ErrorObject } from "ajv";
 import { ValidateFunction } from "ajv";
+import lodash from 'lodash';
+
+/******************************************************************************
+ * Types
+ *****************************************************************************/
+
+export type APIErrorParameters = {
+  message: string;
+  details: Record<string, string[]>;
+  code: number;
+}
 
 /******************************************************************************
  * Errors
  *****************************************************************************/
+
+const APIErrorParamsDefaults: APIErrorParameters = {
+  message: "Internal server error",
+  details: {},
+  code: 500,
+}
 
 export class APIError extends Error {
   public message: string;
@@ -12,20 +29,33 @@ export class APIError extends Error {
   public statusCode: number;
   public timestamp: Date;
 
-  static fromError (error: Error) {
+  static fromError (
+    error: Error | any | unknown, 
+    _params: Partial<APIErrorParameters> = {}
+  ) {
+    console.log(error);
     if (error instanceof APIError) {
       return error;
     }
-    console.error(error);
-    return new APIError(500, "Internal server error");
+    return new APIError(_params);
   }
 
-  constructor (statusCode: number, message: string, details: Record<string, string[]> = {}) {
+  static overrideError (
+    error: Error | any | unknown, 
+    _params: Partial<APIErrorParameters> = {}
+  ) {
+    console.log(error);
+    return new APIError(_params);
+  }
+
+  constructor (_params: Partial<APIErrorParameters> = {}) {
     super();
-    this.statusCode = statusCode;
-    this.name = http.STATUS_CODES[statusCode] || "Unknown Error";
-    this.message = message;
-    this.details = details;
+    const params = lodash.defaultsDeep(_params, APIErrorParamsDefaults) as APIErrorParameters;
+
+    this.statusCode = params.code;
+    this.name = http.STATUS_CODES[params.code] || "Unknown Error";
+    this.message = params.message;
+    this.details = params.details;
     this.timestamp = new Date();
   }
 

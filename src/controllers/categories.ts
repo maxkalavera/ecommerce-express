@@ -197,12 +197,9 @@ categoriesRouter.delete('/:id', async (req, res, next) => {
  *         description: Internal server error
  */
 categoriesRouter.get('/', async (req, res, next) => {
-  const validatedQueryParams = validate(ListCategoriesQueryParameters, req.query, 'Invalid query parameters');
-  if (!validatedQueryParams.success) {
-    return next(validatedQueryParams.error);
-  }
-
-  const result = await categoriesService.list(validatedQueryParams.data);
+  const coercedQueryParams = validate(ListCategoriesQueryParameters, req.query, );
+  
+  const result = await categoriesService.list(coercedQueryParams);
   if (!result.success) {
     return next(result.error);
   }

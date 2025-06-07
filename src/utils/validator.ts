@@ -26,26 +26,22 @@ validator.addFormat('base64url', {
 export function validate(
   schema: TSchema, 
   data: Record<string, any>,
-  errorMessage: string = 'Invalid data'
-): { success: true, data: Record<string, any> } | { success: false, error: APIError }
+): Record<string, any>
 {
   const validate = validator.compile(schema);
-  if (validate(data)) {
-    return { success: true, data };
+  const copiedData = lodash.cloneDeep(data);
+  if (validate(copiedData)) {
+    return copiedData;
   }
-  return {
-    success: false,
-    error: new APIError(400, errorMessage)
-      .addTypeboxValidationErrors(validate.errors),
-  };
+  throw new APIError({ code: 400, message: 'Invalid data' })
+    .addTypeboxValidationErrors(validate.errors)
 }
 
 export function parseQueryRows (
   schema: TSchema, 
   data: Record<string, any>[],
   mapper: (row: Record<string, any>) => Record<string, any> = (row) => row,
-  errorMessage: string = 'Invalid data structure',
-): { success: true, data: Record<string, any>[] } | { success: false, error: APIError } 
+): Record<string, any>[]
 {
   const copy = lodash.cloneDeep(data).map(mapper);
   const validate = validator.compile(schema);
@@ -54,14 +50,11 @@ export function parseQueryRows (
     if (validate(copy[i])) {
       parsedData[i] = copy[i];
     } else {
-      return {
-        success: false,
-        error: new APIError(400, errorMessage)
-         .addTypeboxValidationErrors(validate.errors),
-      };
+      throw new APIError({ code: 400, message: "Invalid data structure" })
+        .addTypeboxValidationErrors(validate.errors);
     }
   }
-  return { success: true, data: parsedData };
+  return parsedData;
 }
 
 export default validator;

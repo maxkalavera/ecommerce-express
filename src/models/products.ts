@@ -53,8 +53,7 @@ export const productImages = pg.pgTable(
     ...buildCommonColumns(),
     // Table specific columns
     productId: pg.integer().notNull().references(() => products.id),
-    name: pg.varchar({ length: 255 }).notNull(),
-    path: pg.varchar({ length: 255 }).notNull(),
+    filename: pg.varchar({ length: 255 }).notNull(),
   }
 );
 
@@ -73,14 +72,12 @@ export const productImagesRelations = relations(
  *****************************************************************************/
 
 export const productItems = pg.pgTable(
-  "products_images",
+  "products_items",
   {
     //...commonColumns,
     ...buildCommonColumns(),
     // Table specific columns
     productId: pg.integer().notNull().references(() => products.id),
-    name: pg.varchar({ length: 255 }).notNull(),
-    path: pg.varchar({ length: 255 }).notNull(),
   }
 );
 

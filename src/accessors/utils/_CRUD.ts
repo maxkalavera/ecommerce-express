@@ -1,18 +1,30 @@
+// @ts-nocheck
 import { db } from '@/db';
-import { getTableColumns, Table } from 'drizzle-orm';
+import lodash from 'lodash';
+import { Table } from 'drizzle-orm';
+import * as op from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import settings from '@/settings';
 import { APIError } from '@/utils/errors';
 import { validate } from '@/utils/validator';
 import { TSchema } from '@sinclair/typebox';
-import { PgSelectBase } from 'drizzle-orm/pg-core';
-import { CoreAccessor } from '@/accessors/common';
 import cursorPagination from '@/accessors/utils/CursorPagination';
-import { Column } from 'drizzle-orm';
 import { OperationReturnType, InputData, LookupIdentifiers } from '@/types/commons';
-import { Database } from '@/db';
-import * as op from 'drizzle-orm';
-import { AccessorReturnType } from '@/accessors/utils/types';
-import { sql } from 'drizzle-orm';
-import settings from '@/settings';
+import { DisplayFields, DisplayFieldsOptions } from '@/utils/accessors/displayFields';
+
+/******************************************************************************
+ * Types
+ *****************************************************************************/
+
+type ListOptions = DisplayFieldsOptions & {
+  fields: [string, "desc" | "asc"][];
+  limit: number;
+};
+
+/******************************************************************************
+ * CRUD Operations Object
+ *****************************************************************************/
+
 
 export const crudOperations = new (class CRUDOperations {
 
@@ -29,14 +41,15 @@ export const crudOperations = new (class CRUDOperations {
     table: Table,
     data: InputData,
     insertSchema: TSchema,
-    displayColumns:  Record<string, Column<any, object, object>>,
+    _options: Partial<DisplayFieldsOptions> = {},
   ): Promise<OperationReturnType>
   {
-    try {
-      if (displayColumns === undefined) {
-        displayColumns = getTableColumns(table);
-      }
+    const options = lodash.defaults(_options, {
+      includeFields: null,
+      excludeFields: null,
+    }) as DisplayFieldsOptions;
 
+    try {
       const validation = validate(insertSchema, data);
       if (!validation.success) {
         return validation;
@@ -45,11 +58,19 @@ export const crudOperations = new (class CRUDOperations {
       const result = await db
         .insert(table)
         .values(data)
-        .returning(displayColumns);
+        .returning();
+
+      const displayFields = DisplayFields.toDisplayFields(result, { 
+        includeFields: options.includeFields,
+        excludeFields: options.excludeFields,
+      });
+      if (!displayFields.success) {
+        return displayFields;
+      }
 
       return {
         success: true,
-        data: result[0],
+        data: displayFields.data[0],
       };
     } catch (error) {
       return {
@@ -59,48 +80,19 @@ export const crudOperations = new (class CRUDOperations {
     }
   }
 
-  public async read(
-    table: Table,
-    identifiers: LookupIdentifiers,
-    displayColumns:  Record<string, Column<any, object, object>>,
-  ): Promise<OperationReturnType> 
-  {
-    try {
-      const identifiersArray = this._getColumnsFromIdentifiers(table, identifiers);
-      if (identifiersArray.length === 0) {
-        return {
-          success: false,
-          error: new APIError(400, 'No identifier provided'),
-        };
-      }
-
-      const lookups = identifiersArray.map(([key, value]) => op.eq(key, value));
-      const result = await db
-        .select(displayColumns)
-        .from(table)
-        .where(op.and(...lookups))
-        .limit(1);
-
-      return {
-        success: true,
-        data: result[0],
-      }
-    } catch (error) {
-      return {
-        success: false,
-        error: new APIError(500, 'Failed to get record'),
-      };
-    }
-  }
-
   public async update(
     table: Table,
     identifiers: LookupIdentifiers,
     data: InputData,
     updateSchema: TSchema,
-    displayColumns:  Record<string, Column<any, object, object>>,
+    _options: Partial<DisplayFieldsOptions> = {},
   ): Promise<OperationReturnType> 
   {
+    const options = lodash.defaults(_options, {
+      includeFields: null,
+      excludeFields: null,
+    }) as DisplayFieldsOptions;
+
     try {
       const identifiersArray = this._getColumnsFromIdentifiers(table, identifiers);
       if (identifiersArray.length === 0) {
@@ -120,11 +112,19 @@ export const crudOperations = new (class CRUDOperations {
         .update(table)
         .set(data)
         .where(op.and(...lookups))
-        .returning(displayColumns);
+        .returning();
+
+      const displayFields = DisplayFields.toDisplayFields(result, { 
+        includeFields: options.includeFields,
+        excludeFields: options.excludeFields,
+      });
+      if (!displayFields.success) {
+        return displayFields;
+      }
 
       return {
         success: true,
-        data: result[0],
+        data: displayFields.data[0],
       }
 
     } catch (error) {
@@ -138,9 +138,14 @@ export const crudOperations = new (class CRUDOperations {
   public async delete(
     table: Table,
     identifiers: LookupIdentifiers,
-    displayColumns:  Record<string, Column<any, object, object>>,
+    _options: Partial<DisplayFieldsOptions> = {},
   ): Promise<OperationReturnType> 
   {
+    const options = lodash.defaults(_options, {
+      includeFields: null,
+      excludeFields: null,
+    }) as DisplayFieldsOptions;
+
     try {
       const identifiersArray = this._getColumnsFromIdentifiers(table, identifiers);
       if (identifiersArray.length === 0) {
@@ -154,13 +159,68 @@ export const crudOperations = new (class CRUDOperations {
       const result = await db
         .delete(table)
         .where(op.and(...lookups))
-        .returning(displayColumns);
+        .returning();
+
+      const displayFields = DisplayFields.toDisplayFields(result, { 
+        includeFields: options.includeFields,
+        excludeFields: options.excludeFields,
+      });
+      if (!displayFields.success) {
+        return displayFields;
+      }
 
       return {
         success: true,
-        data: result[0],
+        data: displayFields.data[0], 
       }
 
+    } catch (error) {
+      return {
+        success: false,
+        error: new APIError(500, 'Failed to delete record'),
+      };
+    }
+  }
+
+  public async read(
+    table: Table,
+    identifiers: LookupIdentifiers,
+    _options: Partial<DisplayFieldsOptions> = {},
+  ): Promise<OperationReturnType> 
+  {
+    const options = lodash.defaults(_options, {
+      includeFields: null,
+      excludeFields: null,
+    }) as DisplayFieldsOptions;
+
+    try {
+      const identifiersArray = this._getColumnsFromIdentifiers(table, identifiers);
+      if (identifiersArray.length === 0) {
+        return {
+          success: false,
+          error: new APIError(400, 'No identifier provided'),
+        };
+      }
+
+      const lookups = identifiersArray.map(([key, value]) => op.eq(key, value));
+      const result = await db
+        .select()
+        .from(table)
+        .where(op.and(...lookups))
+        .limit(1);
+
+      const displayFields = DisplayFields.toDisplayFields(result, { 
+        includeFields: options.includeFields,
+        excludeFields: options.excludeFields,
+      });
+      if (!displayFields.success) {
+        return displayFields;
+      }
+
+      return {
+        success: true,
+        data: displayFields.data[0],
+      }
     } catch (error) {
       return {
         success: false,
@@ -169,22 +229,31 @@ export const crudOperations = new (class CRUDOperations {
     }
   }
 
-  public async executeWithCursorPagination (
+  public async list (
     query: any,
     cursor: string,
-    fields: [string, "desc" | "asc"][] = [['updatedAt', 'desc'], ['id', 'asc']],
-    limit: number = settings.PAGINATION_DEFAULT_LIMIT
+    _options: Partial<ListOptions> = {},
   ): Promise<OperationReturnType<{ 
     items: Record<string, any>[], 
     hasMore: boolean, 
     nextCursor: string | null 
   }>> 
   {
+    const options = lodash.defaults(_options, {
+      fields: [['updatedAt', 'desc'], ['id', 'asc']],
+      limit: settings.PAGINATION_DEFAULT_LIMIT,
+      includeFields: null,
+      excludeFields: null,
+    }) as ListOptions;
     try {
-      const offsetLimit = limit + 1;
+      options.limit = (
+        typeof options.limit === 'number' && options.limit > 0
+        ? options.limit
+        : settings.PAGINATION_DEFAULT_LIMIT
+      );
+      const offsetLimit = options.limit + 1;
       // Decode cursor
       const cursorData = cursorPagination.decodeCursorWithDefaults(cursor);
-      console.log("Cursor Data", cursorData);
       if (!cursorData.success) {
         return cursorData as { success: false, error: APIError };
       }
@@ -196,7 +265,7 @@ export const crudOperations = new (class CRUDOperations {
       */
       if (
         cursorProvided &&
-        fields.every(([field, _]) => cursorData.data[field] === undefined)
+        options.fields.every(([field, _]) => cursorData.data[field] === undefined)
       ) {
         return {
           success: false,
@@ -205,7 +274,7 @@ export const crudOperations = new (class CRUDOperations {
       }
 
       const fieldColumns: Record<string, any> = {};
-      for (const [field, _] of fields) {
+      for (const [field, _] of options.fields) {
         const column = query._.selectedFields[field];
         if (column === undefined) {
           return {
@@ -217,7 +286,7 @@ export const crudOperations = new (class CRUDOperations {
       }
 
       const orderByItems: op.SQL<any>[] = [];
-      for (const [field, direction] of fields) {
+      for (const [field, direction] of options.fields) {
         orderByItems.push(
           direction === 'asc'
             ? op.asc(sql.raw(`"base_query"."${fieldColumns[field].name}"`))
@@ -231,7 +300,7 @@ export const crudOperations = new (class CRUDOperations {
         * After this part is not necessary to check the cursor fields because
         * the cursor data has already been validated before.
         */
-        for (const [field, direction] of fields) {
+        for (const [field, direction] of options.fields) {
           // Different kinds of data types can be checked in 
           // https://github.com/drizzle-team/drizzle-orm/blob/main/drizzle-seed/tests/pg/allDataTypesTest/pgSchema.ts
           if (["date", "time", "timestamp"].includes(fieldColumns[field].dataType)) {
@@ -279,20 +348,27 @@ export const crudOperations = new (class CRUDOperations {
       }
 
       const lastItem = result[result.length - 1];
-      const nextCursorMap = fields.reduce((acc, [field, _]) => {
+      const nextCursorMap = options.fields.reduce((acc, [field, _]) => {
         acc[field] = lastItem[field];
         return acc;
       }, {} as Record<string, any>);
       const nextCursor = cursorPagination.generateCursor(nextCursorMap);
-
       if (!nextCursor.success) {
         return nextCursor as { success: false, error: APIError };
+      }
+
+      const displayFields = DisplayFields.toDisplayFields(result.slice(0, -1), { 
+        includeFields: options.includeFields,
+        excludeFields: options.excludeFields,
+      });
+      if (!displayFields.success) {
+        return displayFields;
       }
 
       return {
         success: true,
         data: {
-          items: result.slice(0, -1),
+          items: displayFields.data,
           nextCursor: nextCursor.data,
           hasMore: true,
         }
@@ -304,7 +380,6 @@ export const crudOperations = new (class CRUDOperations {
       };
     }
   }
-
 
 })();
 

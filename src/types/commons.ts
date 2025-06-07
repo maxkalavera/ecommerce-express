@@ -10,7 +10,7 @@ export type ReturnMany<
   Instance extends Record<string, any>
 > = {
   items: Instance[];
-  nextCursor: string | null;
+  cursor: string | null;
   hasMore: boolean;
 }
 
@@ -25,19 +25,3 @@ export type LayersReturnType<
     error: APIError,
   }
 );
-
-export type OperationReturnType<
-  Data extends any = Record<string, any>,
-> = (
-  {
-    success: true,
-    data: Data,
-  } | {
-    success: false,
-    error: APIError,
-  }
-);
-
-export type InputData = Record<string, any>;
-
-export type LookupIdentifiers = Record<string, any>;

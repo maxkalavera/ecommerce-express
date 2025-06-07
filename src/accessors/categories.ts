@@ -1,157 +1,159 @@
-import { db, Database } from '@/db';
+
 import * as op from 'drizzle-orm';
-import { Static } from '@sinclair/typebox';
-import lodash from 'lodash';
+import { PgSelectDynamic } from 'drizzle-orm/pg-core';
+import lodash, { identity, orderBy } from 'lodash';
+import { Static, TSchema } from '@sinclair/typebox';
+import { db } from '@/db';
 import { APIError } from '@/utils/errors';
-import { ListCategoriesQueryParameters, CategoryInsert } from '@/typebox/categories';
-import { AccessorReturnType } from "@/accessors/utils/types";
-import { categories } from '@/models/categories';
-import { CoreAccessor } from '@/accessors/common';
-import cursorPagination from '@/accessors/utils/CursorPagination';
-import crudOperations from '@/accessors/utils/CRUD';
-import settings from '@/settings';
+import CoreAccessor from '@/utils/accessors/CoreAccessor';
+import { AccessorReturnType } from "@/types/accessors";
+import { categories, categoriesImages } from '@/models/categories';
+import { validate } from '@/utils/validator';
+import { toDisplayFields } from '@/utils/accessors/displayFields';
+import { getLookups } from '@/utils/accessors/lookups';
+import { 
+  ListCategoriesQueryParameters, 
+  CategoryInsert, 
+  CategoryUpdate,
+  CategoryImageInsert,
+  CategoryImageUpdate,
 
-export const categoriesAccessor = new (class CategoriesAccessor extends CoreAccessor {
-  public excludeColumns: string[] = ['id', 'parentId'];
+} from '@/typebox/categories';
 
-  constructor() {
-    super();
+class CategoriesAccessor extends CoreAccessor {
+  public table = categories;
+  public excludeFields: string[] = ['id', 'parentId'];
+  protected insertSchema = CategoryInsert;
+  protected updateSchema = CategoryUpdate;
+
+  async _create(
+    data: Static<typeof this.insertSchema> & { parentKey: string | null },
+  ) {
+    const coercedData = validate(this.insertSchema, data);
+
+    if (coercedData.parentKey) {
+      const parent = await db
+        .select()
+        .from(this.table)
+        .where(op.eq(this.table.key, coercedData.parentKey))
+        .execute();
+      if (!parent.length) {
+        throw new APIError({ code: 400, message: 'Invalid parent key' });
+      }
+      coercedData.parentId = parent[0].id;
+    }
+
+    const result = await db
+      .insert(this.table)
+      .values(coercedData)
+      .returning();
+
+    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
+
+    return displayFields[0];
   }
 
-  public async create(
-    data: Static<typeof CategoryInsert>,
-  ): Promise<AccessorReturnType<any>> 
-  {
-    const displayColumns = this.getDisplayColumns(categories);
-    if (!displayColumns.success) {
-      return displayColumns;
+  protected async _update(
+    identifiers: Record<string, any>, 
+    data: Record<string, any>
+  ): Promise<any> {
+    const lookups = getLookups(this.table, identifiers);
+    const coercedData = validate(this.insertSchema, data);
+
+    if (coercedData.parentKey) {
+      const parent = await db
+        .select()
+        .from(this.table)
+        .where(op.eq(this.table.key, coercedData.parentKey))
+        .execute();
+      if (!parent.length) {
+        throw new APIError({ code: 400, message: 'Invalid parent key' });
+      }
+      coercedData.parentId = parent[0].id;
     }
 
-    const createResult = await crudOperations.create(categories, data, CategoryInsert, displayColumns.data);
+    const result = await db
+      .update(this.table)
+      .set(coercedData)
+      .where(lookups.all)
+      .returning();
 
-    if (!createResult.success) {
-      return createResult;
-    } else {
-      return {
-        success: true,
-        payload: {
-          data: createResult.data,
-        },
-      };
-    }
+    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
+    return displayFields[0];
   }
 
-  public async read(
-    indentifiers: { id: string }
-  ): Promise<AccessorReturnType<any>> 
-  {
-    const displayColumns = this.getDisplayColumns(categories);
-    if (!displayColumns.success) {
-      return displayColumns;
-    }
-    const readResult = await crudOperations.read(categories, indentifiers, displayColumns.data);
+  protected async _delete(
+    identifiers: Record<string, any>,
+  ): Promise<any> {
+    const lookups = getLookups(this.table, identifiers);
+
+    const result = await db
+      .delete(this.table)
+      .where(lookups.all)
+      .returning();
     
-    if (!readResult.success) {
-      return readResult;
-    } else {
-      return {
-        success: true,
-        payload: {
-          data: readResult.data,
-        },
-      };
-    }
+    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
+    return displayFields[0];
   }
 
-  public async update(
-    indentifiers: { id: string },
-    data: Static<typeof CategoryInsert>,
-  ): Promise<AccessorReturnType<any>>
-  {
-    const displayColumns = this.getDisplayColumns(categories);
-    if (!displayColumns.success) {
-      return displayColumns;
-    }
+  protected async _read(
+    identifiers: Record<string, any>,
+  ): Promise<any> {
+    const lookups = getLookups(this.table, identifiers);
 
-    const updateResult = await crudOperations.update(
-        categories, indentifiers, data, CategoryInsert, displayColumns.data);
+    const result = await db
+      .select()
+      .from(this.table)
+      .where(lookups.all)
+      .execute();
 
-    if (!updateResult.success) {
-      return updateResult;
-    } else {
-      return {
-        success: true,
-        payload: {
-          data: updateResult.data,
-        },
-      };
-    }
+    const displayFields = toDisplayFields(result, { excludeFields: this.excludeFields });
+    return displayFields[0];
   }
 
-  public async delete(
-    indentifiers: { id: string }
-  ): Promise<AccessorReturnType<any>>
-  {
-    const displayColumns = this.getDisplayColumns(categories);
-    if (!displayColumns.success) {
-      return displayColumns;
-    }
-
-    const deleteResult = await crudOperations.delete(
-      categories, indentifiers, displayColumns.data);
-
-    if (!deleteResult.success) {
-      return deleteResult;
-    } else {
-      return {
-        success: true,
-        payload: {
-          data: deleteResult.data,
-        },
-      };
-    }
+  protected _buildBaseQuery(
+    params: Record<string, any> = {},
+  ) {
+    return db
+     .select(this._buildSelectFields())
+     .from(this.table).leftJoin(
+      categoriesImages, op.eq(categoriesImages.categoryId, this.table.id));
   }
 
-  public async list(
-    query: Static<typeof ListCategoriesQueryParameters>
-  ): Promise<AccessorReturnType<any>>
-  {
-    const { cursor, limit, childrenOf }: { 
-      cursor: string, 
-      limit: number, 
-      childrenOf: string | null
-    } = lodash.defaults(query, { 
-      cursor: "", 
-      limit: settings.PAGINATION_DEFAULT_LIMIT, 
-      childrenOf: null 
-    });
-    
-    const displayColumns = this.getDisplayColumns(categories);
-    if (!displayColumns.success) {
-      return displayColumns;
-    }
-
-    const basequery = db.select()
-      .from(categories)
-      .where(
-        op.or(op.isNull(op.sql`${childrenOf}::TEXT`), op.eq(categories.parentKey, childrenOf))
-      );
-
-    const enhacedQuery = await crudOperations.executeWithCursorPagination(
-      basequery, 
-      cursor,
-      [['updatedAt', 'desc'], ['id', 'asc']],
-      limit,
-    );
-    
-    if (!enhacedQuery.success) {
-      return enhacedQuery;
-    } else {
-      return {
-        success: true,
-        payload: enhacedQuery.data as { items: any[], nextCursor: string | null, hasMore: boolean },
-      };
-    }
+  protected _buildSelectFields() {
+    return {
+      id: this.table.id,
+      key: this.table.key,
+      createdAt: this.table.createdAt,
+      updatedAt: this.table.updatedAt,
+      description: this.table.updatedAt,
+      parentKey: this.table.parentKey,
+      image: {
+        id: categoriesImages.id,
+        createdAt: categoriesImages.createdAt,
+        updatedAt: categoriesImages.updatedAt,
+        name: categoriesImages.name,
+        mimetype: categoriesImages.mimetype,
+      },
+    };
   }
 
-})();
+  protected _getEncodeCursorData(row: Record<string, any>) {
+    return {
+      updatedAt: row.updatedAt,
+      id: row.id,
+    };
+  }
+
+};
+
+export const categoriesAccessor = new CategoriesAccessor();
+
+export class CategoriesImagesAccessor extends CoreAccessor {
+  public table = categoriesImages;
+  public excludeFields: string[] = ['id', 'categoryId'];
+  protected insertSchema = CategoryImageInsert;
+  protected updateSchema = CategoryImageUpdate;
+};
+
+export const categoriesImagesAccessor = new CategoriesImagesAccessor();

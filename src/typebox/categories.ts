@@ -1,7 +1,8 @@
 import { Type } from '@sinclair/typebox';
+import { createSelectSchema, createInsertSchema, createUpdateSchema } from 'drizzle-typebox';
 import { ListQueryParamaters } from './commons';
 import { addSchema } from '@/openapi';
-import { categories } from '@/models/categories';
+import { categories, categoriesImages } from '@/models/categories';
 
 /******************************************************************************
  * Types
@@ -10,7 +11,7 @@ import { categories } from '@/models/categories';
 export type CategoryType = typeof categories.$inferSelect;
 
 /******************************************************************************
- * Schemas
+ * Categories Schemas
  *****************************************************************************/
 
 export const ListCategoriesQueryParameters = Type.Composite([
@@ -30,11 +31,20 @@ export const Category = Type.Object({
 addSchema(Category, 'Category');
 
 export const CategoryInsert = Type.Object({
+  key: Type.Optional(Type.String({ format: 'base64url' })),
   name: Type.String(),
   description: Type.Optional(Type.String()),
   parentKey: Type.Optional(Type.String({ format: 'base64url' })),
 });
-addSchema(CategoryInsert, 'CategoryInsert');
+addSchema(Type.Omit(CategoryInsert, ['key']), 'CategoryInsert');
 
 export const CategoryUpdate = Type.Optional(CategoryInsert);
-addSchema(CategoryUpdate, 'CategoryUpdate');
+addSchema(Type.Omit(CategoryUpdate, ['key']), 'CategoryUpdate');
+
+/******************************************************************************
+ * Categories images schemas
+ *****************************************************************************/
+
+export const CategoryImage = createSelectSchema(categoriesImages);
+export const CategoryImageInsert = createInsertSchema(categoriesImages);
+export const CategoryImageUpdate = createUpdateSchema(categoriesImages);
