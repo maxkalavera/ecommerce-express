@@ -1,0 +1,6 @@
+{
+  "name": "nodemon",
+  "exec": "npm run build && node",
+  "watch": ["src", "seeds", "test", "assets", "tsconfig.json"],
+  "ext": "*"
+}

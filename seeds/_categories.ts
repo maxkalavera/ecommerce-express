@@ -1,6 +1,6 @@
 import { categories, categoriesImages } from "@/models/categories";
 import base64url from 'base64url';
-import { resetSerialSequence } from "@/seeds/utils";
+import { resetSerialSequence } from "@seeds/utils";
 
 const categoriesData = [
   /*

@@ -86,6 +86,24 @@ export class CoreAccessor {
     return result[0];
   }
 
+  /**
+   * Validates and executes the creation of a record
+   * 
+   * Source:
+   * ```
+   * protected async _create(
+   *   data: Record<string, any>,
+   * ): Promise<any>
+   * {
+   *   const coercedData = this._validateCreateData(data);
+   *  const result = await this._executeCreate(coercedData);
+   *   return result;
+   * }
+   * ```
+   * 
+   * @param data - The data to create the record with
+   * @returns Promise resolving to the created record
+   */
   protected async _create(
     data: Record<string, any>,
   ): Promise<any>
@@ -137,6 +155,27 @@ export class CoreAccessor {
   return result[0];
   }
 
+  /**
+   * Validates and executes the update of a record
+   * 
+   * Source:
+   * ```
+   * protected async _update(
+   *   identifiers: Record<string, any>,
+   *   data: Record<string, any>,
+   * ): Promise<any>
+   * {
+   *   const lookups = this._get_lookups(identifiers);
+   *   const coercedData = this._validateUpdateData(data);
+   *   const result = await this._executeUpdate(coercedData, lookups);
+   *   return result;
+   * }
+   * ```
+   * 
+   * @param identifiers - The identifiers to find the record to update
+   * @param data - The data to update the record with
+   * @returns Promise resolving to the updated record
+   */
   protected async _update(
     identifiers: Record<string, any>,
     data: Record<string, any>,
@@ -181,6 +220,24 @@ export class CoreAccessor {
     return result[0];
   }
 
+  /**
+   * Validates and executes the deletion of a record
+   * 
+   * Source:
+   * ```
+   * protected async _delete (
+   *   identifiers: Record<string, any>,
+   * ): Promise<any>
+   * {
+   *   const lookups = getLookups(this.table, identifiers);
+   *   const result = await this._executeDelete(lookups);
+   *   return result;
+   * }
+   * ```
+   * 
+   * @param identifiers - The identifiers to find the record to delete
+   * @returns Promise resolving to the deleted record
+   */
   protected async _delete (
     identifiers: Record<string, any>,
   ): Promise<any>
@@ -212,6 +269,29 @@ export class CoreAccessor {
    * Read operations
    ***************************************************************************/
 
+  /**
+   * Validates and executes the reading of a record
+   * 
+   * Source:
+   * ```
+   * protected async _read (
+   *   identifiers: Record<string, any>,
+   * ): Promise<any> 
+   * {
+   *   const lookups = getLookups(this.table, identifiers);
+   *
+   *   const result = await this._buildBaseQuery()
+   *     .$dynamic()
+   *     .where(lookups.all)
+   *     .execute();
+   *
+   *   return result[0];
+   * }
+   * ```
+   * 
+   * @param identifiers - The identifiers to find the record to read
+   * @returns Promise resolving to the read record
+   */
   protected async _read (
     identifiers: Record<string, any>,
   ): Promise<any> 
@@ -262,11 +342,35 @@ export class CoreAccessor {
     return this.table;
   }
 
+  /**
+   * Validates and executes the creation of a record
+   * 
+   * Source:
+   * ```
+   * public async create (
+   *   data: any,
+   * ): Promise<AccessorReturnType<any>> 
+   * {
+   *   try {
+   *     return {
+   *       success: true,
+   *       payload: await this._create(data),
+   *     };
+   *   } catch (error) {
+   *     return {
+   *       success: false,
+   *       error: APIError.fromError(
+   *         error, { code: 500, message: 'Failed to create record'}),
+   *     };
+   *   }
+   * }
+   * ```
+   * 
+   * @param data - The data to create the record with
+   * @returns Promise resolving to an AccessorReturnType containing the created record or error
+   */
   protected async _list (
     queryParams: Record<string, any>,
-    query: 
-      | PgSelectDynamic<any>
-      | undefined = undefined,
   ): Promise<{ 
     items: any[],
     cursor: string | null,
@@ -274,14 +378,10 @@ export class CoreAccessor {
   }> 
   {
     const { cursor, limit } = lodash.defaults(queryParams, { cursor: "", limit: this.paginationLimit });
-
     const decodedCursorArtifacts = this._decodeCursorArtifacts(cursor, limit);
-
     const baseQuery = this._buildBaseQuery();
     const cursorPaginatedQuery = this._withCursorPagination(baseQuery, decodedCursorArtifacts);
-    
     const result = await cursorPaginatedQuery.execute(queryParams);
-
     const encodedCursorArtifacts = this._encodeCursorArtifacts(result, decodedCursorArtifacts);
     return {
       items: result,

@@ -6,6 +6,7 @@ import express from 'express';
 import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
+import compression from 'compression';
 import settings from "@/settings";
 import error from "@/middlewares/error";
 import routes from "@/routes";
@@ -29,12 +30,23 @@ const app = initializeExpressApp({
   },
   setAplicationLevelSettings: (app) => {
     // Set view engine
-    app.set('views', path.resolve('src/assets/views'));
+    app.set('views', path.resolve('assets/views'));
     app.set('view engine', 'ejs');
   },
   setBuiltInMiddlewares: (app) => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
+    app.use(compression());
+    app.use(
+      settings.MEDIA_URL_PREFIX, 
+      express.static(settings.MEDIA_STORAGE_FOLDER, {
+        maxAge: '1y', // Cache for 1 year (CDN-friendly)
+        setHeaders: (res) => {
+          res.set('Cross-Origin-Resource-Policy', 'same-site'); // Prevent hotlinking
+          res.set('Cache-Control', 'public, max-age=86400');    // Cache for 1 day
+        }
+      })
+    );
   },
   setCustomMiddlewares: (app) => {
     app.use(morgan('dev'));
@@ -98,6 +110,7 @@ if (
  *****************************************************************************/
 
 function createRuntimeFolder() {
+  console.log("Settings", settings);
   if (!fs.existsSync(settings.RUNTIME_FOLDER)) {
     fs.mkdirSync(settings.RUNTIME_FOLDER, { recursive: true });
   }

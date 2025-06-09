@@ -1,7 +1,7 @@
 import { Static, Type } from '@sinclair/typebox';
 import { ListCategoriesQueryParameters, CategoryInsert } from '@/typebox/categories';
 import { categoriesAccessor } from '@/accessors/categories';
-import { ServiceReturnType } from './utils/types';
+import { ServiceReturnType } from '@/types/services';
 
 export const categoriesService = new (class {
 

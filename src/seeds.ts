@@ -1,6 +1,10 @@
 import { db } from "@/db";
 import { sql } from 'drizzle-orm';
-import { seedCategories } from "@/seeds/categories";
+import { seedCategories } from "@seeds/categories";
+
+/******************************************************************************
+ * Seeds
+ *****************************************************************************/
 
 await runSeeds(async (tx) => {
    await seedCategories(tx); 

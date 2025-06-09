@@ -1,3 +1,4 @@
+import lodash from 'lodash';
 import dotenvDefaults from 'dotenv-defaults';
 import path from 'node:path';
 
@@ -17,8 +18,8 @@ export type Settings = {
     PASSWORD: string;
   },
   RUNTIME_FOLDER: string;
-  DEV_DATA_FOLDER: string;
-  QUERIES_LOOK_UP_ATTRIBUTE: string;
+  MEDIA_URL_PREFIX: string;
+  MEDIA_STORAGE_FOLDER: string;
   SECRET_KEY: string;
   PAGINATION_DEFAULT_LIMIT: number;
 };
@@ -36,8 +37,8 @@ const initials: Settings = {
   PORT: 3001,
   DB: { URL: "", HOST: "", NAME: "", PORT: 3001, USER: "", PASSWORD: "" },
   RUNTIME_FOLDER: path.resolve(process.cwd(), ".runtime"),
-  DEV_DATA_FOLDER: path.resolve(process.cwd(), ".runtime/data"),
-  QUERIES_LOOK_UP_ATTRIBUTE: "id",
+  MEDIA_URL_PREFIX: "/media",
+  MEDIA_STORAGE_FOLDER: path.resolve(process.cwd(), ".runtime/media/"),
   SECRET_KEY: "",
   PAGINATION_DEFAULT_LIMIT: 20,
 };
@@ -55,11 +56,14 @@ const fromEnvSettings: Partial<Settings> = {
   },
   SECRET_KEY: envs.SECRET_KEY,
   PAGINATION_DEFAULT_LIMIT: safeParseInt(envs.PAGINATION_DEFAULT_LIMIT, initials.PAGINATION_DEFAULT_LIMIT),
+  RUNTIME_FOLDER: envs.RUNTIME_FOLDER,
+  MEDIA_URL_PREFIX: envs.MEDIA_URL_PREFIX,
+  MEDIA_STORAGE_FOLDER: envs.MEDIA_STORAGE_FOLDER,
 };
 
-export default Object.assign(
+export default lodash.defaults(
+  fromEnvSettings,
   initials,
-  fromEnvSettings
 ) as Settings;
 
 /******************************************************************************
