@@ -1,12 +1,12 @@
 import { APIError } from "@/utils/errors";
 
-export type ReturnSingle<
+export type PayloadSingle<
   Instance extends Record<string, any>
 > = {
   data: Instance;
 }
 
-export type ReturnMany<
+export type PayloadMany<
   Instance extends Record<string, any>
 > = {
   items: Instance[];
@@ -15,11 +15,12 @@ export type ReturnMany<
 }
 
 export type LayersReturnType<
-  Instance extends Record<string, any>,
+  Payload extends PayloadSingle<Instance> | PayloadMany<Instance> = PayloadSingle<any> | PayloadMany<any>,
+  Instance extends Record<string, any> = any,
 > = (
   {
     success: true,
-    payload: ReturnSingle<Instance> | ReturnMany<Instance>,
+    payload: Payload,
   } | {
     success: false,
     error: APIError,

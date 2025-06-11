@@ -1,7 +1,7 @@
 import * as op from 'drizzle-orm';
 import lodash from 'lodash';
 import { Table } from 'drizzle-orm';
-import { PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
+import { PgSelectBase, PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
 import { Type, TSchema } from '@sinclair/typebox';
 import { db } from '@/db';
 import settings from '@/settings';
@@ -10,6 +10,7 @@ import { AccessorReturnType } from "@/types/accessors";
 import { validate } from '@/utils/validator';
 import { getLookups, LookupsObject } from '@/utils/accessors/lookups';
 import { buildCursor, decodeCursor } from '@/utils/accessors/cursorPagination';
+import { PayloadSingle, PayloadMany } from '@/types/commons';
 
 /******************************************************************************
  * Types
@@ -26,6 +27,7 @@ type DecodedCursorArtifacts = {
  *****************************************************************************/
 
 export class CoreAccessor {
+  [x: string]: any;
   protected table: PgTableWithColumns<any> = null as any;
   protected excludeFields: string[] = ['id'];
   protected insertSchema: TSchema = null as any;
@@ -42,24 +44,6 @@ export class CoreAccessor {
       ])
       .filter(([key, value]) => key !== null && value !== undefined);
   }
-
-  /*
-  protected _reshapeMutateResult(
-    result: Record<string, any>[]
-  ): Record<string, any>[]
-  {
-    return result;
-  }
-  */
-
-  /*
-  protected _reshapeViewResult(
-    result: Record<string, any>[]
-  ): Record<string, any>[]
-  {
-    return result;
-  }
-  */
 
   protected _get_lookups(
     identifiers: Record<string, any>
@@ -97,7 +81,7 @@ export class CoreAccessor {
    * {
    *   const coercedData = this._validateCreateData(data);
    *  const result = await this._executeCreate(coercedData);
-   *   return result;
+   *   return { data: result };
    * }
    * ```
    * 
@@ -106,16 +90,16 @@ export class CoreAccessor {
    */
   protected async _create(
     data: Record<string, any>,
-  ): Promise<any>
+  ): Promise<PayloadSingle<any>>
   {
     const coercedData = this._validateCreateData(data);
     const result = await this._executeCreate(coercedData);
-    return result;
+    return { data: result };
   }
 
   public async create (
     data: any,
-  ): Promise<AccessorReturnType<any>> 
+  ): Promise<AccessorReturnType<PayloadSingle<any>>> 
   {
     try {
       return {
@@ -168,7 +152,7 @@ export class CoreAccessor {
    *   const lookups = this._get_lookups(identifiers);
    *   const coercedData = this._validateUpdateData(data);
    *   const result = await this._executeUpdate(coercedData, lookups);
-   *   return result;
+   *   return { data: result };
    * }
    * ```
    * 
@@ -179,18 +163,18 @@ export class CoreAccessor {
   protected async _update(
     identifiers: Record<string, any>,
     data: Record<string, any>,
-  ): Promise<any>
+  ): Promise<PayloadSingle<any>>
   {
     const lookups = this._get_lookups(identifiers);
     const coercedData = this._validateUpdateData(data);
     const result = await this._executeUpdate(coercedData, lookups);
-    return result;
+    return { data: result };
   }
 
   public async update (
     identifiers: Record<string, any>,
     data: Record<string, any>,
-  ): Promise<AccessorReturnType<any>> 
+  ): Promise<AccessorReturnType<PayloadSingle<any>>> 
   {
     try {
       return {
@@ -217,6 +201,10 @@ export class CoreAccessor {
       .delete(this.table)
       .where(lookups.all)
       .returning();
+
+    if (result.length === 0) {
+      throw new APIError({ code: 404, message: 'Record not found' });
+    }
     return result[0];
   }
 
@@ -231,7 +219,7 @@ export class CoreAccessor {
    * {
    *   const lookups = getLookups(this.table, identifiers);
    *   const result = await this._executeDelete(lookups);
-   *   return result;
+   *   return { data: result };
    * }
    * ```
    * 
@@ -240,16 +228,16 @@ export class CoreAccessor {
    */
   protected async _delete (
     identifiers: Record<string, any>,
-  ): Promise<any>
+  ): Promise<PayloadSingle<any>>
   {
     const lookups = getLookups(this.table, identifiers);
     const result = await this._executeDelete(lookups);
-    return result;
+    return { data: result };
   }
 
   public async delete (
     identifiers: Record<string, any>,
-  ): Promise<AccessorReturnType<any>> 
+  ): Promise<AccessorReturnType<PayloadSingle<any>>> 
   {
     try {
       return {
@@ -285,7 +273,7 @@ export class CoreAccessor {
    *     .where(lookups.all)
    *     .execute();
    *
-   *   return result[0];
+   *   return { data: result[0] };
    * }
    * ```
    * 
@@ -294,21 +282,21 @@ export class CoreAccessor {
    */
   protected async _read (
     identifiers: Record<string, any>,
-  ): Promise<any> 
+  ): Promise<PayloadSingle<any>> 
   {
     const lookups = getLookups(this.table, identifiers);
 
-    const result = await this._buildBaseQuery()
+    const result: Record<string, any>[] = await this._buildBaseQuery()
       .$dynamic()
       .where(lookups.all)
       .execute();
 
-    return result[0];
+    return { data: result[0] };
   }
 
   public async read (
     identifiers: Record<string, any>,
-  ): Promise<AccessorReturnType<any>> 
+  ): Promise<AccessorReturnType<PayloadSingle<any>>> 
   {
     try {
       return {
@@ -328,7 +316,7 @@ export class CoreAccessor {
    * List operations
    ***************************************************************************/
 
-  protected _buildBaseQuery (
+  protected _buildBaseQuery(
     queryParams: Record<string, any> = {},
   ): PgSelectDynamic<any>
   {
@@ -342,40 +330,9 @@ export class CoreAccessor {
     return this.table;
   }
 
-  /**
-   * Validates and executes the creation of a record
-   * 
-   * Source:
-   * ```
-   * public async create (
-   *   data: any,
-   * ): Promise<AccessorReturnType<any>> 
-   * {
-   *   try {
-   *     return {
-   *       success: true,
-   *       payload: await this._create(data),
-   *     };
-   *   } catch (error) {
-   *     return {
-   *       success: false,
-   *       error: APIError.fromError(
-   *         error, { code: 500, message: 'Failed to create record'}),
-   *     };
-   *   }
-   * }
-   * ```
-   * 
-   * @param data - The data to create the record with
-   * @returns Promise resolving to an AccessorReturnType containing the created record or error
-   */
   protected async _list (
     queryParams: Record<string, any>,
-  ): Promise<{ 
-    items: any[],
-    cursor: string | null,
-    hasMore: boolean,
-  }> 
+  ): Promise<PayloadMany<any>> 
   {
     const { cursor, limit } = lodash.defaults(queryParams, { cursor: "", limit: this.paginationLimit });
     const decodedCursorArtifacts = this._decodeCursorArtifacts(cursor, limit);
@@ -392,7 +349,7 @@ export class CoreAccessor {
 
   public async list (
     queryParams: Record<string, any>,
-  ): Promise<AccessorReturnType<any>> 
+  ): Promise<AccessorReturnType<PayloadMany<any>>> 
   {
     try {
       return {

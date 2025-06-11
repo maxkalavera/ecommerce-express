@@ -15,7 +15,7 @@
     "lint:fix": "npm run lint -- --fix",
     "clean": "rm -rf dist",
     "drizzle": "npx drizzle-kit",
-    "seed:db": "npm run build && node dist/seeds.js",
+    "seed:db": "npm run build && node dist/src/seeds.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

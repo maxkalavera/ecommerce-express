@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import lodash from 'lodash';
 import { createHmac } from 'crypto';
 import urlJoin from 'url-join';
+import { fileTypeFromBuffer } from 'file-type';
 import settings from "@/settings";
 
 /******************************************************************************
@@ -60,7 +61,7 @@ export async function storeFileLocal(
   key: string,
   content: Buffer<ArrayBufferLike>,
   _options: Partial<StoreFileLocalOptions> = {}
-): Promise<{ url: string }>
+): Promise<{ url: string, mimetype: string | null }>
 {
   const options: StoreFileLocalOptions = lodash.defaults(_options, {
     force: false,
@@ -77,9 +78,12 @@ export async function storeFileLocal(
   if (fs.existsSync(filePath) && !options.force) {
     throw new Error(`File ${filePath} already exists`);
   }
+
   fs.writeFileSync(filePath, content);
+  const fileInfo = await fileTypeFromBuffer(content);
   return {
     url: urlJoin(settings.MEDIA_URL_PREFIX, hashedDomain, hashedFilename),
+    mimetype: fileInfo && fileInfo.mime ? fileInfo.mime : null,
   }
 }
 

@@ -81,7 +81,6 @@ function getEnvironmentVariables(): {[key: string]: string} {
 function safeParseInt(value: string, _default: number): number {
   const parsed = parseInt(value);
   if (isNaN(parsed)) {
-    console.error(`Invalid integer value: ${value}`);
     return _default;
   }
   return parsed;

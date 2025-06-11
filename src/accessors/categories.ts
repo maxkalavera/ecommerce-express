@@ -18,6 +18,9 @@ import {
   CategoryImageUpdate,
 
 } from '@/typebox/accessors/categories';
+import { storeImage, retrieveImage, deleteImage, imageExists } from '@/utils/db/images';
+import base64url from '@/utils/base64url';
+import { ImageAccessorComposer } from '@/utils/accessors/ImageAccessorComposer';
 
 
 /*******************************************************************************
@@ -71,8 +74,8 @@ class CategoriesAccessor extends CoreAccessor {
     return result;
   }
 
-  protected _buildBaseQuery(
-    params: Record<string, any> = {},
+  protected _buildBaseQuery (
+    queryParams: Record<string, any> = {},
   ) {
     return db
      .select(this._buildSelectFields())
@@ -108,27 +111,9 @@ export class CategoriesImagesAccessor extends CoreAccessor {
   public excludeFields: string[] = ['id', 'categoryId'];
   protected insertSchema = CategoryImageInsert;
   protected updateSchema = CategoryImageUpdate;
+  private domain = 'categories_images';
+  public images = new ImageAccessorComposer(this, this.domain);
 
-  public async createImage(
-    data: Record<string, any>,
-    image: Buffer,
-  ) {
-
-  }
-
-  public async updateImage(
-    identifiers: Record<string, any>,
-    data: Record<string, any>,
-    image: Buffer,
-  ) {
-    
-  }
-
-  public async deleteImage(
-    identifiers: Record<string, any>,
-  ) {
-       
-  }
 };
 
 export const categoriesImagesAccessor = new CategoriesImagesAccessor();

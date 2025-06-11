@@ -41,8 +41,8 @@ export const categoriesImages = pg.pgTable(
     ...buildCommonColumns(),
     // Table specific columns
     categoryId: pg.integer().notNull().references(() => categories.id),
-    name: pg.varchar({ length: 255 }).notNull(),
-    mimetype: pg.varchar({ length: 255 }).notNull(),
+    url: pg.varchar({ length: 255 }).notNull(),
+    mimetype: pg.varchar({ length: 255 }),
   }
 );
 
