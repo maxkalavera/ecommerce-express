@@ -1,6 +1,6 @@
 import * as pg from "drizzle-orm/pg-core";
 import { sql, relations } from "drizzle-orm";
-import { buildCommonColumns } from "@/models/utils";
+import { buildIdentifierColumns, buildTimestamps,  buildFileColumns, buildFileCheckers } from "@/models/commons";
 import { categories } from "@/models/categories";
 
 /******************************************************************************
@@ -8,24 +8,30 @@ import { categories } from "@/models/categories";
  *****************************************************************************/
 
 export const products = pg.pgTable(
-  "products", 
+  "products",
   {
     // Common columns
-    ...buildCommonColumns(),
+    ...buildIdentifierColumns(),
+    ...buildTimestamps(),
     // Table specific columns
     name: pg.varchar({ length: 255 }).notNull(),
-    price: pg.numeric({ precision: 20, scale: 2 }).notNull(),
     description: pg.text().notNull().default(""),
+    // Flags
     isFavorite: pg.boolean().notNull().default(false),
     isOnCart: pg.boolean().notNull().default(false),
+    // Label
     isLabeled: pg.boolean().notNull().default(false),
     labelContent: pg.varchar({ length: 255 }).notNull().default(""),
     labelColor: pg.varchar({ length: 7 }).notNull().default("#000000"),
+    // specific attributes
+    price: pg.numeric('override_price', { precision: 20, scale: 2 }),
+    quantity: pg.integer().notNull().default(1),
+    color: pg.varchar({ length: 255 }),
+    size: pg.varchar({ length: 255 }),
+    // References
     categoryId: pg.integer().notNull().references(() => categories.id),
   },
   (table) => [
-    pg.check("price_check1", sql`${table.price} > 0`),
-    pg.check("labelColor_check1", sql`${table.labelColor} ~ '^#[0-9a-f]{6}$'`),
   ]
 );
 
@@ -38,23 +44,27 @@ export const productsRelations = relations(
     }),
     cover: one(productImages),
     images: many(productImages),
-    items: many(productItems),
+    //items: many(productItems),
   })
 );
 
 /******************************************************************************
- * Products Model
+ * Products Images
  *****************************************************************************/
 
 export const productImages = pg.pgTable(
   "products_images",
   {
     // Common columns
-    ...buildCommonColumns(),
+    ...buildIdentifierColumns(),
+    ...buildTimestamps(),
     // Table specific columns
     productId: pg.integer().notNull().references(() => products.id),
-    filename: pg.varchar({ length: 255 }).notNull(),
-  }
+    ...buildFileColumns(), 
+  },
+  (table) => [
+    ...buildFileCheckers(table),
+  ]
 );
 
 export const productImagesRelations = relations(
@@ -68,17 +78,66 @@ export const productImagesRelations = relations(
 );
 
 /******************************************************************************
- * Products Model
+ * Related products
  *****************************************************************************/
 
+export const relatedProducts = pg.pgTable(
+  "products_related",
+  {
+    // Common columns
+    ...buildIdentifierColumns(),
+    ...buildTimestamps(),
+    // Table specific columns
+    productId: pg.integer().notNull().references(() => products.id),
+    relatedId: pg.integer().notNull().references(() => products.id),
+  },
+  (table) => [
+    pg.check("related_check1", sql`${table.productId} <> ${table.relatedId}`),
+  ]
+);
+
+export const relatedProductsRelations = relations(
+  relatedProducts,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [relatedProducts.productId],
+      references: [products.id],
+    }),
+    related: one(products, {
+      fields: [relatedProducts.relatedId],
+      references: [products.id],
+    }),
+  })
+);
+
+/******************************************************************************
+ * Products Items
+ *****************************************************************************/
+
+/*
 export const productItems = pg.pgTable(
   "products_items",
   {
     //...commonColumns,
     ...buildCommonColumns(),
-    // Table specific columns
+    // Flags
+    isFavorite: pg.boolean().notNull().default(false),
+    isOnCart: pg.boolean().notNull().default(false),
+    // Label
+    isLabeled: pg.boolean().notNull().default(false),
+    labelContent: pg.varchar({ length: 255 }).notNull().default(""),
+    labelColor: pg.varchar({ length: 7 }).notNull().default("#000000"),
+    // specific attributes
+    price: pg.numeric('override_price', { precision: 20, scale: 2 }),
+    quantity: pg.integer().notNull().default(1),
+    color: pg.varchar({ length: 255 }),
+    size: pg.varchar({ length: 255 }),
+    // References
     productId: pg.integer().notNull().references(() => products.id),
-  }
+  },
+  (table) => [
+    pg.check("price_check1", sql`${table.price} > 0`),
+  ]
 );
 
 export const productItemsRelations = relations(
@@ -90,3 +149,5 @@ export const productItemsRelations = relations(
     }),
   })
 );
+*/
+

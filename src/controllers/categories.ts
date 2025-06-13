@@ -24,6 +24,13 @@ export const categoriesRouter = express.Router();
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/CategoryInsert'
+ *         multipart/form-data:
+ *           schema:
+ *              type: object
+ *                properties:
+ *                  image: 
+ *                    type: string
+ *                    format: binary
  *     responses:
  *       201:
  *         description: Category created successfully

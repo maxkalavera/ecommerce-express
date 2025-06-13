@@ -47,7 +47,7 @@ class CategoriesAccessor extends CoreAccessor {
 
   protected async _create(
     data: Record<string, any>
-  ): Promise<any> {
+  ) {
     const coercedData = this._validateCreateData(data);
 
     if (coercedData.parentKey) {
@@ -55,14 +55,13 @@ class CategoriesAccessor extends CoreAccessor {
     }
 
     const result = await this._executeCreate(coercedData);
-    return result;
+    return { data: result };
   }
 
   protected async _update(
     identifiers: Record<string, any>,
     data: Record<string, any>,
-  ): Promise<any>
-  {
+  ) {
     const lookups = this._get_lookups(identifiers);
     const coercedData = this._validateUpdateData(data);
 
@@ -71,7 +70,7 @@ class CategoriesAccessor extends CoreAccessor {
     }
 
     const result = await this._executeUpdate(coercedData, lookups);
-    return result;
+    return { data: result };
   }
 
   protected _buildBaseQuery (

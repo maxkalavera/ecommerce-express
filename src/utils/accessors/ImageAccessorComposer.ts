@@ -22,7 +22,7 @@ export class ImageAccessorComposer {
   ): Promise<AccessorReturnType> 
   {
     try {
-      const key = base64url.encodeBase64url(crypto.randomUUID());
+      const key = data.key || base64url.encodeBase64url(crypto.randomUUID());
       if (await imageExists(this.domain, key)) {  
         throw new APIError({ code: 400, message: `There is already an image associated with ${key}` });
       }

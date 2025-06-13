@@ -1,7 +1,8 @@
 import * as pg from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
 import { products } from "@/models/products";
-import { buildCommonColumns } from "@/models/utils";
+import { buildIdentifierColumns, buildTimestamps, buildFileColumns, buildFileCheckers } from "@/models/commons";
 import { urlFriendlyUUID } from "@/utils/drizzle-orm/types/urlFriendlyUUID";
 
 /******************************************************************************
@@ -12,7 +13,8 @@ export const categories: pg.PgTableWithColumns<any> = pg.pgTable(
   "categories",
   {
     // Common columns
-    ...buildCommonColumns(),
+    ...buildIdentifierColumns(),
+    ...buildTimestamps(),
     // Table specific columns
     name: pg.varchar({ length: 255 }).notNull(),
     description: pg.text().notNull().default(""),
@@ -38,12 +40,15 @@ export const categoriesImages = pg.pgTable(
   "categories_images",
   {
     // Common columns
-    ...buildCommonColumns(),
+    ...buildIdentifierColumns(),
+    ...buildTimestamps(),
     // Table specific columns
     categoryId: pg.integer().notNull().references(() => categories.id),
-    url: pg.varchar({ length: 255 }).notNull(),
-    mimetype: pg.varchar({ length: 255 }),
-  }
+    ...buildFileColumns(),
+  },
+  (table) => [
+    ...buildFileCheckers(table),
+  ]
 );
 
 export const categoriesImagesRelations = relations(

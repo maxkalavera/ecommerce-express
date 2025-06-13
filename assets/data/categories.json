@@ -1,6 +1,8 @@
 [
   { "key": "076f7ec7-712f-4923-97c8-bb13a9ee3e99", "name": "Men", "description": "Clothes for men", "parentKey": null },
   { "key": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee", "name": "Women", "description": "Clothes for women", "parentKey": null },
+
+  { "key": "5e84927e-0559-4f96-8f45-52622dd0f6d6", "name": "Shirts", "description": "", "parentKey": "076f7ec7-712f-4923-97c8-bb13a9ee3e99" },
   { "key": "5fa1c211-a189-42a9-81c5-d35382578857", "name": "Pants", "description": "", "parentKey": "076f7ec7-712f-4923-97c8-bb13a9ee3e99" },
   { "key": "1e4aad25-7c34-496c-b9fc-7e08896c7713", "name": "Suits and Blazers", "description": "", "parentKey": "076f7ec7-712f-4923-97c8-bb13a9ee3e99" },
   { "key": "6b142ad2-84bd-4333-87b1-0418bf55d22d", "name": "Jackets and Coats", "description": "", "parentKey": "076f7ec7-712f-4923-97c8-bb13a9ee3e99" },
@@ -16,7 +18,8 @@
   { "key": "0a8eee07-ad10-4153-bf1c-06faee43d3f2", "name": "Jackets and Coats", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
   { "key": "8033453a-4981-444d-8ef7-7fe9d02518ef", "name": "Innerwear and Lingerie", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
   { "key": "fb98299b-34f6-4520-bd13-488c5015cf0a", "name": "Nightwear", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
-  { "key": "e8ba64b6-893f-4010-a964-89df911e8113", "name": "Maternity Wear", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" }
+  { "key": "e8ba64b6-893f-4010-a964-89df911e8113", "name": "Maternity Wear", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
+  { "key": "8ba6bd82-b1bc-4bcc-b4e4-d3c41a560342", "name": "Accessories", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" }
 ]
 
 
