@@ -7,6 +7,7 @@ import path from 'node:path';
  *****************************************************************************/
 
 export type Settings = {
+  REQUIRED_SETTINGS: string[],
   ENV: "production" | "development",
   PORT: number;
   DB: {
@@ -18,6 +19,7 @@ export type Settings = {
     PASSWORD: string;
   },
   RUNTIME_FOLDER: string;
+  BASE_URL: string;
   MEDIA_URL_PREFIX: string;
   MEDIA_STORAGE_FOLDER: string;
   SECRET_KEY: string;
@@ -33,10 +35,12 @@ const APP_ENVIRONMENT_PREFIX = "ECOMMERCE_";
 const envs = getEnvironmentVariables();
 
 const initials: Settings = {
+  REQUIRED_SETTINGS: [],
   ENV: "development",
   PORT: 3001,
   DB: { URL: "", HOST: "", NAME: "", PORT: 3001, USER: "", PASSWORD: "" },
   RUNTIME_FOLDER: path.resolve(process.cwd(), ".runtime"),
+  BASE_URL: "",
   MEDIA_URL_PREFIX: "/media",
   MEDIA_STORAGE_FOLDER: path.resolve(process.cwd(), ".runtime/media/"),
   SECRET_KEY: "",
@@ -57,14 +61,19 @@ const fromEnvSettings: Partial<Settings> = {
   SECRET_KEY: envs.SECRET_KEY,
   PAGINATION_DEFAULT_LIMIT: safeParseInt(envs.PAGINATION_DEFAULT_LIMIT, initials.PAGINATION_DEFAULT_LIMIT),
   RUNTIME_FOLDER: envs.RUNTIME_FOLDER,
+  BASE_URL: envs.BASE_URL,
   MEDIA_URL_PREFIX: envs.MEDIA_URL_PREFIX,
   MEDIA_STORAGE_FOLDER: envs.MEDIA_STORAGE_FOLDER,
 };
 
-export default lodash.defaults(
-  fromEnvSettings,
-  initials,
-) as Settings;
+const settings = validateSettings(
+  lodash.defaults(
+    fromEnvSettings,
+    initials,
+  )
+) as Settings
+
+export default settings;
 
 /******************************************************************************
  * Utils
@@ -84,4 +93,14 @@ function safeParseInt(value: string, _default: number): number {
     return _default;
   }
   return parsed;
+}
+
+export function validateSettings(settings: Settings) {
+  settings.REQUIRED_SETTINGS.forEach((setting) => {
+    if (!settings[setting as keyof Settings]) {
+      throw new Error(`Missing required setting: ${setting}`);
+    }
+  });
+
+  return settings;
 }

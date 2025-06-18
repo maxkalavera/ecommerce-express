@@ -1,8 +1,10 @@
+import { getTableName } from 'drizzle-orm';
 import { APIError } from '@/utils/errors';
 import CoreAccessor from '@/utils/accessors/CoreAccessor';
 import { AccessorReturnType } from "@/types/accessors";
 import { storeImage, deleteImage, imageExists } from '@/utils/db/images';
 import base64url from '@/utils/base64url';
+import { buildMediaURL } from '@/utils/urls';
 
 export class ImageAccessorComposer {
   private context: CoreAccessor;
@@ -10,10 +12,10 @@ export class ImageAccessorComposer {
 
   constructor (
     context: CoreAccessor,
-    domain: string,
+    domain: string = '',
   ) {
     this.context = context;
-    this.domain = domain;
+    this.domain = domain || getTableName(context.table);
   }
 
   public async addImage(
@@ -30,7 +32,7 @@ export class ImageAccessorComposer {
       return await this.context.create({
         ...data,
         key: key,
-        url: imageInfo.url,
+        url: buildMediaURL(imageInfo.path),
         mimetype: imageInfo.mimetype,
       });
     } catch (err) {
@@ -49,7 +51,7 @@ export class ImageAccessorComposer {
       const imageInfo = await storeImage(this.domain, key, image, { force: true });
       return await this.context.update(identifiers, {
         key: key,
-        url: imageInfo.url,
+        url: buildMediaURL(imageInfo.path),
         mimetype: imageInfo.mimetype,
       });
     } catch (err) {

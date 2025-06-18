@@ -1,10 +1,31 @@
-import { products, productImages, productItems } from "@/models/products";
-import { categories, categoriesImages } from "@/models/categories";
-
-export { 
+import { users } from "@/models/users";
+import {
   products,
-  productImages,
-  productItems,
+  productsItemsImages,
+  productsItems,
+} from "@/models/products";
+import {
   categories,
   categoriesImages,
+} from "@/models/categories";
+import { 
+  carts,
+  cartsItems
+} from "@/models/carts";
+import { 
+  orders, 
+  ordersItems 
+} from "@/models/orders";
+
+export {
+  users,
+  products,
+  productsItemsImages,
+  productsItems,
+  categories,
+  categoriesImages,
+  carts,
+  cartsItems,
+  orders,
+  ordersItems,
 };

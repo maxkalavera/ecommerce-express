@@ -1,6 +1,7 @@
 import * as pg from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { urlFriendlyUUID } from "@/utils/drizzle-orm/types/urlFriendlyUUID";
+import { toPostgreSQLRegex, URL_REGEX } from "@/utils/regex";
 
 
 /**
@@ -11,10 +12,10 @@ import { urlFriendlyUUID } from "@/utils/drizzle-orm/types/urlFriendlyUUID";
 /*
 export const buildCommonColumns = () => {
   return {
-    id: pg.serial("id").primaryKey().notNull(),
+    id: op.serial("id").primaryKey().notNull(),
     key: urlFriendlyUUID("key").default(sql`gen_random_uuid()`).unique().notNull(),
-    createdAt: pg.timestamp("created_at").notNull().defaultNow(),
-    updatedAt: pg.timestamp("updated_at").notNull().defaultNow(),
+    createdAt: op.timestamp("created_at").notNull().defaultNow(),
+    updatedAt: op.timestamp("updated_at").notNull().defaultNow(),
   };
 };
 */
@@ -42,6 +43,15 @@ export const buildFileColumns = () => {
 
 export const buildFileCheckers = (table: Record<string, any>) => {
   return [
-    pg.check("file_url_check1", sql`${table.url} ~ '^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$'`),
+    pg.check(
+      "file_url_check1",
+      sql`${table.url} ~ ${toPostgreSQLRegex(URL_REGEX)}`),
   ]
+}
+
+export const commonColumns = () => {
+  return {
+    ...buildIdentifierColumns(),
+    ...buildTimestamps(),
+  };
 }

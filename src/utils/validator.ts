@@ -18,6 +18,13 @@ validator.addFormat('base64url', {
   validate: (value) => /^[A-Za-z0-9_-]+$/.test(value),
 });
 
+validator.addFormat('decimal', {
+  type: 'string',
+  validate: (price) => {
+    return /^\d+(\.\d{1,})?$/.test(price) || /^\d+(,\d{1,})?$/.test(price);
+  }
+});
+
 
 /******************************************************************************
  * Util valdation functions

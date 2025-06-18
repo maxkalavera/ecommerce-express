@@ -27,11 +27,21 @@ type DecodedCursorArtifacts = {
  *****************************************************************************/
 
 export class CoreAccessor {
-  [x: string]: any;
-  protected table: PgTableWithColumns<any> = null as any;
-  protected excludeFields: string[] = ['id'];
-  protected insertSchema: TSchema = null as any;
-  protected updateSchema: TSchema = null as any;
+  public table: PgTableWithColumns<any>;
+  protected insertSchema: TSchema;
+  protected updateSchema: TSchema;
+
+  constructor (
+    table: PgTableWithColumns<any>,
+    options: Partial<{
+      insertSchema: TSchema,
+      updateSchema: TSchema
+    }> = {}
+  ) {
+    this.table = table;
+    this.insertSchema = options.insertSchema || Type.Any();
+    this.updateSchema = options.updateSchema || Type.Any();
+  }
 
   protected _getColumnsFromIdentifiers(
     table: Table, 
@@ -56,7 +66,11 @@ export class CoreAccessor {
    * Create operations
    ***************************************************************************/
 
-  protected _validateCreateData(data: Record<string, any>, schema=this.insertSchema) {
+  protected _validateCreateData(
+    data: Record<string, any>,
+    schema=this.insertSchema
+  ): Record<string, any>
+  {
     return validate(schema, data);
   }
 
@@ -122,7 +136,8 @@ export class CoreAccessor {
   protected _validateUpdateData(
     data: Record<string, any>,
     schema=this.updateSchema,
-  ) {
+  ): Record<string, any>
+  {
     return validate(schema, data);
   }
 

@@ -5,7 +5,7 @@ import { categories, categoriesImages } from '@/models/categories';
  * Categories schemas
  *****************************************************************************/
 
-export const CategoryInsert = Type.Object({
+export const CategoriesInsert = Type.Object({
     // Core fields
     id: Type.Optional(Type.Integer()),
     key: Type.Optional(Type.String({ format: 'base64url' })),
@@ -18,13 +18,13 @@ export const CategoryInsert = Type.Object({
     parentKey: Type.Optional(Type.String({ format: 'base64url' })),
 });
 
-export const CategoryUpdate = Type.Partial(CategoryInsert);
+export const CategoriesUpdate = Type.Partial(CategoriesInsert);
 
 /******************************************************************************
  * Categories images schemas
  *****************************************************************************/
 
-export const CategoryImageInsert = Type.Object({
+export const CategoriesImagesInsert = Type.Object({
   // Core fields
   id: Type.Optional(Type.Integer()),
   key: Type.Optional(Type.String({ format: 'base64url' })),
@@ -37,4 +37,4 @@ export const CategoryImageInsert = Type.Object({
   mimetype: Type.Union([Type.String({ maxLength: 255 }), Type.Null()]),
 });
 
-export const CategoryImageUpdate = Type.Partial(CategoryImageInsert);
+export const CategoriesImagesUpdate = Type.Partial(CategoriesImagesInsert);

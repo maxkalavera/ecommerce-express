@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { db } from "@/db";
 import { sql } from 'drizzle-orm';
 import { seedCategories } from "@seeds/categories";

@@ -1,38 +1,24 @@
 import * as pg from "drizzle-orm/pg-core";
 import { sql, relations } from "drizzle-orm";
-import { buildIdentifierColumns, buildTimestamps,  buildFileColumns, buildFileCheckers } from "@/models/commons";
+import { commonColumns,  buildFileColumns, buildTimestamps, buildFileCheckers } from "@/models/commons";
 import { categories } from "@/models/categories";
 
 /******************************************************************************
- * Products Model
+ * Products
  *****************************************************************************/
 
 export const products = pg.pgTable(
   "products",
   {
     // Common columns
-    ...buildIdentifierColumns(),
-    ...buildTimestamps(),
+    ...commonColumns(),
     // Table specific columns
     name: pg.varchar({ length: 255 }).notNull(),
     description: pg.text().notNull().default(""),
-    // Flags
-    isFavorite: pg.boolean().notNull().default(false),
-    isOnCart: pg.boolean().notNull().default(false),
-    // Label
-    isLabeled: pg.boolean().notNull().default(false),
-    labelContent: pg.varchar({ length: 255 }).notNull().default(""),
-    labelColor: pg.varchar({ length: 7 }).notNull().default("#000000"),
-    // specific attributes
-    price: pg.numeric('override_price', { precision: 20, scale: 2 }),
-    quantity: pg.integer().notNull().default(1),
-    color: pg.varchar({ length: 255 }),
-    size: pg.varchar({ length: 255 }),
     // References
-    categoryId: pg.integer().notNull().references(() => categories.id),
+    categoryId: pg.integer().notNull().references(() => categories.id, { onDelete: 'restrict' }),
   },
-  (table) => [
-  ]
+  (table) => []
 );
 
 export const productsRelations = relations(
@@ -42,71 +28,7 @@ export const productsRelations = relations(
       fields: [products.categoryId],
       references: [categories.id],
     }),
-    cover: one(productImages),
-    images: many(productImages),
-    //items: many(productItems),
-  })
-);
-
-/******************************************************************************
- * Products Images
- *****************************************************************************/
-
-export const productImages = pg.pgTable(
-  "products_images",
-  {
-    // Common columns
-    ...buildIdentifierColumns(),
-    ...buildTimestamps(),
-    // Table specific columns
-    productId: pg.integer().notNull().references(() => products.id),
-    ...buildFileColumns(), 
-  },
-  (table) => [
-    ...buildFileCheckers(table),
-  ]
-);
-
-export const productImagesRelations = relations(
-  productImages,
-  ({ one }) => ({
-    product: one(products, {
-      fields: [productImages.productId],
-      references: [products.id],
-    }),
-  })
-);
-
-/******************************************************************************
- * Related products
- *****************************************************************************/
-
-export const relatedProducts = pg.pgTable(
-  "products_related",
-  {
-    // Common columns
-    ...buildIdentifierColumns(),
-    ...buildTimestamps(),
-    // Table specific columns
-    productId: pg.integer().notNull().references(() => products.id),
-    relatedId: pg.integer().notNull().references(() => products.id),
-  },
-  (table) => [
-    pg.check("related_check1", sql`${table.productId} <> ${table.relatedId}`),
-  ]
-);
-
-export const relatedProductsRelations = relations(
-  relatedProducts,
-  ({ one }) => ({
-    product: one(products, {
-      fields: [relatedProducts.productId],
-      references: [products.id],
-    }),
-    related: one(products, {
-      fields: [relatedProducts.relatedId],
-      references: [products.id],
-    }),
+    items: many(productsItems),
   })
 );
 
@@ -114,12 +36,11 @@ export const relatedProductsRelations = relations(
  * Products Items
  *****************************************************************************/
 
-/*
-export const productItems = pg.pgTable(
+export const productsItems = pg.pgTable(
   "products_items",
   {
-    //...commonColumns,
-    ...buildCommonColumns(),
+    // Common columns
+    ...commonColumns(),
     // Flags
     isFavorite: pg.boolean().notNull().default(false),
     isOnCart: pg.boolean().notNull().default(false),
@@ -128,26 +49,57 @@ export const productItems = pg.pgTable(
     labelContent: pg.varchar({ length: 255 }).notNull().default(""),
     labelColor: pg.varchar({ length: 7 }).notNull().default("#000000"),
     // specific attributes
-    price: pg.numeric('override_price', { precision: 20, scale: 2 }),
+    price: pg.numeric('override_price', { precision: 20, scale: 2 }).notNull().default("0.0"),
     quantity: pg.integer().notNull().default(1),
-    color: pg.varchar({ length: 255 }),
-    size: pg.varchar({ length: 255 }),
+    color: pg.varchar({ length: 255 }).notNull().default(""),
+    size: pg.varchar({ length: 255 }).notNull().default(""),
     // References
-    productId: pg.integer().notNull().references(() => products.id),
+    productId: pg.integer().notNull().references(() => products.id, { onDelete: 'cascade' }),
   },
   (table) => [
-    pg.check("price_check1", sql`${table.price} > 0`),
+    pg.check('positive_quantity', sql`${table.quantity} >= 0`),
+    pg.check('positive_price', sql`${table.price} >= 0`),
+    pg.check('label_color_hex', sql`${table.labelColor} ~ '^#[0-9a-fA-F]{6}$'`),
   ]
 );
 
-export const productItemsRelations = relations(
-  productItems,
+export const productsItemsRelations = relations(
+  productsItems,
+  ({ one, many }) => ({
+    product: one(products, {
+      fields: [productsItems.productId],
+      references: [products.id],
+    }),
+    images: many(productsItemsImages),
+  })
+);
+
+/******************************************************************************
+ * Products Items Images
+ *****************************************************************************/
+
+export const productsItemsImages = pg.pgTable(
+  "products_items_images",
+  {
+    // Common columns
+    ...buildTimestamps(),
+    ...buildFileColumns(), 
+    // Table specific columns
+    isCover: pg.boolean().notNull().default(false),
+    // References
+    productItemId: pg.integer('product_item_id').notNull().references(() => productsItems.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    ...buildFileCheckers(table),
+  ]
+);
+
+export const productsItemsImagesRelations = relations(
+  productsItemsImages,
   ({ one }) => ({
     product: one(products, {
-      fields: [productItems.productId],
+      fields: [productsItemsImages.productItemId],
       references: [products.id],
     }),
   })
 );
-*/
-
