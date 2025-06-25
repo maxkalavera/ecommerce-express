@@ -7,6 +7,13 @@ import { Type } from '@sinclair/typebox';
 export const ProductsInsert = Type.Object({
   name: Type.String({ maxLength: 255 }),
   description: Type.String(),
+  price: Type.String({ format: 'decimal' }),
+  color: Type.String({ maxLength: 255 }),
+  colorHex: Type.String({ maxLength: 7 }),
+  // Label
+  isLabeled: Type.Optional(Type.Boolean()),
+  labelContent: Type.Optional(Type.String({ maxLength: 255 })),
+  labelColor: Type.Optional(Type.String({ maxLength: 7 })),
   categoryId: Type.Integer(),
   categoryKey: Type.Optional(Type.String({ format: 'base64url' })),
 });
@@ -20,16 +27,9 @@ export const ProductsUpdate = Type.Partial(ProductsInsert);
 export const ProductsItemsInsert = Type.Object({
   isFavorite: Type.Boolean(),
   isOnCart: Type.Boolean(),
-  // Label
-  isLabeled: Type.Boolean(),
-  labelContent: Type.String({ maxLength: 255 }),
-  labelColor: Type.String({ maxLength: 7 }),
   // specific attributes
-  price: Type.String({ format: 'decimal' }),
   quantity: Type.Integer(),
-  color: Type.String({ maxLength: 255 }),
   size: Type.String({ maxLength: 255 }),
-
   productId: Type.Integer(),
   productKey: Type.Optional(Type.String({ format: 'base64url' })),
 });
@@ -40,11 +40,11 @@ export const ProductsItemsUpdate = Type.Partial(ProductsItemsInsert);
  * Products items images
  *****************************************************************************/
 
-export const ProductsItemsImagesInsert = Type.Object({
-  isCover: Type.Boolean(),
+export const ProductsImagesInsert = Type.Object({
+  productId: Type.Integer(),
   url: Type.String({ maxLength: 255 }),
   mimetype: Type.Union([Type.String({ maxLength: 255 }), Type.Null()]),
-  productId: Type.Integer(),
+  isCover: Type.Optional(Type.Boolean()),
 });
 
-export const ProductsItemsImagesUpdate = Type.Partial(ProductsItemsImagesInsert);
+export const ProductsImagesUpdate = Type.Partial(ProductsImagesInsert);

@@ -1,5 +1,4 @@
 import * as op from 'drizzle-orm';
-import { db } from '@/db';
 import CoreAccessor from '@/utils/accessors/CoreAccessor';
 import { orders, ordersItems } from '@/schema';
 import { 

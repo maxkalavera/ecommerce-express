@@ -1,6 +1,5 @@
 
 import * as op from 'drizzle-orm';
-import { db } from '@/db';
 import CoreAccessor from '@/utils/accessors/CoreAccessor';
 import { categories, categoriesImages } from '@/models/categories';
 import { 
@@ -40,7 +39,7 @@ class CategoriesAccessor extends CoreAccessor {
   protected _buildBaseQuery (
     queryParams: Record<string, any> = {},
   ) {
-    return db
+    return this.db
      .select(this._buildSelectFields())
      .from(this.table).leftJoin(
       categoriesImages, op.eq(categoriesImages.categoryId, this.table.id));

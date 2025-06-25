@@ -1,0 +1,44 @@
+[
+  {
+    "productKey": "7076c2aa-6d78-4c43-94f1-034f5da61006",
+    "isFavorite": false,
+    "isOnCart": false,
+    "quantity": [35, 27, 28, 29, 39, 40, 25, 37, 40],
+    "size": ["4", "5", "6", "7", "8", "9", "10", "11", "12"]
+  },
+  {
+    "productKey": "3ce90e5e-1a3c-4e7f-b76d-e5fc44aa9d87",
+    "isFavorite": false,
+    "isOnCart": false,
+    "quantity": [9, 36, 8, 39, 36, 37, 15],
+    "size": ["XXS", "XS", "S", "M", "L", "XL", "XXL"]
+  },
+  {
+    "productKey": "17a43931-a6ec-42a4-ac88-cd33a4503d25",
+    "isFavorite": false,
+    "isOnCart": false,
+    "quantity": [31, 32, 36, 18, 14, 44, 42, 9, 25, 38, 40],
+    "size": ["6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"]
+  },
+  {
+    "productKey": "b1acc1de-1c41-4146-96df-fb5e4625bca9",
+    "isFavorite": false,
+    "isOnCart": false,
+    "quantity": [17, 5, 50, 50, 46, 10, 48],
+    "size": ["XXS", "XS", "S", "M", "L", "XL", "XXL"]
+  },
+  {
+    "productKey": "3f580ba1-3f82-4c01-bfa0-a5a84d9f4ec6",
+    "isFavorite": false,
+    "isOnCart": false,
+    "quantity": [31, 22, 16, 25, 33, 41, 19],
+    "size": ["XXS", "XS", "S", "M", "L", "XL", "XXL"]
+  },
+  {
+    "productKey": "fa822e13-3cb1-4c0d-a1d1-92188ad0ba09",
+    "isFavorite": false,
+    "isOnCart": false,
+    "quantity": [38, 7, 26, 10, 22, 43, 20],
+    "size": ["XXS", "XS", "S", "M", "L", "XL", "XXL"]
+  }
+]

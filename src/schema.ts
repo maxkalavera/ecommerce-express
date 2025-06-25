@@ -1,7 +1,7 @@
 import { users } from "@/models/users";
 import {
   products,
-  productsItemsImages,
+  productsImages,
   productsItems,
 } from "@/models/products";
 import {
@@ -20,7 +20,7 @@ import {
 export {
   users,
   products,
-  productsItemsImages,
+  productsImages,
   productsItems,
   categories,
   categoriesImages,

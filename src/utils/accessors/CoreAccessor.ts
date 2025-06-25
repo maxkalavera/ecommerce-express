@@ -1,9 +1,10 @@
 import * as op from 'drizzle-orm';
 import lodash from 'lodash';
 import { Table } from 'drizzle-orm';
-import { PgSelectBase, PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
+import { PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
 import { Type, TSchema } from '@sinclair/typebox';
-import { db } from '@/db';
+import { Database } from '@/types/db';
+import { getDatabase } from '@/db';
 import settings from '@/settings';
 import { APIError } from '@/utils/errors';
 import { AccessorReturnType } from "@/types/accessors";
@@ -27,6 +28,7 @@ type DecodedCursorArtifacts = {
  *****************************************************************************/
 
 export class CoreAccessor {
+  protected db: Database;
   public table: PgTableWithColumns<any>;
   protected insertSchema: TSchema;
   protected updateSchema: TSchema;
@@ -36,11 +38,13 @@ export class CoreAccessor {
     options: Partial<{
       insertSchema: TSchema,
       updateSchema: TSchema
+      db: Database
     }> = {}
   ) {
     this.table = table;
     this.insertSchema = options.insertSchema || Type.Any();
     this.updateSchema = options.updateSchema || Type.Any();
+    this.db = options.db || getDatabase();
   }
 
   protected _getColumnsFromIdentifiers(
@@ -77,7 +81,7 @@ export class CoreAccessor {
   protected async _executeCreate(
     data: Record<string, any>
   ): Promise<Record<string, any>> {
-    const result = await db
+    const result = await this.db
       .insert(this.table)
       .values(data)
       .returning();
@@ -145,7 +149,7 @@ export class CoreAccessor {
     data: Record<string, any>,
     lookups: LookupsObject,
   ) {
-    const result = await db
+    const result = await this.db
       .update(this.table)
       .set(data)
       .where(lookups.all)
@@ -212,7 +216,7 @@ export class CoreAccessor {
   protected async _executeDelete (
     lookups: LookupsObject,
   ) {
-    const result = await db
+    const result = await this.db
       .delete(this.table)
       .where(lookups.all)
       .returning();
@@ -335,7 +339,7 @@ export class CoreAccessor {
     queryParams: Record<string, any> = {},
   ): PgSelectDynamic<any>
   {
-    return db
+    return this.db
      .select(this._buildSelectFields())
      .from(this.table);
   }

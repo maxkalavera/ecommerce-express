@@ -8,16 +8,24 @@ import path from 'node:path';
 
 export type Settings = {
   REQUIRED_SETTINGS: string[],
-  ENV: "production" | "development",
+  ENV: "production" | "development"| "testing" | "staging",
   PORT: number;
-  DB: {
-    URL: string;
+  DATABASE: {
     HOST: string;
     NAME: string;
     PORT: number;
     USER: string;
     PASSWORD: string;
   },
+  //DATABASE_URL: string;
+  TESTING_DATABASE: {
+    HOST: string;
+    NAME: string;
+    PORT: number;
+    USER: string;
+    PASSWORD: string;
+  },
+  //TESTING_DATABASE_URL: string;
   RUNTIME_FOLDER: string;
   BASE_URL: string;
   MEDIA_URL_PREFIX: string;
@@ -38,7 +46,8 @@ const initials: Settings = {
   REQUIRED_SETTINGS: [],
   ENV: "development",
   PORT: 3001,
-  DB: { URL: "", HOST: "", NAME: "", PORT: 3001, USER: "", PASSWORD: "" },
+  DATABASE: { HOST: "", NAME: "", PORT: 3001, USER: "", PASSWORD: "" },
+  TESTING_DATABASE: { HOST: "", NAME: "", PORT: 3001, USER: "", PASSWORD: "" },
   RUNTIME_FOLDER: path.resolve(process.cwd(), ".runtime"),
   BASE_URL: "",
   MEDIA_URL_PREFIX: "/media",
@@ -50,13 +59,19 @@ const initials: Settings = {
 const fromEnvSettings: Partial<Settings> = {
   ENV: envs.ENV as Settings['ENV'],
   PORT: safeParseInt(envs.PORT, initials.PORT),
-  DB: {
-    URL: `postgresql://${envs.POSTGRES_USER}:${envs.POSTGRES_PASSWORD}@${envs.POSTGRES_HOST}:${envs.POSTGRES_PORT}/${envs.POSTGRES_DB}`,
+  DATABASE: {
     HOST: envs.POSTGRES_HOST,
     NAME: envs.POSTGRES_DB,
-    PORT: safeParseInt(envs.POSTGRES_PORT, initials.DB.PORT),
+    PORT: safeParseInt(envs.POSTGRES_PORT, initials.DATABASE.PORT),
     USER: envs.POSTGRES_USER,
     PASSWORD: envs.POSTGRES_PASSWORD,
+  },
+  TESTING_DATABASE: {
+    HOST: envs.POSTGRES_TEST_HOST,
+    NAME: envs.POSTGRES_TEST_DB,
+    PORT: safeParseInt(envs.POSTGRES_TEST_PORT, initials.DATABASE.PORT),
+    USER: envs.POSTGRES_TEST_USER,
+    PASSWORD: envs.POSTGRES_TEST_PASSWORD,
   },
   SECRET_KEY: envs.SECRET_KEY,
   PAGINATION_DEFAULT_LIMIT: safeParseInt(envs.PAGINATION_DEFAULT_LIMIT, initials.PAGINATION_DEFAULT_LIMIT),

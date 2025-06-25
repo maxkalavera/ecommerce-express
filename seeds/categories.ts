@@ -1,11 +1,10 @@
-import fs from 'node:fs/promises';
-import fg from 'fast-glob';
 import base64url from 'base64url';
 import { categoriesAccessor, categoriesImagesAccessor } from '@/accessors/categories';
-import categoriesJSON from '@assets/data/categories.json' with { type: 'json' };
+import categoriesJson from '@assets/fixtures/categories.json' with { type: 'json' };
+import { getFiles } from '@/utils/seeds';
 
 export async function seedCategories(tx: any) {
-  for (const row of categoriesJSON) {
+  for (const row of categoriesJson) {
     const categoryData = {
       ...row,
       key: base64url.encode(row.key),
@@ -17,17 +16,12 @@ export async function seedCategories(tx: any) {
       throw result.error;
     }
 
-    const images = await fg([`assets/images/categories/${row.key}.{jpg,png}`]);
+    const images = await getFiles('categories', row.key, ['jpg', 'png']);
     if (images.length > 0) {
-      const imageBuffer = await fs.readFile(images[0]);
       categoriesImagesAccessor.images.addImage(
         { categoryId: result.payload.data.id }, 
-        imageBuffer,
+        images[0],
       );
     }
   }
-}
-
-export async function seedCategoriesImages(tx: any) {
-
 }

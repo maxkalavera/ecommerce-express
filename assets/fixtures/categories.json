@@ -10,6 +10,7 @@
   { "key": "95b9174d-cea2-41b7-85e3-77ac8d823e32", "name": "Activewear", "description": "", "parentKey": "076f7ec7-712f-4923-97c8-bb13a9ee3e99" },
   { "key": "0bc6879e-46eb-4e11-bcda-a9c9d890e580", "name": "Innerwear and Undergarments", "description": "", "parentKey": "076f7ec7-712f-4923-97c8-bb13a9ee3e99" },
   { "key": "90237cc9-d86f-44e8-8987-5462b899f86d", "name": "Accessories", "description": "", "parentKey": "076f7ec7-712f-4923-97c8-bb13a9ee3e99" },
+  { "key": "85f46940-016c-4e70-a7de-111572a34d64", "name": "Footwear", "description": "", "parentKey": "076f7ec7-712f-4923-97c8-bb13a9ee3e99" },
 
   { "key": "c6a5a103-98c9-43f2-9c4e-fb78f53e58b4", "name": "Tops", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
   { "key": "b4886eb5-795a-419b-bd4b-f8bb991ef5ce", "name": "Dresses", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
@@ -19,6 +20,8 @@
   { "key": "8033453a-4981-444d-8ef7-7fe9d02518ef", "name": "Innerwear and Lingerie", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
   { "key": "fb98299b-34f6-4520-bd13-488c5015cf0a", "name": "Nightwear", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
   { "key": "e8ba64b6-893f-4010-a964-89df911e8113", "name": "Maternity Wear", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
+  { "key": "49d2a9c4-5e09-457d-abc2-816fbe17548e", "name": "Footwear", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" },
+  
   { "key": "8ba6bd82-b1bc-4bcc-b4e4-d3c41a560342", "name": "Accessories", "description": "", "parentKey": "89c8ced1-7597-4f5e-831e-3a809a3cc2ee" }
 ]
 

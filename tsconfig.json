@@ -22,7 +22,7 @@
     "src/**/*",
     "test/**/*",
     "assets/**/*",
-    "seeds/**/*",
+    "seeds/**/*"
   ],
   "exclude": ["node_modules"],
   "tsc-alias": {

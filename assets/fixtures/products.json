@@ -1,0 +1,56 @@
+[
+  { 
+    "key": "7076c2aa-6d78-4c43-94f1-034f5da61006",
+    "categoryKey": "49d2a9c4-5e09-457d-abc2-816fbe17548e",
+    "name": "Crimson Elegance – Women's Classic Red Heels",
+    "description": "Step into sophistication with our Crimson Elegance women’s heels. Crafted from premium faux leather, these stunning red pumps feature a sleek pointed toe, a comfortable 3-inch heel, and a cushioned insole for all-day wear. Perfect for formal events, date nights, or adding a bold pop of color to your office attire. Available in sizes 5–11.",
+    "color": "Red",
+    "colorHex": "#FF0000",
+    "price": "00.00"
+  },
+  { 
+    "key": "3ce90e5e-1a3c-4e7f-b76d-e5fc44aa9d87",
+    "categoryKey": "26b7c1ef-da06-4020-b863-d87321ee3ed0",
+    "name": "Pure Motion – Women's White Athletic Outfit Set",
+    "description": "Stay stylish and active with the Pure Motion women’s sport outfit. This breathable, moisture-wicking set includes a fitted white cropped hoodie and high-waisted leggings, designed for yoga, running, or gym workouts. The lightweight fabric offers UV protection and four-way stretch for maximum mobility. Machine washable and squat-proof.",
+    "color": "White",
+    "colorHex": "#FFFFFF",
+    "price": "00.00"
+  },
+  { 
+    "key": "17a43931-a6ec-42a4-ac88-cd33a4503d25",
+    "categoryKey": "85f46940-016c-4e70-a7de-111572a34d64",
+    "name": "Urban Stride – Men's Casual Sneakers",
+    "description": "The Urban Stride sneakers blend comfort and streetwear style. Made with a cushioned memory foam insole, durable rubber sole, and breathable knit upper, these shoes are ideal for everyday wear. The minimalist design pairs well with jeans, chinos, or joggers. Available in black, gray, and navy.",
+    "color": "White",
+    "colorHex": "#FFFFFF",
+    "price": "00.00"
+  },
+  { 
+    "key": "b1acc1de-1c41-4146-96df-fb5e4625bca9",
+    "categoryKey": "95b9174d-cea2-41b7-85e3-77ac8d823e32",
+    "name": "ActiveFlex – Men's Performance Sport Vest",
+    "description": "Train harder and stay cool in the ActiveFlex men’s sport vest. Designed with quick-dry polyester mesh, this sleeveless top offers superior ventilation and freedom of movement. The racerback design enhances mobility, while the lightweight fabric prevents chafing during workouts. Ideal for running, weightlifting, or outdoor sports.",
+    "color": "Black",
+    "colorHex": "#000000",
+    "price": "00.00"
+  },
+  { 
+    "key": "3f580ba1-3f82-4c01-bfa0-a5a84d9f4ec6",
+    "categoryKey": "c6a5a103-98c9-43f2-9c4e-fb78f53e58b4",
+    "name": "Forest Charm – Women's Relaxed Green Blouse",
+    "description": "Effortlessly chic, the Forest Charm blouse is a must-have for casual outings. Made from soft, sustainable viscose, this loose-fit green top features a V-neck, button-down front, and rolled-up sleeves. Perfect for layering over jeans or pairing with a skirt for a boho-inspired look.",
+    "color": "Green",
+    "colorHex": "#008000",
+    "price": "00.00"
+  },
+  { 
+    "key": "fa822e13-3cb1-4c0d-a1d1-92188ad0ba09",
+    "categoryKey": "364c21c7-4b81-4c9e-acdb-ec6815f63ed5",
+    "name": "Shoreline Breeze – Men's Quick-Dry Beach Shorts",
+    "description": "Hit the beach or pool in style with Shoreline Breeze men’s shorts. Made from quick-dry, stretchable fabric, these lightweight shorts feature an elastic waistband, secure zip pockets, and UPF 50+ sun protection. Perfect for swimming, lounging, or summer adventures. Available in navy, black, and tropical prints.",
+    "color": "White",
+    "colorHex": "#FFFFFF",
+    "price": "00.00"
+  }
+]

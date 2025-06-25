@@ -1,5 +1,4 @@
 import * as op from 'drizzle-orm';
-import { db } from '@/db';
 import CoreAccessor from '@/utils/accessors/CoreAccessor';
 import { carts, cartsItems } from '@/schema';
 import {
@@ -23,6 +22,7 @@ export class CartsAccessor extends CoreAccessor {
     );
   }
 }
+export const cartsAccessor = new CartsAccessor();
 
 /******************************************************************************
  * Carts items
@@ -39,3 +39,4 @@ export class CartsItemsAccessor extends CoreAccessor {
     );
   }
 }
+export const cartsItemsAccessor = new CartsItemsAccessor();

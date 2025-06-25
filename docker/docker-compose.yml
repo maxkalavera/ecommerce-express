@@ -1,7 +1,7 @@
 
 
 services:
-  postgres:
+  db:
     container_name: ecommerce-db
     image: postgres:15.13
     environment:
@@ -9,10 +9,24 @@ services:
       POSTGRES_PASSWORD: ${ECOMMERCE_POSTGRES_PASSWORD}
       POSTGRES_DB: ${ECOMMERCE_POSTGRES_DB}
     ports:
-      - "${ECOMMERCE_POSTGRES_PORT}:${ECOMMERCE_POSTGRES_PORT}"
+      - "${ECOMMERCE_POSTGRES_PORT}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - db_data:/var/lib/postgresql/data/
+
+  db-test:
+    container_name: ecommerce-test-db
+    image: postgres:15.13
+    environment:
+      POSTGRES_USER: ${ECOMMERCE_POSTGRES_TEST_USER}
+      POSTGRES_PASSWORD: ${ECOMMERCE_POSTGRES_TEST_PASSWORD}
+      POSTGRES_DB: ${ECOMMERCE_POSTGRES_TEST_DB}
+    ports:
+      - "${ECOMMERCE_POSTGRES_TEST_PORT}:5432"
+    volumes:
+      - db_test_data:/var/lib/postgresql/data/
 
 volumes:
-  postgres_data:
+  db_data:
     name: "ecommerce-db-data"
+  db_test_data:
+    name: "ecommerce-db-test-data"

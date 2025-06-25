@@ -1,12 +1,11 @@
 import * as op from 'drizzle-orm';
-import { db } from '@/db';
 import CoreAccessor from '@/utils/accessors/CoreAccessor';
-import { products, productsItems, productsItemsImages } from '@/models/products';
+import { products, productsItems, productsImages } from '@/models/products';
 import { ImageAccessorComposer } from '@/utils/accessors/ImageAccessorComposer';
 import {
   ProductsInsert, ProductsUpdate, 
   ProductsItemsInsert, ProductsItemsUpdate,
-  ProductsItemsImagesInsert, ProductsItemsImagesUpdate
+  ProductsImagesInsert, ProductsImagesUpdate
 } from "@/typebox/accessors/products";
 
 
@@ -48,18 +47,18 @@ export const productsItemsAccessor = new ProductsItemsAccessor();
  * Products items images
  *****************************************************************************/
 
-export class ProductsItemsImagesAccessor extends CoreAccessor {
+export class ProductsImagesAccessor extends CoreAccessor {
   public images = new ImageAccessorComposer(this);
 
   constructor () {
     super(
-      productsItemsImages,
+      productsImages,
       {
-        insertSchema: ProductsItemsImagesInsert,
-        updateSchema: ProductsItemsImagesUpdate,
+        insertSchema: ProductsImagesInsert,
+        updateSchema: ProductsImagesUpdate,
       }
     );
   }
 
 }
-export const productsItemsImagesAccessor = new ProductsItemsImagesAccessor();
+export const productsImagesAccessor = new ProductsImagesAccessor();
