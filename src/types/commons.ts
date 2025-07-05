@@ -4,7 +4,7 @@ export type PayloadSingle<
   Instance extends Record<string, any>
 > = {
   data: Instance;
-}
+};
 
 export type PayloadMany<
   Instance extends Record<string, any>
@@ -12,7 +12,7 @@ export type PayloadMany<
   items: Instance[];
   cursor: string | null;
   hasMore: boolean;
-}
+};
 
 export type LayersReturnType<
   Payload extends PayloadSingle<Instance> | PayloadMany<Instance> = PayloadSingle<any> | PayloadMany<any>,
@@ -26,3 +26,9 @@ export type LayersReturnType<
     error: APIError,
   }
 );
+
+export type RequestData = {
+  params: Record<string, any>,  // URL Params
+  query: Record<string, any>,  // Query params
+  body: Record<string, any>,  // Body params
+};

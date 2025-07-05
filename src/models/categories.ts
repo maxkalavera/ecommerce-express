@@ -26,7 +26,7 @@ export const categories: pg.PgTableWithColumns<any> = pg.pgTable(
 export const categoriesRelations = relations(
   categories,
   ({ one, many }) => ({
-    display: one(categories),
+    display: one(categoriesImages),
     products: many(products),
   })
 );

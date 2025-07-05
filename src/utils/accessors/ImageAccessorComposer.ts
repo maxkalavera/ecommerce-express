@@ -1,7 +1,7 @@
 import { getTableName } from 'drizzle-orm';
 import { APIError } from '@/utils/errors';
+import { LayersReturnType } from '@/types/layers';
 import CoreAccessor from '@/utils/accessors/CoreAccessor';
-import { AccessorReturnType } from "@/types/accessors";
 import { storeImage, deleteImage, imageExists } from '@/utils/db/images';
 import base64url from '@/utils/base64url';
 import { buildMediaURL } from '@/utils/urls';
@@ -21,7 +21,7 @@ export class ImageAccessorComposer {
   public async addImage(
     data: Record<string, any>,
     image: Buffer,
-  ): Promise<AccessorReturnType> 
+  ): Promise<LayersReturnType> 
   {
     try {
       const key = data.key || base64url.encodeBase64url(crypto.randomUUID());
@@ -44,7 +44,7 @@ export class ImageAccessorComposer {
   public async updateImage(
     identifiers: Record<string, any>,
     image: Buffer,
-  ): Promise<AccessorReturnType>  
+  ): Promise<LayersReturnType>  
   {
     try {
       const key = base64url.encodeBase64url(crypto.randomUUID());
@@ -61,16 +61,13 @@ export class ImageAccessorComposer {
 
   public async deleteImage(
     identifiers: Record<string, any>,
-  ): Promise<AccessorReturnType>  
+  ): Promise<LayersReturnType>  
   {
     try {
       const result = await this.context.delete(identifiers);
-      if (!result.success) {
-        return result;
-      }
-
-      console.log(result.payload)
-      await deleteImage(this.domain, result.payload.data.key);
+      await result.onSuccess(async (payload) => {
+        await deleteImage(this.domain, payload.data.key);
+      });
       return result;
     } catch (err) {
       throw APIError.fromError(err, { code: 500, message: 'Failed to delete image in database' });

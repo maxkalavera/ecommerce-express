@@ -110,7 +110,6 @@ if (
  *****************************************************************************/
 
 function createRuntimeFolder() {
-  console.log("Settings", settings);
   if (!fs.existsSync(settings.RUNTIME_FOLDER)) {
     fs.mkdirSync(settings.RUNTIME_FOLDER, { recursive: true });
   }

@@ -9,15 +9,15 @@ import lodash from 'lodash';
 
 export type APIErrorParameters = {
   message: string;
-  details: Record<string, string[]>;
-  code: number;
+  details?: Record<string, string[]>;
+  code?: number;
 }
 
 /******************************************************************************
  * Errors
  *****************************************************************************/
 
-const APIErrorParamsDefaults: APIErrorParameters = {
+const APIErrorParamsDefaults: Required<APIErrorParameters> = {
   message: "Internal server error",
   details: {},
   code: 500,
@@ -31,26 +31,26 @@ export class APIError extends Error {
 
   static fromError (
     error: Error | any | unknown, 
-    _params: Partial<APIErrorParameters> = {}
+    params: APIErrorParameters
   ) {
     console.log(error);
     if (error instanceof APIError) {
       return error;
     }
-    return new APIError(_params);
+    return new APIError(params);
   }
 
   static overrideError (
     error: Error | any | unknown, 
-    _params: Partial<APIErrorParameters> = {}
+    _params: APIErrorParameters
   ) {
     console.log(error);
     return new APIError(_params);
   }
 
-  constructor (_params: Partial<APIErrorParameters> = {}) {
+  constructor (_params: APIErrorParameters) {
     super();
-    const params = lodash.defaultsDeep(_params, APIErrorParamsDefaults) as APIErrorParameters;
+    const params = lodash.defaultsDeep(_params, APIErrorParamsDefaults) as Required<APIErrorParameters>;
 
     this.statusCode = params.code;
     this.name = http.STATUS_CODES[params.code] || "Unknown Error";

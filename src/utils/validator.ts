@@ -9,6 +9,7 @@ import { APIError } from "@/utils/errors";
  *****************************************************************************/
 
 export const validator = addFormats(new Ajv({
+  strict: true,
   allErrors: true,
   coerceTypes: true,
 }));

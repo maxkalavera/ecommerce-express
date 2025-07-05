@@ -39,7 +39,7 @@ export function buildCursor (
     const cursor = base64url.encodeBase64urlFromBuffer(Buffer.concat([iv, encrypted]));
     return cursor
   } catch (error) {
-    throw APIError.fromError({ code: 400, message: 'Could not generate pagination cursor'});    
+    throw APIError.fromError(error,{ code: 400, message: 'Could not generate pagination cursor'});    
   }
 }
 
@@ -70,6 +70,6 @@ export function decodeCursor (
     // Deserialize back to object
     return _deserializeObject(decrypted);
   } catch (error) {
-    throw APIError.fromError({ code: 400, message: 'Invalid cursor'}); 
+    throw APIError.fromError(error, { code: 400, message: 'Invalid cursor'}); 
   }
 }

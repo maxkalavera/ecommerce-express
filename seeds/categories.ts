@@ -12,16 +12,14 @@ export async function seedCategories(tx: any) {
     };
 
     const result = await categoriesAccessor.create(categoryData);
-    if (!result.success) {
-      throw result.error;
-    }
-
-    const images = await getFiles('categories', row.key, ['jpg', 'png']);
-    if (images.length > 0) {
-      categoriesImagesAccessor.images.addImage(
-        { categoryId: result.payload.data.id }, 
-        images[0],
-      );
-    }
+    await result.onSuccess(async (payload) => {
+      const images = await getFiles('categories', row.key, ['jpg', 'png']);
+      if (images.length > 0) {
+        categoriesImagesAccessor.images.addImage(
+          { categoryId: payload.data.id }, 
+          images[0],
+        );
+      }
+    });
   }
 }

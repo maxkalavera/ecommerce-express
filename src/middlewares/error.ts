@@ -13,7 +13,7 @@ export default function error (
   next: NextFunction
 ): void 
 {
-  const apiError = err !instanceof APIError ? err : APIError.fromError(err);
+  const apiError = err !instanceof APIError ? err : APIError.fromError(err, { message: 'Internal server error' });
   const acceptedTypes = req.accepts(['json', 'html']);
 
   //console.log("----------------------------------------------------------------------");

@@ -1,8 +1,6 @@
 import express from 'express';
 import { categoriesService } from '@/services/categories';
-import { ListCategoriesQueryParameters } from '@/typebox/categories';
-import { validate } from '@/utils/validator';
-// import validators from '@/controllers/utils/validators';
+
 
 export const categoriesRouter = express.Router();
 
@@ -41,47 +39,13 @@ export const categoriesRouter = express.Router();
  */
 
 categoriesRouter.post('/', async (req, res, next) => {
+  /*
   const result = await categoriesService.create(req.body);
   if (!result.success) {
     return next(result.error);
   }
   res.json(result.payload);
-});
-
-/******************************************************************************
- * Read category
- *****************************************************************************/
-
-/**
- * @openapi
- * /categories/{id}:
- *   get:
- *     summary: Get category by ID
- *     description: Retrieves a single category by its ID
- *     tags:
- *       - Categories
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Category ID
- *     responses:
- *       200:
- *         description: Category retrieved successfully
- *       404:
- *         description: Category not found
- *       500:
- *         description: Internal server error
- */
-
-categoriesRouter.get('/:id', async (req, res, next) => {
-  const result = await categoriesService.read({ id: req.params.id });
-  if (!result.success) {
-    return next(result.error);
-  }
-  res.json(result.payload);
+  */
 });
 
 /******************************************************************************
@@ -121,15 +85,17 @@ categoriesRouter.get('/:id', async (req, res, next) => {
  */
 
 categoriesRouter.put('/:id', async (req, res, next) => {
+  /*
   const result = await categoriesService.update({ id: req.params.id }, req.body);
   if (!result.success) {
     return next(result.error);
   }
   res.json(result.payload);
+  */
 });
 
 /******************************************************************************
- * Update category
+ * Delete category
  *****************************************************************************/
 
 /**
@@ -157,11 +123,54 @@ categoriesRouter.put('/:id', async (req, res, next) => {
  */
 
 categoriesRouter.delete('/:id', async (req, res, next) => {
+  /*
   const result = await categoriesService.delete({ id: req.params.id });
   if (!result.success) {
     return next(result.error);
   }
   res.json(result.payload);
+  */
+});
+
+/******************************************************************************
+ * Read category
+ *****************************************************************************/
+
+/**
+ * @openapi
+ * /categories/{id}:
+ *   get:
+ *     summary: Get category by ID
+ *     description: Retrieves a single category by its ID
+ *     tags:
+ *       - Categories
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Category ID
+ *     responses:
+ *       200:
+ *         description: Category retrieved successfully
+ *       404:
+ *         description: Category not found
+ *       500:
+ *         description: Internal server error
+ */
+
+categoriesRouter.get('/:id', async (req, res, next) => {
+  const result = await categoriesService.read({ 
+    params: req.query,
+    query: req.query,
+    body: req.body,
+  });
+  if (!result.isSuccess()) {
+    return next(result.getError());
+  }
+
+  res.status(200).json(result.getPayload());
 });
 
 /******************************************************************************
@@ -204,12 +213,14 @@ categoriesRouter.delete('/:id', async (req, res, next) => {
  *         description: Internal server error
  */
 categoriesRouter.get('/', async (req, res, next) => {
-  const coercedQueryParams = validate(ListCategoriesQueryParameters, req.query, );
-  
-  const result = await categoriesService.list(coercedQueryParams);
-  if (!result.success) {
-    return next(result.error);
+  const result = await categoriesService.list({ 
+    params: req.query,
+    query: req.query,
+    body: req.body,
+  });
+  if (!result.isSuccess()) {
+    return next(result.getError());
   }
 
-  res.json(result.payload);
+  res.status(200).json(result.getPayload());
 });

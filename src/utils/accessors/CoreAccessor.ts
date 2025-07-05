@@ -1,17 +1,18 @@
 import * as op from 'drizzle-orm';
-import lodash from 'lodash';
 import { Table } from 'drizzle-orm';
 import { PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
-import { Type, TSchema } from '@sinclair/typebox';
+import { Type, TSchema, Static } from '@sinclair/typebox';
+import { LayersCore } from '@/utils/layers/LayersCore'; 
+import { PayloadSingle, PayloadMany, LayersReturnType } from '@/types/layers'
 import { Database } from '@/types/db';
 import { getDatabase } from '@/db';
 import settings from '@/settings';
 import { APIError } from '@/utils/errors';
-import { AccessorReturnType } from "@/types/accessors";
 import { validate } from '@/utils/validator';
 import { getLookups, LookupsObject } from '@/utils/accessors/lookups';
 import { buildCursor, decodeCursor } from '@/utils/accessors/cursorPagination';
-import { PayloadSingle, PayloadMany } from '@/types/commons';
+import { BaseKeysSchema, BaseQueryParamsSchema } from '@/typebox/accessors/commons'
+
 
 /******************************************************************************
  * Types
@@ -27,31 +28,45 @@ type DecodedCursorArtifacts = {
  * CoreAccessor
  *****************************************************************************/
 
-export class CoreAccessor {
+export class CoreAccessor extends LayersCore {
   protected db: Database;
   public table: PgTableWithColumns<any>;
   protected insertSchema: TSchema;
   protected updateSchema: TSchema;
+  protected keysSchema: TSchema;
+  protected queryParamsSchema: TSchema;
 
   constructor (
     table: PgTableWithColumns<any>,
     options: Partial<{
       insertSchema: TSchema,
-      updateSchema: TSchema
+      updateSchema: TSchema,
+      keysSchema: TSchema,
+      queryParamsSchema: TSchema,
       db: Database
     }> = {}
   ) {
+    super();
     this.table = table;
-    this.insertSchema = options.insertSchema || Type.Any();
-    this.updateSchema = options.updateSchema || Type.Any();
+    this.insertSchema = options.insertSchema || Type.Record(Type.String(), Type.Any());
+    this.updateSchema = options.updateSchema || Type.Record(Type.String(), Type.Any());
+    this.keysSchema = options.keysSchema || BaseKeysSchema;
+    this.queryParamsSchema = options.queryParamsSchema || BaseQueryParamsSchema;
     this.db = options.db || getDatabase();
   }
 
-  protected _getColumnsFromIdentifiers(
+  protected _validateSchema(schema: TSchema, data: Record<string, any>) {
+    return validate({
+      ...schema,
+      additionalProperties: false,
+    }, data);
+  }
+
+  protected _getColumnsFromkeys(
     table: Table, 
-    identifiers: Record<string, any>,
+    keys: Record<string, any>,
   ) {
-    return Object.entries(identifiers)
+    return Object.entries(keys)
       .map(([key, value]) => [
         (key in table) ? table[key as keyof typeof table] : null,
         value
@@ -59,216 +74,17 @@ export class CoreAccessor {
       .filter(([key, value]) => key !== null && value !== undefined);
   }
 
-  protected _get_lookups(
-    identifiers: Record<string, any>
+  protected _getLookups(
+    keys: Static<typeof this.keysSchema>
   ): LookupsObject 
   {
-    return getLookups(this.table, identifiers);
+    this._validateSchema(this.keysSchema, keys as Record<string, any>);
+    return getLookups(this.table, keys as Record<string, any>);
   }
 
-  /****************************************************************************
-   * Create operations
-   ***************************************************************************/
-
-  protected _validateCreateData(
-    data: Record<string, any>,
-    schema=this.insertSchema
-  ): Record<string, any>
-  {
-    return validate(schema, data);
-  }
-
-  protected async _executeCreate(
-    data: Record<string, any>
-  ): Promise<Record<string, any>> {
-    const result = await this.db
-      .insert(this.table)
-      .values(data)
-      .returning();
-    return result[0];
-  }
-
-  /**
-   * Validates and executes the creation of a record
-   * 
-   * Source:
-   * ```
-   * protected async _create(
-   *   data: Record<string, any>,
-   * ): Promise<any>
-   * {
-   *   const coercedData = this._validateCreateData(data);
-   *  const result = await this._executeCreate(coercedData);
-   *   return { data: result };
-   * }
-   * ```
-   * 
-   * @param data - The data to create the record with
-   * @returns Promise resolving to the created record
-   */
-  protected async _create(
-    data: Record<string, any>,
-  ): Promise<PayloadSingle<any>>
-  {
-    const coercedData = this._validateCreateData(data);
-    const result = await this._executeCreate(coercedData);
-    return { data: result };
-  }
-
-  public async create (
-    data: any,
-  ): Promise<AccessorReturnType<PayloadSingle<any>>> 
-  {
-    try {
-      return {
-        success: true,
-        payload: await this._create(data),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: APIError.fromError(
-          error, { code: 500, message: 'Failed to create record'}),
-      };
-    }
-  }
-
-  /****************************************************************************
-   * Update operations
-   ***************************************************************************/
-
-  protected _validateUpdateData(
-    data: Record<string, any>,
-    schema=this.updateSchema,
-  ): Record<string, any>
-  {
-    return validate(schema, data);
-  }
-
-  protected async _executeUpdate(
-    data: Record<string, any>,
-    lookups: LookupsObject,
-  ) {
-    const result = await this.db
-      .update(this.table)
-      .set(data)
-      .where(lookups.all)
-      .returning();
-
-  return result[0];
-  }
-
-  /**
-   * Validates and executes the update of a record
-   * 
-   * Source:
-   * ```
-   * protected async _update(
-   *   identifiers: Record<string, any>,
-   *   data: Record<string, any>,
-   * ): Promise<any>
-   * {
-   *   const lookups = this._get_lookups(identifiers);
-   *   const coercedData = this._validateUpdateData(data);
-   *   const result = await this._executeUpdate(coercedData, lookups);
-   *   return { data: result };
-   * }
-   * ```
-   * 
-   * @param identifiers - The identifiers to find the record to update
-   * @param data - The data to update the record with
-   * @returns Promise resolving to the updated record
-   */
-  protected async _update(
-    identifiers: Record<string, any>,
-    data: Record<string, any>,
-  ): Promise<PayloadSingle<any>>
-  {
-    const lookups = this._get_lookups(identifiers);
-    const coercedData = this._validateUpdateData(data);
-    const result = await this._executeUpdate(coercedData, lookups);
-    return { data: result };
-  }
-
-  public async update (
-    identifiers: Record<string, any>,
-    data: Record<string, any>,
-  ): Promise<AccessorReturnType<PayloadSingle<any>>> 
-  {
-    try {
-      return {
-        success: true,
-        payload: await this._update(identifiers, data),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: APIError.fromError(
-          error, { code: 500, message: 'Failed to update record'}),
-      };
-    }
-  }
-
-  /****************************************************************************
-   * Delete operations
-   ***************************************************************************/
-
-  protected async _executeDelete (
-    lookups: LookupsObject,
-  ) {
-    const result = await this.db
-      .delete(this.table)
-      .where(lookups.all)
-      .returning();
-
-    if (result.length === 0) {
-      throw new APIError({ code: 404, message: 'Record not found' });
-    }
-    return result[0];
-  }
-
-  /**
-   * Validates and executes the deletion of a record
-   * 
-   * Source:
-   * ```
-   * protected async _delete (
-   *   identifiers: Record<string, any>,
-   * ): Promise<any>
-   * {
-   *   const lookups = getLookups(this.table, identifiers);
-   *   const result = await this._executeDelete(lookups);
-   *   return { data: result };
-   * }
-   * ```
-   * 
-   * @param identifiers - The identifiers to find the record to delete
-   * @returns Promise resolving to the deleted record
-   */
-  protected async _delete (
-    identifiers: Record<string, any>,
-  ): Promise<PayloadSingle<any>>
-  {
-    const lookups = getLookups(this.table, identifiers);
-    const result = await this._executeDelete(lookups);
-    return { data: result };
-  }
-
-  public async delete (
-    identifiers: Record<string, any>,
-  ): Promise<AccessorReturnType<PayloadSingle<any>>> 
-  {
-    try {
-      return {
-        success: true,
-        payload: await this._delete(identifiers),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: APIError.fromError(
-          error, { code: 500, message: 'Failed to update record'}),
-      };
+  protected _getKeysFromRecord(record: Record<string, any>) {
+    return {
+      id: record.id
     }
   }
 
@@ -276,59 +92,27 @@ export class CoreAccessor {
    * Read operations
    ***************************************************************************/
 
-  /**
-   * Validates and executes the reading of a record
-   * 
-   * Source:
-   * ```
-   * protected async _read (
-   *   identifiers: Record<string, any>,
-   * ): Promise<any> 
-   * {
-   *   const lookups = getLookups(this.table, identifiers);
-   *
-   *   const result = await this._buildBaseQuery()
-   *     .$dynamic()
-   *     .where(lookups.all)
-   *     .execute();
-   *
-   *   return { data: result[0] };
-   * }
-   * ```
-   * 
-   * @param identifiers - The identifiers to find the record to read
-   * @returns Promise resolving to the read record
-   */
   protected async _read (
-    identifiers: Record<string, any>,
-  ): Promise<PayloadSingle<any>> 
+    keys: Static<typeof this.keysSchema>,
+  ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const lookups = getLookups(this.table, identifiers);
-
+    const lookups = this._getLookups(keys);
     const result: Record<string, any>[] = await this._buildBaseQuery()
       .$dynamic()
       .where(lookups.all)
       .execute();
 
-    return { data: result[0] };
+    return this._buildReturn({
+      success: true,
+      payload: { data: result[0] } 
+    });
   }
 
   public async read (
-    identifiers: Record<string, any>,
-  ): Promise<AccessorReturnType<PayloadSingle<any>>> 
+    keys: Static<typeof this.keysSchema>
+  ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
-    try {
-      return {
-        success: true,
-        payload: await this._read(identifiers),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: APIError.fromError(
-          error, { code: 500, message: 'Failed to read the record'}),
-      };
-    }
+    return await this._read(keys);
   }
 
   /****************************************************************************
@@ -349,39 +133,172 @@ export class CoreAccessor {
     return this.table;
   }
 
-  protected async _list (
-    queryParams: Record<string, any>,
-  ): Promise<PayloadMany<any>> 
+  protected _validateQueryParams(
+    queryParams: Static<typeof this.queryParamsSchema>
+  ): Record<string, any> 
   {
-    const { cursor, limit } = lodash.defaults(queryParams, { cursor: "", limit: this.paginationLimit });
-    const decodedCursorArtifacts = this._decodeCursorArtifacts(cursor, limit);
+    this._validateSchema(this.queryParamsSchema, queryParams as Record<string, any>);
+    return queryParams as any;
+  }
+
+  protected defaultQueryParams = { 
+    cursor: "", 
+    limit: settings.PAGINATION_DEFAULT_LIMIT 
+  }
+  protected _defaultQueryParams(
+    queryParams: Static<typeof this.queryParamsSchema>
+  ) {
+    return this._defaults(queryParams, this.defaultQueryParams)
+  }
+
+  protected async _list (
+    _queryParams: Static<typeof this.queryParamsSchema>,
+  ): Promise<LayersReturnType<PayloadMany<any>>>
+  {
+    let queryParams: Record<string, any> = this._validateQueryParams(_queryParams);
+    queryParams = this._defaultQueryParams(queryParams);
+    const decodedCursorArtifacts = this._decodeCursorArtifacts(queryParams.cursor, queryParams.limit);
     const baseQuery = this._buildBaseQuery();
     const cursorPaginatedQuery = this._withCursorPagination(baseQuery, decodedCursorArtifacts);
     const result = await cursorPaginatedQuery.execute(queryParams);
     const encodedCursorArtifacts = this._encodeCursorArtifacts(result, decodedCursorArtifacts);
-    return {
-      items: result,
-      cursor: encodedCursorArtifacts.data.cursor,
-      hasMore: encodedCursorArtifacts.data.hasMore,
-    };
+    return this._buildReturn({
+      success: true,
+      payload: {
+        items: result,
+        cursor: encodedCursorArtifacts.data.cursor,
+        hasMore: encodedCursorArtifacts.data.hasMore,
+      }      
+    });
   }
 
   public async list (
-    queryParams: Record<string, any>,
-  ): Promise<AccessorReturnType<PayloadMany<any>>> 
+    queryParams: Static<typeof this.queryParamsSchema>,
+  ): Promise<LayersReturnType<PayloadMany<any>>> 
   {
-    try {
-      return {
-        success: true,
-        payload: await this._list(queryParams),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: APIError.fromError(
-          error, { code: 500, message: 'Failed to list records'}),
-      };
+    return await this._list(queryParams);
+  }
+
+  /****************************************************************************
+   * Create operations
+   ***************************************************************************/
+
+  protected _validateCreateData(
+    data: Record<string, any>,
+    schema=this.insertSchema
+  ): Record<string, any>
+  {
+    return this._validateSchema(schema, data);
+  }
+
+  protected async _executeCreate(
+    data: Record<string, any>
+  ): Promise<Record<string, any>> {
+    const result = await this.db
+      .insert(this.table)
+      .values(data)
+      .returning();
+    return result[0];
+  }
+
+  protected async _create(
+    data: Record<string, any>,
+  ): Promise<LayersReturnType<PayloadSingle<any>>> 
+  {
+    const coercedData = this._validateCreateData(data);
+    const mutatedRecord = await this._executeCreate(coercedData);
+    const readKeys = this._getKeysFromRecord(mutatedRecord);
+    const payload = await this.read(readKeys);
+    return payload;
+  }
+
+  public async create (
+    data: Record<string, any>,
+  ): Promise<LayersReturnType<PayloadSingle<any>>> 
+  {
+    return await this._create(data);
+  }
+
+  /****************************************************************************
+   * Update operations
+   ***************************************************************************/
+
+  protected _validateUpdateData(
+    data: Record<string, any>,
+    schema=this.updateSchema,
+  ): Record<string, any>
+  {
+    return this._validateSchema(schema, data);
+  }
+
+  protected async _executeUpdate(
+    data: Record<string, any>,
+    lookups: LookupsObject,
+  ) {
+    const result = await this.db
+      .update(this.table)
+      .set(data)
+      .where(lookups.all)
+      .returning();
+
+  return result[0];
+  }
+
+  protected async _update(
+    keys: Static<typeof this.keysSchema>,
+    data: Record<string, any>,
+  ): Promise<LayersReturnType<PayloadSingle<any>>>
+  {
+    const lookups = this._getLookups(keys);
+    const coercedData = this._validateUpdateData(data);
+    const mutatedRecord = await this._executeUpdate(coercedData, lookups);
+    const readKeys = this._getKeysFromRecord(mutatedRecord);
+    const payload = await this.read(readKeys);
+    return payload;
+  }
+
+  public async update (
+    keys: Static<typeof this.keysSchema>,
+    data: Record<string, any>,
+  ): Promise<LayersReturnType<PayloadSingle<any>>> 
+  {
+    return await this._update(keys, data);
+  }
+
+  /****************************************************************************
+   * Delete operations
+   ***************************************************************************/
+
+  protected async _executeDelete (
+    lookups: LookupsObject,
+  ) {
+    const result = await this.db
+      .delete(this.table)
+      .where(lookups.all)
+      .returning();
+
+    if (result.length === 0) {
+      throw new APIError({ code: 404, message: 'Record not found' });
     }
+    return result[0];
+  }
+
+  protected async _delete (
+    keys: Static<typeof this.keysSchema>,
+  ): Promise<LayersReturnType<PayloadSingle<any>>> 
+  {
+    const lookups = this._getLookups(keys);
+    const mutatedRecord = await this._executeDelete(lookups);
+    const readKeys = this._getKeysFromRecord(mutatedRecord);
+    const payload = await this.read(readKeys);
+    return payload;
+  }
+
+  public async delete (
+    keys: Static<typeof this.keysSchema>,
+  ): Promise<LayersReturnType<PayloadSingle<any>>> 
+  {
+    return await this._delete(keys);
   }
 
   /****************************************************************************
@@ -406,7 +323,7 @@ export class CoreAccessor {
     if (validCursor) {
       const cursorData = decodeCursor(cursor);
       try {
-        validate(this.cursorDataSchema, cursorData);
+        this._validateSchema(this.cursorDataSchema, cursorData);
       } catch (error) {
         throw APIError.overrideError(error, {
           code: 400,
@@ -456,7 +373,7 @@ export class CoreAccessor {
       const cursorData = this._getEncodeCursorData(cursorItem);
 
       try {
-        validate(this.cursorDataSchema, cursorData);
+        this._validateSchema(this.cursorDataSchema, cursorData);
       } catch (error) {
         throw APIError.overrideError(error, {
           code: 400,

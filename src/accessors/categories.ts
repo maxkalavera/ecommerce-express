@@ -48,6 +48,7 @@ class CategoriesAccessor extends CoreAccessor {
 };
 export const categoriesAccessor = new CategoriesAccessor();
 
+
 /*******************************************************************************
  * Categories's Images
  ******************************************************************************/

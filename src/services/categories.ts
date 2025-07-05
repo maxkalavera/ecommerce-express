@@ -1,42 +1,50 @@
 import { Static, Type } from '@sinclair/typebox';
-import { ListCategoriesQueryParameters, CategoryInsert } from '@/typebox/categories';
 import { categoriesAccessor } from '@/accessors/categories';
-import { ServiceReturnType } from '@/types/services';
+import { CRUDService } from '@/utils/services/CRUDService';
+import * as categoriesSchemas from '@/typebox/services/categories';
 
-export const categoriesService = new (class {
+export class CategoriesService extends CRUDService {
 
-  public async create(
-    data: Static<typeof CategoryInsert>
-  ): Promise<ServiceReturnType<any>>
-  {
-    return await categoriesAccessor.create(data);
+  constructor() {
+    super({
+      executers: {
+        create: async (data) => {
+          return await categoriesAccessor.create(data.body!);
+        },
+        update: async (data) => {
+          return await categoriesAccessor.update(data.params, data.body!);
+        },
+        delete: async (data) => {
+          return await categoriesAccessor.delete(data.params);
+        }, 
+        read: async (data) => {
+          return await categoriesAccessor.read(data.params);
+        }, 
+        list: async (data) => {
+          return await categoriesAccessor.list(data.query);
+        },
+      },
+      schemas: {
+        instance: categoriesSchemas.Category,
+        insert: categoriesSchemas.CategoryInsert,
+        update: categoriesSchemas.CategoryUpdate,
+        identifiers: categoriesSchemas.CategoryIdentifiers,
+        queryParams: categoriesSchemas.CategoryQueryParams,
+      }
+    });
   }
 
-  public async read(identifier: { id: string }): Promise<ServiceReturnType<any>>
-  {
-    return await categoriesAccessor.read(identifier);
+  reshapePayload(instance: Record<string, any>) {
+    return {
+      key: instance.key,
+      createdAt: instance.createdAt.toISOString(),
+      updatedAt: instance.updatedAt.toISOString(),
+      name: instance.name,
+      description: instance.description,
+      parentKey: instance.parentKey,
+      display: null,
+    };
   }
 
-  public async update(
-    identifier: { id: string },
-    data: Static<typeof CategoryInsert>
-  ): Promise<ServiceReturnType<any>>
-  {
-    return await categoriesAccessor.update(identifier, data);
-  }
-
-  public async delete(
-    identifier: { id: string }
-  ): Promise<ServiceReturnType<any>>
-  {
-    return await categoriesAccessor.delete(identifier);
-  }
-
-  public async list(
-    query: Static<typeof ListCategoriesQueryParameters>
-  ): Promise<ServiceReturnType<any>>
-  {
-    return await categoriesAccessor.list(query);
-  }
-
-});
+};
+export const categoriesService = new CategoriesService();

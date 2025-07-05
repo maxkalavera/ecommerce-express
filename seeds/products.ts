@@ -54,25 +54,28 @@ export async function seedProducts(tx: any) {
 
   for (const row of productsJson) {
     const { key: productKey, categoryKey, ...restRow } = row;
-    const categoryPayload = await categoriesAccessor.read({ key: base64url.encode(categoryKey) });
-    if (!categoryPayload.success) {
+    const categoryReturned = await categoriesAccessor.read({ key: base64url.encode(categoryKey) });
+
+    if (!categoryReturned.isSuccess()) {
       throw new Error(`Category ${row.categoryKey} not found`);
     }
 
-    const productPayload = await productsAccessor.create({
+    const categoryPayload = categoryReturned.getPayload();
+    const productReturned = await productsAccessor.create({
       ...restRow,
       key: base64url.encode(productKey),
-      categoryId: categoryPayload.payload.data.id,
+      categoryId: categoryPayload.data.id,
     });
 
-    if (productPayload.success) {
+    if (productReturned.isSuccess()) {
+      const productPayload = productReturned.getPayload();
       // Seed items
       const relatedProductsItems = productsItems.filter((item) => item.productKey === productKey);
       for (const item of relatedProductsItems) {
         const { ...restItem } = item;
-        const productItemPayload = await seedProductItem(productKey, {
+        await seedProductItem(productKey, {
           ...restItem,
-          productId: productPayload.payload.data.id,
+          productId: productPayload.data.id,
         });
       }
 
@@ -80,7 +83,7 @@ export async function seedProducts(tx: any) {
       const images = await getFiles('products', productKey, ['jpg', 'png']);
       for (const image of images) {
         productsImagesAccessor.images.addImage(
-          { productId: productPayload.payload.data.id }, 
+          { productId: productPayload.data.id }, 
           image,
         );
       }
