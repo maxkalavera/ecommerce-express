@@ -2,10 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { APIError } from '@/utils/errors';
 import { CoreController } from '@/utils/controllers/CoreController'; 
 import { RequestData, ControllerExecuters } from '@/types/controllers';
+//import { DocsCRUDComposer } from '@/utils/controllers/DocsCRUDComposer';
 
 
 export class CRUDController extends CoreController {
   protected executers: ControllerExecuters;
+  //public docs: DocsCRUDComposer;
   
   constructor(
     resourceName: string,
@@ -34,139 +36,7 @@ export class CRUDController extends CoreController {
       },
     });
     this.executers = options.executers;
-  }
-
-  protected _defaultDocs() {
-    this.docs.extend({
-      paths: {
-[`/${this.resourceName}`]: {
-  post: {
-    summary: `Create a new ${this.resourceName}`,
-    requestBody: {
-      required: true,
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object'
-          }
-        }
-      }
-    },
-    responses: {
-      '201': {
-        description: `${this.resourceName} created successfully`,
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object'
-            }
-          }
-        }
-      }
-    }
-  },
-  get: {
-    summary: `List all ${this.resourceName}s`,
-    responses: {
-      '200': {
-        description: `Array of ${this.resourceName}s`,
-        content: {
-          'application/json': {
-            schema: {
-              type: 'array',
-              items: {
-                type: 'object'
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-},
-[`/${this.resourceName}/{id}`]: {
-  get: {
-    summary: `Get a single ${this.resourceName}`,
-    parameters: [{
-      name: 'id',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string'
-      }
-    }],
-    responses: {
-      '200': {
-        description: `${this.resourceName} found`,
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object'
-            }
-          }
-        }
-      }
-    }
-  },
-  put: {
-    summary: `Update a ${this.resourceName}`,
-    parameters: [{
-      name: 'id',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string'
-      }
-    }],
-    requestBody: {
-      required: true,
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object'
-          }
-        }
-      }
-    },
-    responses: {
-      '200': {
-        description: `${this.resourceName} updated successfully`,
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object'
-            }
-          }
-        }
-      }
-    }
-  },
-  delete: {
-    summary: `Delete a ${this.resourceName}`,
-    parameters: [{
-      name: 'id',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string'
-      }
-    }],
-    responses: {
-      '200': {
-        description: `${this.resourceName} deleted successfully`,
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object'
-            }
-          }
-        }
-      }
-    }
-  }
-}
-      }
-    })  
+    //this.docs = new DocsCRUDComposer(resourceName);
   }
 
   protected _addCRUDRoutes() {

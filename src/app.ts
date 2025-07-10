@@ -12,7 +12,7 @@ import error from "@/middlewares/error";
 import routes from "@/routes";
 import SwaggerUi from 'swagger-ui-express';
 import { initializeExpressApp } from '@/utils/lifecycle';
-import { specs } from '@/openapi';
+import openAPIDocs from '@/openapi';
 
 /******************************************************************************
  * Initialization
@@ -55,7 +55,7 @@ const app = initializeExpressApp({
   },
   setRoutes: (app) => {
     app.use('/api/', routes);
-    app.use('/api-docs', SwaggerUi.serve, SwaggerUi.setup(specs));
+    app.use('/api-docs', SwaggerUi.serve, SwaggerUi.setup(openAPIDocs));
   },
   setErrorMiddlewares: (app) => {
     app.use(error);  // Custom error handler
