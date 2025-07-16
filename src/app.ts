@@ -12,7 +12,8 @@ import error from "@/middlewares/error";
 import routes from "@/routes";
 import SwaggerUi from 'swagger-ui-express';
 import { initializeExpressApp } from '@/utils/lifecycle';
-import openAPIDocs from '@/openapi';
+import openAPISpecs from '@/openapi';
+
 
 /******************************************************************************
  * Initialization
@@ -22,6 +23,9 @@ const app = initializeExpressApp({
   beforeCreateApp: () => {
     // Create runtime files
     createRuntimeFolder();
+    settings.ENV === "development" && 
+      storeInRuntimeFolder("./openapi.json", JSON.stringify(openAPISpecs, null, 2))
+
 
     if (settings.ENV === "development") {
       console.log("Running in development mode");
@@ -55,7 +59,7 @@ const app = initializeExpressApp({
   },
   setRoutes: (app) => {
     app.use('/api/', routes);
-    app.use('/api-docs', SwaggerUi.serve, SwaggerUi.setup(openAPIDocs));
+    app.use('/api-docs', SwaggerUi.serve, SwaggerUi.setup(openAPISpecs));
   },
   setErrorMiddlewares: (app) => {
     app.use(error);  // Custom error handler
@@ -113,4 +117,19 @@ function createRuntimeFolder() {
   if (!fs.existsSync(settings.RUNTIME_FOLDER)) {
     fs.mkdirSync(settings.RUNTIME_FOLDER, { recursive: true });
   }
+}
+
+function storeInRuntimeFolder(relativePath: string, content: Buffer | string) {
+  const fullPath = path.join(settings.RUNTIME_FOLDER, relativePath);
+  const directory = path.dirname(fullPath);
+
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+
+  // Write the content to the file
+  fs.writeFileSync(fullPath, content);
+  return fullPath;
+
 }

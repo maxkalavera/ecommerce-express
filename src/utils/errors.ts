@@ -11,6 +11,7 @@ export type APIErrorParameters = {
   message: string;
   details?: Record<string, string[]>;
   code?: number;
+  errorStack?: Error[];
 }
 
 /******************************************************************************
@@ -21,6 +22,7 @@ const APIErrorParamsDefaults: Required<APIErrorParameters> = {
   message: "Internal server error",
   details: {},
   code: 500,
+  errorStack: [],
 }
 
 export class APIError extends Error {
@@ -28,27 +30,29 @@ export class APIError extends Error {
   public details: Record<string, string[]>;
   public statusCode: number;
   public timestamp: Date;
+  public errorStack: Error[];
 
   static fromError (
-    error: Error | any | unknown, 
-    params: APIErrorParameters
+    error: Error | unknown, 
+    params: Omit<APIErrorParameters, "errorStack">
   ) {
-    console.log(error);
     if (error instanceof APIError) {
-      return error;
+      return new APIError({ 
+        ...error,
+        ...params
+      });
+    } else if (error instanceof Error) {
+      return new APIError({ 
+        ...params,
+        errorStack: [error]
+      });
     }
-    return new APIError(params);
+    throw new Error (`Error parameter should be of error type: ${error}`);
   }
 
-  static overrideError (
-    error: Error | any | unknown, 
+  constructor (
     _params: APIErrorParameters
   ) {
-    console.log(error);
-    return new APIError(_params);
-  }
-
-  constructor (_params: APIErrorParameters) {
     super();
     const params = lodash.defaultsDeep(_params, APIErrorParamsDefaults) as Required<APIErrorParameters>;
 
@@ -57,6 +61,7 @@ export class APIError extends Error {
     this.message = params.message;
     this.details = params.details;
     this.timestamp = new Date();
+    this.errorStack = [...params.errorStack];
   }
 
   public addTypeboxValidationErrors (errors: ValidateFunction<any>['errors']) {

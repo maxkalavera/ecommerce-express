@@ -1,8 +1,8 @@
 import { Type, TSchema, Static } from '@sinclair/typebox';
-import { LayersCore } from '@/utils/layers/LayersCore'; 
+import { LayersCore } from '@/utils/layers/LayersCore';
 import { validate } from '@/utils/validator';
 import { LayersReturnType, PayloadSingle, PayloadMany } from '@/types/layers';
-import { RequestData, RequestDataSchemas, ServiceTaskSchemas } from '@/types/services'
+import { RequestData, RequestDataSchemas, ServiceTaskSchemas, ServiceExecuter } from '@/types/services'
 
 
 /******************************************************************************
@@ -15,7 +15,8 @@ export class CoreService extends LayersCore {
     super();
   }
 
-  protected _validateSchema(schema: TSchema, data: Record<string, any>) {
+  protected _validateSchema(
+    schema: TSchema, data: Record<string, any>) {
     return validate({
       ...schema,
       additionalProperties: false,
@@ -26,12 +27,12 @@ export class CoreService extends LayersCore {
     _data: Partial<RequestData> = {},
     _schemas: Partial<RequestDataSchemas> = {}
   ) {
-    const data: Required<RequestData> = this._defaults(_data, { 
+    const data: Required<RequestData> = this.defaults(_data, { 
       params: {}, 
       query: {}, 
       body: {},
     });
-    const schemas: RequestDataSchemas = this._defaults(_schemas, {
+    const schemas: RequestDataSchemas = this.defaults(_schemas, {
       params: Type.Object({}),
       query: Type.Object({}),
       body: Type.Object({}),
@@ -83,7 +84,7 @@ export class CoreService extends LayersCore {
         (payload as PayloadMany<any>).items = (payload as PayloadMany<any>).items.map(item => mapper(item));
       }
     });
-    return this._buildReturn({ success: true, payload });
+    return this.buildReturn({ success: true, payload });
   }
 
   protected reshapePayload(
@@ -93,30 +94,47 @@ export class CoreService extends LayersCore {
     return instance;
   }
 
+  /**
+   * Reshapes and validates request data before executing the main service logic:
+   * - Set defaults in data
+   * - Validate request params
+   * - execute the callback to execute the service operation
+   * - Reshape payload data to fulfill the schema definition
+   * - Validate payload using the schema definition
+   * 
+   * @template PayloadType - Type extending either PayloadSingle or PayloadMany
+   * @param {Partial<RequestData>} _data - Request data containing params, query and body
+   * @param {Function} callback - Async function containing the main service logic
+   * @param {Partial<ServiceTaskSchemas>} _schemas - Validation schemas for request data and payload
+   * @param {Function | null} mapper - Optional function to transform payload data
+   * @returns {Promise<LayersReturnType<PayloadType>>} - Returns processed and validated service response
+   * 
+   * @protected
+   * @async
+   */
   protected async _wrap<
     PayloadType extends PayloadSingle<any> | PayloadMany<any>
   > (
     _data: Partial<RequestData>,
-    callback: (data: RequestData) => Promise<LayersReturnType<PayloadType>>, 
+    callback: ServiceExecuter, 
     _schemas: Partial<ServiceTaskSchemas> = {},
     mapper: ((data: Record<string, any>) => Record<string, any>) | null = null,
   ) 
   {
-    const schemas = this._defaults(_schemas, {
+    const schemas = this.defaults(_schemas, {
       params: Type.Record(Type.String(), Type.Any()),
       query: Type.Record(Type.String(), Type.Any()),
       body: Type.Record(Type.String(), Type.Any()),
       payloadInstance: Type.Record(Type.String(), Type.Any()),
     });
-    const data: RequestData = this._defaults(_data, { params: {}, query: {}, body: {}});
-
+    const data: RequestData = this.defaults(_data, { params: {}, query: {}, body: {}});
     this._validateRequestParams(data, {
       params: schemas.params,
       query: schemas.query,
       body: schemas.body,
     });
-    let result = await callback(data);
-    result = this._reshapePayload(result, mapper);
+    let result = await callback(data, { buildReturn: this.buildReturn });
+    result = this._reshapePayload(result as LayersReturnType<PayloadType>, mapper);
     this._validatePayload(result, schemas.payloadInstance);
 
     return result;

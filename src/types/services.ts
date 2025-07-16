@@ -1,4 +1,5 @@
 import { TSchema } from '@sinclair/typebox';
+import { LayersCore } from '@/utils/layers/LayersCore';
 import * as layers from '@/types/layers';
 import * as commons from "@/types/commons";
 
@@ -23,10 +24,20 @@ export type ServiceSchemas = {
   queryParams: TSchema;
 };
 
+export type ServiceExecuterHelpers = { 
+  buildReturn: LayersCore['buildReturn'];
+};
+
+export type ServiceExecuter<
+  PayloadType extends layers.PayloadSingle<any> | layers.PayloadMany<any> = 
+    layers.PayloadSingle<any> | layers.PayloadMany<any>
+> = 
+  (data: RequestData, helpers: ServiceExecuterHelpers) => Promise<layers.LayersReturnType<PayloadType>>
+
 export type ServiceExecuters = {
-  create: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadSingle<any>>>;
-  update: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadSingle<any>>>;
-  delete: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadSingle<any>>>;
-  read: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadSingle<any>>>;
-  list: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadMany<any>>>;
+  create: ServiceExecuter<layers.PayloadSingle<any>>;
+  update: ServiceExecuter<layers.PayloadSingle<any>>;
+  delete: ServiceExecuter<layers.PayloadSingle<any>>;
+  read: ServiceExecuter<layers.PayloadSingle<any>>;
+  list: ServiceExecuter<layers.PayloadMany<any>>;
 };

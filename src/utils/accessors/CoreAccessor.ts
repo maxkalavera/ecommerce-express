@@ -55,14 +55,14 @@ export class CoreAccessor extends LayersCore {
     this.db = options.db || getDatabase();
   }
 
-  protected _validateSchema(schema: TSchema, data: Record<string, any>) {
+  protected validateSchema(schema: TSchema, data: Record<string, any>) {
     return validate({
       ...schema,
       additionalProperties: false,
     }, data);
   }
 
-  protected _getColumnsFromkeys(
+  protected getColumnsFromkeys(
     table: Table, 
     keys: Record<string, any>,
   ) {
@@ -74,15 +74,15 @@ export class CoreAccessor extends LayersCore {
       .filter(([key, value]) => key !== null && value !== undefined);
   }
 
-  protected _getLookups(
+  protected getLookups(
     keys: Static<typeof this.keysSchema>
   ): LookupsObject 
   {
-    this._validateSchema(this.keysSchema, keys as Record<string, any>);
+    this.validateSchema(this.keysSchema, keys as Record<string, any>);
     return getLookups(this.table, keys as Record<string, any>);
   }
 
-  protected _getKeysFromRecord(record: Record<string, any>) {
+  protected getKeysFromRecord(record: Record<string, any>) {
     return {
       id: record.id
     }
@@ -92,77 +92,79 @@ export class CoreAccessor extends LayersCore {
    * Read operations
    ***************************************************************************/
 
-  protected async _read (
+  public async read (
     keys: Static<typeof this.keysSchema>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const lookups = this._getLookups(keys);
-    const result: Record<string, any>[] = await this._buildBaseQuery()
+    const lookups = this.getLookups(keys);
+    const result: Record<string, any>[] = await this.buildBaseQuery()
       .$dynamic()
       .where(lookups.all)
       .execute();
 
-    return this._buildReturn({
+    return this.buildReturn({
       success: true,
       payload: { data: result[0] } 
     });
   }
 
+  /*
   public async read (
     keys: Static<typeof this.keysSchema>
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
     return await this._read(keys);
   }
+  */
 
   /****************************************************************************
    * List operations
    ***************************************************************************/
 
-  protected _buildBaseQuery(
+  protected buildBaseQuery(
     queryParams: Record<string, any> = {},
   ): PgSelectDynamic<any>
   {
     return this.db
-     .select(this._buildSelectFields())
+     .select(this.buildSelectFields())
      .from(this.table);
   }
 
-  protected _buildSelectFields (): SelectedFields
+  protected buildSelectFields (): SelectedFields
   {
     return this.table;
   }
 
-  protected _validateQueryParams(
+  protected validateQueryParams(
     queryParams: Static<typeof this.queryParamsSchema>
   ): Record<string, any> 
   {
-    this._validateSchema(this.queryParamsSchema, queryParams as Record<string, any>);
+    this.validateSchema(this.queryParamsSchema, queryParams as Record<string, any>);
     return queryParams as any;
   }
 
-  protected defaultQueryParams = { 
+  protected defaultQueryParamsObject = { 
     cursor: "", 
     limit: settings.PAGINATION_DEFAULT_LIMIT 
   }
-  protected _defaultQueryParams(
+  protected defaultQueryParams(
     queryParams: Static<typeof this.queryParamsSchema>
   ) {
-    return this._defaults(queryParams, this.defaultQueryParams)
+    return this.defaults(queryParams, this.defaultQueryParamsObject)
   }
 
-  protected async _list (
+  public async list (
     _queryParams: Static<typeof this.queryParamsSchema>,
   ): Promise<LayersReturnType<PayloadMany<any>>>
   {
-    let queryParams: Record<string, any> = this._validateQueryParams(_queryParams);
-    queryParams = this._defaultQueryParams(queryParams);
-    const decodedCursorArtifacts = this._decodeCursorArtifacts(queryParams.cursor, queryParams.limit);
-    const baseQuery = this._buildBaseQuery();
-    const cursorPaginatedQuery = this._withCursorPagination(baseQuery, decodedCursorArtifacts);
+    let queryParams: Record<string, any> = this.validateQueryParams(_queryParams);
+    queryParams = this.defaultQueryParams(queryParams);
+    const decodedCursorArtifacts = this.decodeCursorArtifacts(queryParams.cursor, queryParams.limit);
+    const baseQuery = this.buildBaseQuery();
+    const cursorPaginatedQuery = this.withCursorPagination(baseQuery, decodedCursorArtifacts);
     const result = await cursorPaginatedQuery.execute(queryParams);
-    const encodedCursorArtifacts = this._encodeCursorArtifacts(result, decodedCursorArtifacts);
-    return this._buildReturn({
+    const encodedCursorArtifacts = this.encodeCursorArtifacts(result, decodedCursorArtifacts);
+    return this.buildReturn({
       success: true,
       payload: {
         items: result,
@@ -172,26 +174,28 @@ export class CoreAccessor extends LayersCore {
     });
   }
 
+  /*
   public async list (
     queryParams: Static<typeof this.queryParamsSchema>,
   ): Promise<LayersReturnType<PayloadMany<any>>> 
   {
     return await this._list(queryParams);
   }
+  */
 
   /****************************************************************************
    * Create operations
    ***************************************************************************/
 
-  protected _validateCreateData(
+  protected validateCreateData(
     data: Record<string, any>,
     schema=this.insertSchema
   ): Record<string, any>
   {
-    return this._validateSchema(schema, data);
+    return this.validateSchema(schema, data);
   }
 
-  protected async _executeCreate(
+  protected async executeCreate(
     data: Record<string, any>
   ): Promise<Record<string, any>> {
     const result = await this.db
@@ -201,37 +205,39 @@ export class CoreAccessor extends LayersCore {
     return result[0];
   }
 
-  protected async _create(
+  public async create(
     data: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
-    const coercedData = this._validateCreateData(data);
-    const mutatedRecord = await this._executeCreate(coercedData);
-    const readKeys = this._getKeysFromRecord(mutatedRecord);
+    const coercedData = this.validateCreateData(data);
+    const mutatedRecord = await this.executeCreate(coercedData);
+    const readKeys = this.getKeysFromRecord(mutatedRecord);
     const payload = await this.read(readKeys);
     return payload;
   }
 
+  /*
   public async create (
     data: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
     return await this._create(data);
   }
+  */
 
   /****************************************************************************
    * Update operations
    ***************************************************************************/
 
-  protected _validateUpdateData(
+  protected validateUpdateData(
     data: Record<string, any>,
     schema=this.updateSchema,
   ): Record<string, any>
   {
-    return this._validateSchema(schema, data);
+    return this.validateSchema(schema, data);
   }
 
-  protected async _executeUpdate(
+  protected async executeUpdate(
     data: Record<string, any>,
     lookups: LookupsObject,
   ) {
@@ -244,19 +250,20 @@ export class CoreAccessor extends LayersCore {
   return result[0];
   }
 
-  protected async _update(
+  public async update(
     keys: Static<typeof this.keysSchema>,
     data: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const lookups = this._getLookups(keys);
-    const coercedData = this._validateUpdateData(data);
-    const mutatedRecord = await this._executeUpdate(coercedData, lookups);
-    const readKeys = this._getKeysFromRecord(mutatedRecord);
+    const lookups = this.getLookups(keys);
+    const coercedData = this.validateUpdateData(data);
+    const mutatedRecord = await this.executeUpdate(coercedData, lookups);
+    const readKeys = this.getKeysFromRecord(mutatedRecord);
     const payload = await this.read(readKeys);
     return payload;
   }
 
+  /*
   public async update (
     keys: Static<typeof this.keysSchema>,
     data: Record<string, any>,
@@ -264,12 +271,13 @@ export class CoreAccessor extends LayersCore {
   {
     return await this._update(keys, data);
   }
+  */
 
   /****************************************************************************
    * Delete operations
    ***************************************************************************/
 
-  protected async _executeDelete (
+  protected async executeDelete (
     lookups: LookupsObject,
   ) {
     const result = await this.db
@@ -283,23 +291,25 @@ export class CoreAccessor extends LayersCore {
     return result[0];
   }
 
-  protected async _delete (
+  public async delete (
     keys: Static<typeof this.keysSchema>,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
-    const lookups = this._getLookups(keys);
-    const mutatedRecord = await this._executeDelete(lookups);
-    const readKeys = this._getKeysFromRecord(mutatedRecord);
+    const lookups = this.getLookups(keys);
+    const mutatedRecord = await this.executeDelete(lookups);
+    const readKeys = this.getKeysFromRecord(mutatedRecord);
     const payload = await this.read(readKeys);
     return payload;
   }
 
+  /*
   public async delete (
     keys: Static<typeof this.keysSchema>,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
     return await this._delete(keys);
   }
+  */
 
   /****************************************************************************
    * Cursor pagination
@@ -314,7 +324,7 @@ export class CoreAccessor extends LayersCore {
     id: Type.Number(),
   });
 
-  protected _decodeCursorArtifacts (
+  protected decodeCursorArtifacts (
     cursor: string,
     limit: number = this.paginationLimit,
   ): DecodedCursorArtifacts
@@ -323,9 +333,9 @@ export class CoreAccessor extends LayersCore {
     if (validCursor) {
       const cursorData = decodeCursor(cursor);
       try {
-        this._validateSchema(this.cursorDataSchema, cursorData);
+        this.validateSchema(this.cursorDataSchema, cursorData);
       } catch (error) {
-        throw APIError.overrideError(error, {
+        throw APIError.fromError(error, {
           code: 400,
           message: 'Cursor decoding is inconsistent with provided fields'
         });
@@ -345,7 +355,7 @@ export class CoreAccessor extends LayersCore {
     };
   }
 
-  protected _getEncodeCursorData (
+  protected getEncodeCursorData (
     row: Record<string, any>
   ): Record<string, any> 
   {
@@ -355,7 +365,7 @@ export class CoreAccessor extends LayersCore {
     }
   }
 
-  protected _encodeCursorArtifacts (
+  protected encodeCursorArtifacts (
     queryResult: Record<string, any>[],
     decodedCursorArtifacts: DecodedCursorArtifacts,
   ): {
@@ -370,12 +380,12 @@ export class CoreAccessor extends LayersCore {
     const { limit } = decodedCursorArtifacts;
     if (queryResult.length >= limit) {
       const cursorItem = queryResult[limit - 1];
-      const cursorData = this._getEncodeCursorData(cursorItem);
+      const cursorData = this.getEncodeCursorData(cursorItem);
 
       try {
-        this._validateSchema(this.cursorDataSchema, cursorData);
+        this.validateSchema(this.cursorDataSchema, cursorData);
       } catch (error) {
-        throw APIError.overrideError(error, {
+        throw APIError.fromError(error, {
           code: 400,
           message: 'Cursor encoding is inconsistent with provided fields'
         });
@@ -399,7 +409,7 @@ export class CoreAccessor extends LayersCore {
     };
   }
 
-  protected _getCursorOrderBy(): op.SQL[]
+  protected getCursorOrderBy(): op.SQL[]
   {
     return [
       op.desc(op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt})`),
@@ -424,7 +434,7 @@ export class CoreAccessor extends LayersCore {
    * 
    * @returns {op.SQL[]} Array of SQL ORDER BY expressions
    */
-  protected _getCursorQueryWhere (
+  protected getCursorQueryWhere (
     cursorArtifacts: DecodedCursorArtifacts,
   ): op.SQL | undefined
   {
@@ -441,13 +451,13 @@ export class CoreAccessor extends LayersCore {
     return undefined
   }
 
-  protected _withCursorPagination(
+  protected withCursorPagination(
     query: PgSelectDynamic<any>,
     decodedCursorArtifacts: DecodedCursorArtifacts,
   ) {
     return query.$dynamic()
-      .where(this._getCursorQueryWhere(decodedCursorArtifacts))
-      .orderBy(...this._getCursorOrderBy())
+      .where(this.getCursorQueryWhere(decodedCursorArtifacts))
+      .orderBy(...this.getCursorOrderBy())
       .limit(decodedCursorArtifacts.limit);
   }
 

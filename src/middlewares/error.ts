@@ -13,15 +13,18 @@ export default function error (
   next: NextFunction
 ): void 
 {
-  const apiError = err !instanceof APIError ? err : APIError.fromError(err, { message: 'Internal server error' });
-  const acceptedTypes = req.accepts(['json', 'html']);
-
-  //console.log("----------------------------------------------------------------------");
-  //console.error(apiError.toLoggerText());
-
-  if (acceptedTypes === 'html') {
-    res.status(apiError.statusCode).render('error', apiError.toHTMLContext());
+  console.error(JSON.stringify(err, null, 2));
+  if (res.headersSent) {
+    next();
   } else {
-    res.status(apiError.statusCode).json(apiError.toResponseObject());
+    const apiError = err !instanceof APIError ? err : APIError.fromError(err, { message: 'Internal server error' });
+    const acceptedTypes = req.accepts(['json', 'html']);
+
+    if (acceptedTypes === 'html') {
+      res.status(apiError.statusCode).render('error', apiError.toHTMLContext());
+    } else {
+      res.status(apiError.statusCode).json(apiError.toResponseObject());
+    }
+    next();
   }
 };

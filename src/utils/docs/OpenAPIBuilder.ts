@@ -89,6 +89,7 @@ export class OpenAPIBuilder {
       this.document.components.schemas = {};
     }
     this.document.components.schemas[schemaName] = schema;
+    return this;
   }
 
   public buildDocument () {

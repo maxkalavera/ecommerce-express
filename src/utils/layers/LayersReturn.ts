@@ -11,7 +11,7 @@ export class LayersReturn<
     this.data = data;
   }
 
-  async onSuccess<
+  public async onSuccess<
     Return extends any
   > (
     callback: (payload: Payload) => Promise<Return>
@@ -23,7 +23,7 @@ export class LayersReturn<
     return;
   }
 
-  onSuccessSync<
+  public onSuccessSync<
     Return extends any
   > (
     callback: (payload: Payload) => Return
@@ -35,21 +35,21 @@ export class LayersReturn<
     return;
   }
 
-  isSuccess() {
+  public isSuccess() {
     return this.data.success;
   }
 
-  getPayload () {
+  public getPayload () {
     if (this.data.success) {
       return this.data.payload;
     }
-    throw ("Return object must be successful to get payload");
+    throw new Error("Return object must be successful to get payload");
   }
 
-  getError () {
+  public getError () {
     if (!this.data.success) {
       return this.data.error;
     }
-    throw ("Return object must have failed to get error");
+    throw new Error("Return object must have failed to get error");
   }
 }

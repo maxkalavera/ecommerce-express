@@ -1,9 +1,8 @@
-import { Static, Type } from '@sinclair/typebox';
 import { categoriesAccessor } from '@/accessors/categories';
 import { CRUDService } from '@/utils/services/CRUDService';
 import * as categoriesSchemas from '@/typebox/services/categories';
 
-export class CategoriesService extends CRUDService {
+class CategoriesService extends CRUDService {
 
   constructor() {
     super({

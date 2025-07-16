@@ -20,7 +20,7 @@ export class CRUDService extends CoreService {
     }> = {}
   ) {
     super();
-    this.options = this._defaultsDeep(_options, {
+    this.options = this.defaultsDeep(_options, {
       executers: {
         create: async () => {
           throw ('"create" is not implemented');
@@ -61,7 +61,7 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    return await this._wrap(data, execute, schemas);
+    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
   }
 
   public async create(
@@ -85,7 +85,7 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    return await this._update(data, execute, schemas);
+    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
   }
 
   public async update(
@@ -108,7 +108,7 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    return await this._wrap(data, execute, schemas);
+    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
   }
 
   public async delete(
@@ -131,7 +131,7 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    return await this._wrap(data, execute, schemas);
+    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
   }
 
   public async read(
@@ -154,7 +154,7 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadMany<any>>>
   {
-    return await this._wrap(data, execute, schemas);
+    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadMany<any>>;
   }
 
   public async list(

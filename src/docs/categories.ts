@@ -1,9 +1,21 @@
-import { OpenAPICRUDBuilder } from '@/utils/docs/APIDocsCRUDBuilder';
+import { OpenAPICRUDBuilder } from '@/utils/docs/OpenAPICRUDBuilder';
+import * as categoriesSchemas from '@/typebox/services/categories';
+
 
 export const categoriesDocs = new OpenAPICRUDBuilder('categories')
-  .addCreateOperation()
-  .addUpdateOperation()
+  .setAllowedOperations("view")
+  .setDefaultSuccessItemSchema(categoriesSchemas.Category)
+  .addCreateOperation({
+    requestBodySchema: categoriesSchemas.CategoryInsert,
+  })
+  .addUpdateOperation({
+    requestBodySchema: categoriesSchemas.CategoryUpdate,
+  })
   .addDeleteOperation()
   .addGetOperation()
-  .addListOperation()
+  .addListOperation({
+    parameters: [
+      { name: "childrenOf", in: "query" },
+    ],
+  })
   .buildDocument();

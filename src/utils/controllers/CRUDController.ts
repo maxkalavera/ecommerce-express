@@ -1,22 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
-import { APIError } from '@/utils/errors';
 import { CoreController } from '@/utils/controllers/CoreController'; 
 import { RequestData, ControllerExecuters } from '@/types/controllers';
-//import { DocsCRUDComposer } from '@/utils/controllers/DocsCRUDComposer';
+
+
+type CRUDKeyword = "create" | "update" | "delete" | "read" | "list" | "view" | "mutate" | "all";
 
 
 export class CRUDController extends CoreController {
   protected executers: ControllerExecuters;
-  //public docs: DocsCRUDComposer;
+  protected defaultIdentifierParam: string = 'key';
+  protected crudAllowedOperations: (CRUDKeyword)[];
   
   constructor(
     resourceName: string,
     _options: Partial<{
       executers: Partial<ControllerExecuters>;
+      operations: (CRUDKeyword)[] | CRUDKeyword;
     }> = {}
   ) {
     super(resourceName);
-    const options = this._defaultsDeep(_options, {
+    const options = this.defaultsDeep(_options, {
+      operations: "all",
       executers: {
         create: async () => {
           throw ('"create" is not implemented');
@@ -34,17 +38,32 @@ export class CRUDController extends CoreController {
           throw ('"list" is not implemented');
         },
       },
+    } as {
+      executers: ControllerExecuters;
+      operations: (CRUDKeyword)[] | CRUDKeyword;
     });
     this.executers = options.executers;
-    //this.docs = new DocsCRUDComposer(resourceName);
+    this.crudAllowedOperations = Array.isArray(options.operations) 
+      ? options.operations 
+      : [options.operations];
   }
 
   protected _addCRUDRoutes() {
-    this.router.post('/', this.create);
-    this.router.put('/:id', this.update);
-    this.router.delete('/:id', this.delete);
-    this.router.get('/:id', this.read);
-    this.router.get('/', this.list);
+    if (multipleContains(this.crudAllowedOperations, ["all", "create", "mutate"])) {
+      this.router.post('/', this.create.bind(this));
+    }
+    if (multipleContains(this.crudAllowedOperations, ["all", "update", "mutate"])) {
+      this.router.put(`/:${this.defaultIdentifierParam}`, this.update.bind(this));
+    }
+    if (multipleContains(this.crudAllowedOperations, ["all", "delete", "mutate"])) {
+      this.router.delete(`/:${this.defaultIdentifierParam}`, this.delete.bind(this));
+    }
+    if (multipleContains(this.crudAllowedOperations, ["all", "read", "view"])) {
+      this.router.get(`/:${this.defaultIdentifierParam}`, this.read.bind(this));
+    }
+    if (multipleContains(this.crudAllowedOperations, ["all", "list", "view"])) {
+      this.router.get('/', this.list.bind(this));
+    }
   }
 
   _addRoutes() {
@@ -72,17 +91,17 @@ export class CRUDController extends CoreController {
       executer: ControllerExecuters['create'];
     }> = {}
   ) {
-    const options = this._defaults(_options, {
+    const options = this.defaults(_options, {
       executer: this.executers.create,
     });
 
-    await this._withErrors({ message: "Error creating resource" }, async () => {
+    await this.withErrors({ message: "Error creating resource" }, async () => {
       const data = this._buildRequestData(req);
-      const result = await options.executer(data);
+      const result = await options.executer(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        res.status(201).json(result.getPayload());        
+        return res.status(201).json(result.getPayload());        
       }
-      next(result.getError());
+      return next(result.getError());
     });
   }
 
@@ -100,17 +119,17 @@ export class CRUDController extends CoreController {
       executer: ControllerExecuters['update'];
     }> = {}
   ) {
-    const options = this._defaults(_options, {
+    const options = this.defaults(_options, {
       executer: this.executers.update,
     });
 
-    await this._withErrors({ message: "Error updating resource" }, async () => {
+    await this.withErrors({ message: "Error updating resource" }, async () => {
       const data = this._buildRequestData(req);
-      const result = await options.executer(data);
+      const result = await options.executer(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        res.status(201).json(result.getPayload());        
+        return res.status(201).json(result.getPayload());        
       }
-      next(result.getError());
+      return next(result.getError());
     });
   }
 
@@ -128,17 +147,17 @@ export class CRUDController extends CoreController {
       executer: ControllerExecuters['delete'];
     }> = {}
   ) {
-    const options = this._defaults(_options, {
+    const options = this.defaults(_options, {
       executer: this.executers.delete,
     });
 
-    await this._withErrors({ message: "Error deleting resource" }, async () => {
+    await this.withErrors({ message: "Error deleting resource" }, async () => {
       const data = this._buildRequestData(req);
-      const result = await options.executer(data);
+      const result = await options.executer(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        res.status(201).json(result.getPayload());        
+        return res.status(201).json(result.getPayload());        
       }
-      next(result.getError());
+      return next(result.getError());
     });
   }
 
@@ -156,17 +175,17 @@ export class CRUDController extends CoreController {
       executer: ControllerExecuters['read'];
     }> = {}
   ) {
-    const options = this._defaults(_options, {
+    const options = this.defaults(_options, {
       executer: this.executers.read,
     });
 
-    await this._withErrors({ message: "Error reading resource" }, async () => {
+    await this.withErrors({ message: "Error reading resource" }, async () => {
       const data = this._buildRequestData(req);
-      const result = await options.executer(data);
+      const result = await options.executer(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        res.status(201).json(result.getPayload());        
+        return res.status(201).json(result.getPayload());        
       }
-      next(result.getError());
+      return next(result.getError());
     });
   }
 
@@ -184,21 +203,35 @@ export class CRUDController extends CoreController {
       executer: ControllerExecuters['list'];
     }> = {}
   ) {
-    const options = this._defaults(_options, {
+    const options = this.defaults(_options, {
       executer: this.executers.list,
     });
 
-    await this._withErrors({ message: "Error listing resource" }, async () => {
+    await this.withErrors({ message: "Error listing resource" }, async () => {
       const data = this._buildRequestData(req);
-      const result = await options.executer(data);
+      const result = await options.executer(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        res.status(201).json(result.getPayload());        
+        return res.status(201).json(result.getPayload());        
       }
-      next(result.getError());
+      return next(result.getError());
     });
   }
 
   public async list(req: Request, res: Response, next: NextFunction) {
     return await this._list(req, res, next);
   }
+}
+
+
+/******************************************************************************
+ * Utils
+ *****************************************************************************/
+
+function multipleContains(
+  arr: string[], 
+  values: string[]
+) {
+  // Check if array contains any of the given values
+  return values.some(value => arr.includes(value));
+
 }

@@ -1,27 +1,24 @@
+import { LayersCore } from '@/utils/layers/LayersCore';
 import * as commons from "@/types/commons";
 import * as layers from '@/types/layers';
 
-/*
-export type PayloadSingle<
-  Instance extends Record<string, any>
-> = commons.PayloadSingle<Instance>;
-
-export type PayloadMany<
-  Instance extends Record<string, any>
-> = commons.PayloadMany<Instance>;
-
-export type ControllerReturnType<
-  Payload extends PayloadSingle<Instance> | PayloadMany<Instance> = PayloadSingle<any> | PayloadMany<any>,
-  Instance extends Record<string, any> = any,
-> = commons.LayersReturnType<Payload>;
-*/
-
 export type RequestData = commons.RequestData;
 
+export type ControllerExecuterHelpers = { 
+  buildReturn: LayersCore['buildReturn'];
+};
+
+export type ServiceExecuter<
+  PayloadType extends layers.PayloadSingle<any> | layers.PayloadMany<any> = 
+    layers.PayloadSingle<any> | layers.PayloadMany<any>
+> = 
+  (data: RequestData, helpers: ControllerExecuterHelpers) => Promise<layers.LayersReturnType<PayloadType>>
+
+
 export type ControllerExecuters = {
-  create: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadSingle<any>>>;
-  update: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadSingle<any>>>;
-  delete: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadSingle<any>>>;
-  read: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadSingle<any>>>;
-  list: (data: RequestData) => Promise<layers.LayersReturnType<layers.PayloadMany<any>>>;
+  create: ServiceExecuter<layers.PayloadSingle<any>>;
+  update: ServiceExecuter<layers.PayloadSingle<any>>;
+  delete: ServiceExecuter<layers.PayloadSingle<any>>;
+  read: ServiceExecuter<layers.PayloadSingle<any>>;
+  list: ServiceExecuter<layers.PayloadMany<any>>;
 };

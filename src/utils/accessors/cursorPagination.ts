@@ -7,11 +7,11 @@ const ENCRYPTION_KEY = Buffer.from(settings.SECRET_KEY, "hex").subarray(0, 16);
 const ENCRYPTION_IV_LENGTH = 16;
 const ENCRYPTION_ALGORITHM = "aes-128-ctr";
 
-function _serializeObject(data: Record<string, any>): string {
+function serializeObject(data: Record<string, any>): string {
   return Buffer.from(JSON.stringify(data), 'utf8').toString('base64');
 }
 
-function _deserializeObject(str: string): Record<string, any> {
+function deserializeObject(str: string): Record<string, any> {
   return JSON.parse(Buffer.from(str, 'base64').toString('utf8'));
 }
 
@@ -21,7 +21,7 @@ export function buildCursor (
 {
   try {
     // Configuration
-    const serialized = _serializeObject(data);
+    const serialized = serializeObject(data);
     const iv = randomBytes(ENCRYPTION_IV_LENGTH);
     const cipher = createCipheriv(
       ENCRYPTION_ALGORITHM, 
@@ -68,7 +68,7 @@ export function decodeCursor (
     ]).toString('utf8');
   
     // Deserialize back to object
-    return _deserializeObject(decrypted);
+    return deserializeObject(decrypted);
   } catch (error) {
     throw APIError.fromError(error, { code: 400, message: 'Invalid cursor'}); 
   }

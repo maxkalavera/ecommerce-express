@@ -1,6 +1,15 @@
-import { Type } from '@sinclair/typebox';
+import { Type, TSchema } from '@sinclair/typebox';
 
-export const ListQueryParamaters = Type.Object({
-  cursor: Type.Optional(Type.String()),
-  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
-});
+
+export const PayloadSingle = <Instance extends TSchema>(Instance: Instance) => 
+  Type.Object({
+    data: Instance,
+  });
+
+
+export const PayloadMany = <Instance extends TSchema>(Instance: Instance) => 
+  Type.Object({
+    items: Type.Array(Instance),
+    cursor: Type.Optional(Type.String()),
+    hasMore: Type.Boolean(),
+  });
