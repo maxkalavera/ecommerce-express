@@ -1,14 +1,14 @@
 import { Type } from '@sinclair/typebox';
-import { Nullable } from '@/utils/typebox';
+import { Nullable, Base64URL } from '@/utils/typebox';
 
 
 export const Category = Type.Object({
-  key: Type.String({ format: 'base64url' }),
+  key: Base64URL(),
   createdAt: Type.String({ format: 'date-time' }),
   updatedAt: Type.String({ format: 'date-time' }),
   name: Type.String(),
   description: Type.String(),
-  parentKey: Nullable(Type.String({ format: 'base64url' })),
+  parentKey: Nullable(Base64URL()),
   display: Nullable(Type.Object({
     url: Type.String(),
     mimetype: Type.String(),
@@ -18,18 +18,18 @@ export const Category = Type.Object({
 export const CategoryInsert = Type.Object({
   name: Type.String(),
   description: Type.String(),
-  parentKey: Type.Optional(Type.String({ format: 'base64url' })),
+  parentKey: Type.Optional(Base64URL()),
 });
 
 export const CategoryUpdate = Type.Partial(CategoryInsert);
 
 export const CategoryIdentifiers = Type.Object({
   id: Type.Optional(Type.Number()),
-  key: Type.Optional(Type.String({ format: 'base64url' }))
+  key: Type.Optional(Base64URL())
 });
 
 export const CategoryQueryParams = Type.Object({
-  cursor: Type.Optional(Type.String({ format: 'base64url' })),
+  cursor: Type.Optional(Base64URL()),
   limit: Type.Optional(Type.Number()),
-  childrenOf: Type.Optional(Type.String({ format: 'base64url' })),
+  childrenOf: Type.Optional(Base64URL()),
 });

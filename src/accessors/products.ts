@@ -1,11 +1,11 @@
 import * as op from 'drizzle-orm';
-import CoreAccessor from '@/utils/accessors/CoreAccessor';
+import CoreAccessor, { type BuildQueryOptions } from '@/utils/accessors/CoreAccessor';
 import { products, productsItems, productsImages } from '@/models/products';
 import { ImageAccessorComposer } from '@/utils/accessors/ImageAccessorComposer';
 import {
   ProductsInsert, ProductsUpdate, 
-  ProductsItemsInsert, ProductsItemsUpdate,
-  ProductsImagesInsert, ProductsImagesUpdate
+  ProductsItemsInsert, ProductsItemsUpdate, ProductItemsQueryParams,
+  ProductsImagesInsert, ProductsImagesUpdate, ProductsImagesQueryParams
 } from "@/typebox/accessors/products";
 
 
@@ -14,6 +14,7 @@ import {
  *****************************************************************************/
 
 export class ProductsAccessor extends CoreAccessor {
+
   constructor () {
     super(
       products,
@@ -23,6 +24,24 @@ export class ProductsAccessor extends CoreAccessor {
       }
     );
   }
+
+  protected buildQuerySelectFields() {
+    return {
+      ...this.table as Record<string, any>,
+      isFavorite: productsItems.isFavorite,
+      isOnCart: productsItems.isOnCart,
+      quantity: productsItems.quantity,
+      size: productsItems.size,
+    };
+  }
+
+  protected buildQueryBaseSelect () {
+    return this.db
+     .select(this.buildQuerySelectFields())
+     .from(this.table)
+     .leftJoin(productsItems, op.eq(products.id, productsItems.productId));
+  }
+
 }
 export const productsAccessor = new ProductsAccessor();
 
@@ -37,9 +56,72 @@ export class ProductsItemsAccessor extends CoreAccessor {
       {
         insertSchema: ProductsItemsInsert,
         updateSchema: ProductsItemsUpdate,
+        queryParamsSchema: ProductItemsQueryParams,
       }
     );
   }
+
+  protected buildQuerySelectFields() {
+    return {
+      ...this.table as Record<string, any>,
+      name: products.name,
+      description: products.description,
+      price: products.price,
+      color: products.color,
+      colorHex: products.colorHex,
+      isLabeled: products.isLabeled,
+      labelContent: products.labelContent,
+      labelColor: products.labelColor,
+    };
+  }
+
+  protected buildQueryBaseSelect() {
+    return this.db
+      .select(this.buildQuerySelectFields())
+      .from(this.table)
+      .leftJoin(products, op.eq(productsItems.productId, products.id));
+  }
+
+
+  protected buildQueryWhere(
+    query: Record<string, any>,
+    options: BuildQueryOptions
+  ) {
+    const conditions = super.buildKeyQueryWhere(query, options);
+    const { search, newArrivals } = query;
+
+    if (typeof search === 'string' && search.length >= 3) {
+      conditions.push(
+        op.or(
+          op.ilike(products.name, op.sql`'%' || ${search} || '%'`),
+          op.ilike(products.description, op.sql`'%' || ${search} || '%'`),
+          op.ilike(products.color, op.sql`'%' || ${search} || '%'`),
+          op.ilike(productsItems.size, op.sql`'%' || ${search} || '%'`),
+        )
+      );
+    }
+
+    if (typeof newArrivals === 'boolean' && newArrivals) {
+      conditions.push(
+        op.gte(products.createdAt, op.sql`NOW() - INTERVAL '2 weeks'`)
+      );
+    }
+
+    return conditions;
+  }
+
+  protected buildPaginationQueryOrderBy(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): op.SQL[]
+  {
+    const orderBy = super.buildPaginationQueryOrderBy(params, options);
+
+
+
+    return orderBy;
+  }
+
 }
 export const productsItemsAccessor = new ProductsItemsAccessor();
 
@@ -56,8 +138,38 @@ export class ProductsImagesAccessor extends CoreAccessor {
       {
         insertSchema: ProductsImagesInsert,
         updateSchema: ProductsImagesUpdate,
+        queryParamsSchema: ProductsImagesQueryParams,
       }
     );
+  }
+
+  protected buildQuerySelectFields() {
+    return {
+      ...this.table as Record<string, any>,
+    }
+  }
+
+  protected buildQueryBaseSelect() {
+    return this.db
+      .select(this.buildQuerySelectFields())
+      .from(this.table);
+  }
+
+  protected buildQueryWhere(
+    query: Record<string, any>,
+    options: BuildQueryOptions
+  ) {
+    const conditions = super.buildKeyQueryWhere(query, options);
+
+    if (query.productId !== undefined) {
+      conditions.push(op.eq(this.table.productId, query.productId));
+    }
+
+    if (query.productsIds !== undefined) {
+      conditions.push(op.inArray(this.table.productId, query.productsIds))
+    }
+
+    return conditions;
   }
 
 }

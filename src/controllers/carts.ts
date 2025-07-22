@@ -16,7 +16,7 @@ export const CartsItemsController = new CRUDController(
         return await cartsItemsService.delete(requestData);
       },
       read: async (requestData) => {
-        return await cartsItemsService.create(requestData);
+        return await cartsItemsService.read(requestData);
       },
       list: async (requestData) => {
         return await cartsItemsService.list(requestData);

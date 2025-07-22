@@ -11,7 +11,7 @@ export type APIErrorParameters = {
   message: string;
   details?: Record<string, string[]>;
   code?: number;
-  errorStack?: Error[];
+  errorStack?: (Error | Record<string, any>)[];
 }
 
 /******************************************************************************
@@ -30,7 +30,7 @@ export class APIError extends Error {
   public details: Record<string, string[]>;
   public statusCode: number;
   public timestamp: Date;
-  public errorStack: Error[];
+  public errorStack: (Error | Record<string, any>)[];
 
   static fromError (
     error: Error | unknown, 
@@ -44,7 +44,12 @@ export class APIError extends Error {
     } else if (error instanceof Error) {
       return new APIError({ 
         ...params,
-        errorStack: [error]
+        errorStack: [
+          {
+            message: error.message,
+            stack: error.stack
+          }
+        ]
       });
     }
     throw new Error (`Error parameter should be of error type: ${error}`);

@@ -13,7 +13,7 @@ export default function error (
   next: NextFunction
 ): void 
 {
-  console.error(JSON.stringify(err, null, 2));
+  console.error(err);
   if (res.headersSent) {
     next();
   } else {

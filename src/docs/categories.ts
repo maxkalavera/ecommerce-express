@@ -3,7 +3,7 @@ import * as categoriesSchemas from '@/typebox/services/categories';
 
 
 export const categoriesDocs = new OpenAPICRUDBuilder('categories')
-  .setAllowedOperations("view")
+  .setAllowedOperations("all")
   .setDefaultSuccessItemSchema(categoriesSchemas.Category)
   .addCreateOperation({
     requestBodySchema: categoriesSchemas.CategoryInsert,

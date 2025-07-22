@@ -1,4 +1,5 @@
 import { Type } from '@sinclair/typebox';
+import { Nullable, Base64URL, Decimal } from '@/utils/typebox';
 import { BaseSchema } from '@/typebox/accessors/commons';
 
 /******************************************************************************
@@ -20,9 +21,9 @@ export const ProductsInsert = Type.Composite([
     categoryId: Type.Integer(),
     categoryKey: Type.Optional(Type.String({ format: 'base64url' })),
   })
-]);
+], { additionalProperties: false });
 
-export const ProductsUpdate = Type.Partial(ProductsInsert);
+export const ProductsUpdate = Type.Partial(ProductsInsert, { additionalProperties: false });
 
 /******************************************************************************
  * Products items
@@ -39,9 +40,21 @@ export const ProductsItemsInsert = Type.Composite([
     productId: Type.Integer(),
     productKey: Type.Optional(Type.String({ format: 'base64url' })),
   })
-]);
+], { additionalProperties: false });
 
-export const ProductsItemsUpdate = Type.Partial(ProductsItemsInsert);
+export const ProductsItemsUpdate = Type.Partial(ProductsItemsInsert, { additionalProperties: false });
+
+export const ProductItemsQueryParams = Type.Partial(Type.Object({
+  search: Type.String(),
+  newArrivals: Type.Boolean(),
+  saleItems: Type.Boolean(),
+  category: Base64URL(),
+  sort: Type.String({ enum: ['relevance', 'trending', 'latest-arrival', 'price-low-high', 'price-high-low'] }),
+  color: Type.String(),
+  size: Type.String(),
+  fromPrice: Decimal(),
+  toPrice: Decimal(),
+}));
 
 /******************************************************************************
  * Products items images
@@ -55,6 +68,11 @@ export const ProductsImagesInsert = Type.Composite([
     mimetype: Type.Union([Type.String({ maxLength: 255 }), Type.Null()]),
     isCover: Type.Optional(Type.Boolean()),
   })
-]);
+], { additionalProperties: false });
 
-export const ProductsImagesUpdate = Type.Partial(ProductsImagesInsert);
+export const ProductsImagesUpdate = Type.Partial(ProductsImagesInsert, { additionalProperties: false });
+
+export const ProductsImagesQueryParams = Type.Partial(Type.Object({
+  productId: Type.Number(),
+  productsIds: Type.Array(Type.Union([Type.Number(), Type.String({ pattern: '^[0-9]+$' })])),
+}));

@@ -1,6 +1,6 @@
 
 import * as op from 'drizzle-orm';
-import CoreAccessor from '@/utils/accessors/CoreAccessor';
+import CoreAccessor, { type BuildQueryOptions } from '@/utils/accessors/CoreAccessor';
 import { categories, categoriesImages } from '@/models/categories';
 import { 
   CategoriesInsert, 
@@ -27,20 +27,18 @@ class CategoriesAccessor extends CoreAccessor {
     );
   }
 
-  protected _buildSelectFields() {
+  protected buildQuerySelectFields(): Record<string, any> {
     return {
-      ...this.table as any,
+      ...this.table,
       image: {
-        ...categoriesImages as any,
+        ...categoriesImages,
       },
     };
   }
 
-  protected _buildBaseQuery (
-    queryParams: Record<string, any> = {},
-  ) {
+  protected buildQueryBaseSelect() {
     return this.db
-     .select(this._buildSelectFields())
+     .select(this.buildQuerySelectFields())
      .from(this.table).leftJoin(
       categoriesImages, op.eq(categoriesImages.categoryId, this.table.id));
   }

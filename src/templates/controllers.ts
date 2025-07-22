@@ -18,7 +18,7 @@ export const ___Controller = new CRUDController(
         return await ___Service.delete(requestData);
       },
       read: async (requestData, { buildReturn }) => {
-        return await ___Service.create(requestData);
+        return await ___Service.read(requestData);
       },
       list: async (requestData, { buildReturn }) => {
         return await ___Service.list(requestData);

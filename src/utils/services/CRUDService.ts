@@ -52,7 +52,7 @@ export class CRUDService extends CoreService {
    * Create operations
    ***************************************************************************/
 
-  protected async _create(
+  public async create(
     data: Partial<RequestData>,
     execute: ServiceExecuters['create'] = this.options.executers.create,
     schemas: Partial<ServiceTaskSchemas> = {
@@ -61,21 +61,14 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
-  }
-
-  public async create(
-    data: Partial<RequestData>
-  ): Promise<LayersReturnType<PayloadSingle<any>>>
-  {
-    return await this._create(data);
+    return await this.wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
   }
 
   /****************************************************************************
    * Update operations
    ***************************************************************************/
 
-  protected async _update(
+  public async update(
     data: Partial<RequestData>,
     execute: ServiceExecuters['update'] = this.options.executers.update,
     schemas: Partial<ServiceTaskSchemas> = {
@@ -85,21 +78,14 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
-  }
-
-  public async update(
-    data: Partial<RequestData>
-  ): Promise<LayersReturnType<PayloadSingle<any>>>
-  {
-    return await this._update(data);
+    return await this.wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
   }
 
   /****************************************************************************
    * Delete operations
    ***************************************************************************/
 
-  protected async _delete(
+  public async delete(
     data: Partial<RequestData>,
     execute: ServiceExecuters['delete'] = this.options.executers.delete,
     schemas: Partial<ServiceTaskSchemas> = {
@@ -108,21 +94,14 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
-  }
-
-  public async delete(
-    data: Partial<RequestData>
-  ): Promise<LayersReturnType<PayloadSingle<any>>>
-  {
-    return await this._delete(data);
+    return await this.wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
   }
 
   /****************************************************************************
    * Read operations
    ***************************************************************************/
 
-  protected async _read(
+  public async read(
     data: Partial<RequestData>,
     execute: ServiceExecuters['read'] = this.options.executers.read,
     schemas: Partial<ServiceTaskSchemas> = {
@@ -131,21 +110,14 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
-  }
-
-  public async read(
-    data: Partial<RequestData>
-  ): Promise<LayersReturnType<PayloadSingle<any>>>
-  {
-    return await this._read(data);
+    return await this.wrap(data, execute, schemas) as LayersReturnType<PayloadSingle<any>>;
   }
 
   /****************************************************************************
    * All operations
    ***************************************************************************/
 
-  protected async _list(
+  public async list(
     data: Partial<RequestData>,
     execute: ServiceExecuters['list'] = this.options.executers.list,
     schemas: Partial<ServiceTaskSchemas> = {
@@ -154,14 +126,7 @@ export class CRUDService extends CoreService {
     }
   ): Promise<LayersReturnType<PayloadMany<any>>>
   {
-    return await this._wrap(data, execute, schemas) as LayersReturnType<PayloadMany<any>>;
-  }
-
-  public async list(
-    data: Partial<RequestData>
-  ): Promise<LayersReturnType<PayloadMany<any>>>
-  {
-    return await this._list(data);
+    return await this.wrap(data, execute, schemas) as LayersReturnType<PayloadMany<any>>;
   }
 
 }

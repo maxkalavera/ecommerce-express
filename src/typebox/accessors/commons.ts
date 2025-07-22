@@ -5,24 +5,17 @@ export const CursorSchema = Type.Object({
   limit: Type.Optional(Type.Number()),
 });
 
-export const BaseKeysSchema = Type.Object({
-  id: Type.Optional(Type.Number()),
-  key: Type.Optional(Type.String({ format: 'base64url' }))
-});
-
 export const BaseTimestampsSchema = Type.Object({
   createdAt: Type.Optional(Type.String({ format: 'date-time' })),
   updatedAt: Type.Optional(Type.String({ format: 'date-time' })),
 });
 
+export const BaseKeysSchema = Type.Object({
+  id: Type.Optional(Type.Number()),
+  key: Type.Optional(Type.String({ format: 'base64url' }))
+});
+
 export const BaseSchema = Type.Composite([
   BaseKeysSchema,
   BaseTimestampsSchema,
-]);
-
-export const BaseQueryParamsSchema = Type.Composite([
-  CursorSchema,
-  Type.Object({
-
-  })
 ]);

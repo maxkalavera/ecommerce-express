@@ -11,7 +11,7 @@ export const CartsInsert = Type.Composite([
   Type.Object({
     userId: Type.String(),
   })
-]);
+], { additionalProperties: false });
 
 export const CartsUpdate = Type.Partial(CartsInsert);
 
@@ -25,6 +25,6 @@ export const CartsItemsInsert = Type.Composite([
     cartId: Type.String(),
     productId: Type.String(),
   })
-]);
+], { additionalProperties: false });
 
 export const CartsItemsUpdate = Type.Partial(CartsItemsInsert);

@@ -2,6 +2,7 @@ import loadash from 'lodash';
 import { APIError, APIErrorParameters } from '@/utils/errors';
 import { LayersReturn } from "@/utils/layers/LayersReturn";
 import { ReturnData, PayloadSingle, PayloadMany } from '@/types/layers';
+import { validate, coherce } from '@/utils/validators';
 
 
 export class LayersCore {
@@ -35,6 +36,18 @@ export class LayersCore {
     returned: ReturnData<Payload>
   ) {
     return new LayersReturn(returned);
+  }
+
+  protected validate(
+    ...args: Parameters<typeof validate>
+  ) {
+    return validate(...args);
+  }
+
+  protected coherce(
+    ...args: Parameters<typeof coherce>
+  ) {
+    return coherce(...args);
   }
 
 };

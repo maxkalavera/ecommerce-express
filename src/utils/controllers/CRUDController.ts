@@ -48,7 +48,7 @@ export class CRUDController extends CoreController {
       : [options.operations];
   }
 
-  protected _addCRUDRoutes() {
+  protected addCRUDRoutes() {
     if (multipleContains(this.crudAllowedOperations, ["all", "create", "mutate"])) {
       this.router.post('/', this.create.bind(this));
     }
@@ -66,11 +66,11 @@ export class CRUDController extends CoreController {
     }
   }
 
-  _addRoutes() {
-    this._addCRUDRoutes();
+  addRoutes() {
+    this.addCRUDRoutes();
   }
 
-  protected _buildRequestData(
+  protected buildRequestData(
     req: Request
   ): RequestData
   {
@@ -96,7 +96,7 @@ export class CRUDController extends CoreController {
     });
 
     await this.withErrors({ message: "Error creating resource" }, async () => {
-      const data = this._buildRequestData(req);
+      const data = this.buildRequestData(req);
       const result = await options.executer(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
         return res.status(201).json(result.getPayload());        
@@ -124,7 +124,7 @@ export class CRUDController extends CoreController {
     });
 
     await this.withErrors({ message: "Error updating resource" }, async () => {
-      const data = this._buildRequestData(req);
+      const data = this.buildRequestData(req);
       const result = await options.executer(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
         return res.status(201).json(result.getPayload());        
@@ -141,85 +141,59 @@ export class CRUDController extends CoreController {
    * Delete operations
    ***************************************************************************/
 
-  protected async _delete(
-    req: Request, res: Response, next: NextFunction,
-    _options: Partial<{
-      executer: ControllerExecuters['delete'];
-    }> = {}
-  ) {
-    const options = this.defaults(_options, {
-      executer: this.executers.delete,
-    });
-
-    await this.withErrors({ message: "Error deleting resource" }, async () => {
-      const data = this._buildRequestData(req);
-      const result = await options.executer(data, { buildReturn: this.buildReturn });
-      if (result.isSuccess()) {
-        return res.status(201).json(result.getPayload());        
-      }
-      return next(result.getError());
-    });
-  }
-
-  public async delete(req: Request, res: Response, next: NextFunction) {
-    return await this._delete(req, res, next);
-  }
+    protected async delete(
+      req: Request, 
+      res: Response, 
+      next: NextFunction,
+    ) {
+      await this.withErrors({ message: "Error deleting resource" }, async () => {
+        const data = this.buildRequestData(req);
+        const result = await this.executers.delete(data, { buildReturn: this.buildReturn });
+        if (result.isSuccess()) {
+          return res.status(201).json(result.getPayload());        
+        }
+        return next(result.getError());
+      });
+    };
 
   /****************************************************************************
    * Read operations
    ***************************************************************************/
 
-  protected async _read(
-    req: Request, res: Response, next: NextFunction,
-    _options: Partial<{
-      executer: ControllerExecuters['read'];
-    }> = {}
+  protected async read(
+    req: Request, 
+    res: Response, 
+    next: NextFunction,
   ) {
-    const options = this.defaults(_options, {
-      executer: this.executers.read,
-    });
-
     await this.withErrors({ message: "Error reading resource" }, async () => {
-      const data = this._buildRequestData(req);
-      const result = await options.executer(data, { buildReturn: this.buildReturn });
+      const data = this.buildRequestData(req);
+      const result = await this.executers.read(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
         return res.status(201).json(result.getPayload());        
       }
       return next(result.getError());
     });
-  }
-
-  public async read(req: Request, res: Response, next: NextFunction) {
-    return await this._read(req, res, next);
   }
 
   /****************************************************************************
    * List operations
    ***************************************************************************/
 
-  protected async _list(
-    req: Request, res: Response, next: NextFunction,
-    _options: Partial<{
-      executer: ControllerExecuters['list'];
-    }> = {}
+  protected async list(
+    req: Request, 
+    res: Response, 
+    next: NextFunction,
   ) {
-    const options = this.defaults(_options, {
-      executer: this.executers.list,
-    });
-
     await this.withErrors({ message: "Error listing resource" }, async () => {
-      const data = this._buildRequestData(req);
-      const result = await options.executer(data, { buildReturn: this.buildReturn });
+      const data = this.buildRequestData(req);
+      const result = await this.executers.list(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
         return res.status(201).json(result.getPayload());        
       }
       return next(result.getError());
     });
   }
-
-  public async list(req: Request, res: Response, next: NextFunction) {
-    return await this._list(req, res, next);
-  }
+  
 }
 
 

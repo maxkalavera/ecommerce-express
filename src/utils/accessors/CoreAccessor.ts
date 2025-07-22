@@ -1,32 +1,55 @@
 import * as op from 'drizzle-orm';
-import { Table } from 'drizzle-orm';
 import { PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
 import { Type, TSchema, Static } from '@sinclair/typebox';
 import { LayersCore } from '@/utils/layers/LayersCore'; 
-import { PayloadSingle, PayloadMany, LayersReturnType } from '@/types/layers'
+import { PayloadSingle, PayloadMany, LayersReturnType } from '@/types/layers';
 import { Database } from '@/types/db';
 import { getDatabase } from '@/db';
 import settings from '@/settings';
 import { APIError } from '@/utils/errors';
-import { validate } from '@/utils/validator';
-import { getLookups, LookupsObject } from '@/utils/accessors/lookups';
 import { buildCursor, decodeCursor } from '@/utils/accessors/cursorPagination';
-import { BaseKeysSchema, BaseQueryParamsSchema } from '@/typebox/accessors/commons'
 
 
 /******************************************************************************
  * Types
  *****************************************************************************/
 
-type DecodedCursorArtifacts = {
-  validCursor: boolean;
-  data: Record<string, any>;
-  limit: number;
+type CursorData = Record<string, any>;
+
+export type BuildQueryOptions = {
+  usePagination: Boolean;
 };
 
 /******************************************************************************
  * CoreAccessor
  *****************************************************************************/
+
+/**
+ * Core accessor class that provides CRUD operations and cursor-based pagination
+ * for database tables using Drizzle ORM.
+ * 
+ * @class CoreAccessor
+ * @extends LayersCore
+ * 
+ * @property {Database} db - Database connection instance
+ * @property {PgTableWithColumns<any>} table - Drizzle table object to perform operations on
+ * @property {TSchema} insertSchema - JSON schema for validating insert operations
+ * @property {TSchema} updateSchema - JSON schema for validating update operations
+ * @property {TSchema} keysSchema - JSON schema for validating record keys
+ * @property {TSchema} queryParamsSchema - JSON schema for validating query parameters
+ * 
+ * @example
+ * ```typescript
+ * class UserAccessor extends CoreAccessor {
+ *   constructor() {
+ *     super(users, {
+ *       insertSchema: UserInsertSchema,
+ *       updateSchema: UserUpdateSchema
+ *     });
+ *   }
+ * }
+ * ```
+ */
 
 export class CoreAccessor extends LayersCore {
   protected db: Database;
@@ -38,7 +61,7 @@ export class CoreAccessor extends LayersCore {
 
   constructor (
     table: PgTableWithColumns<any>,
-    options: Partial<{
+    _options: Partial<{
       insertSchema: TSchema,
       updateSchema: TSchema,
       keysSchema: TSchema,
@@ -47,154 +70,101 @@ export class CoreAccessor extends LayersCore {
     }> = {}
   ) {
     super();
+    const options = this.defaults(_options, {
+      insertSchema: Type.Record(Type.String(), Type.Any()),
+      updateSchema: Type.Record(Type.String(), Type.Any()),
+      keysSchema: Type.Record(Type.String(), Type.Any()),
+      queryParamsSchema: Type.Record(Type.String(), Type.Any()),
+      db: getDatabase(),
+    });
+
     this.table = table;
-    this.insertSchema = options.insertSchema || Type.Record(Type.String(), Type.Any());
-    this.updateSchema = options.updateSchema || Type.Record(Type.String(), Type.Any());
-    this.keysSchema = options.keysSchema || BaseKeysSchema;
-    this.queryParamsSchema = options.queryParamsSchema || BaseQueryParamsSchema;
-    this.db = options.db || getDatabase();
-  }
-
-  protected validateSchema(schema: TSchema, data: Record<string, any>) {
-    return validate({
-      ...schema,
-      additionalProperties: false,
-    }, data);
-  }
-
-  protected getColumnsFromkeys(
-    table: Table, 
-    keys: Record<string, any>,
-  ) {
-    return Object.entries(keys)
-      .map(([key, value]) => [
-        (key in table) ? table[key as keyof typeof table] : null,
-        value
-      ])
-      .filter(([key, value]) => key !== null && value !== undefined);
-  }
-
-  protected getLookups(
-    keys: Static<typeof this.keysSchema>
-  ): LookupsObject 
-  {
-    this.validateSchema(this.keysSchema, keys as Record<string, any>);
-    return getLookups(this.table, keys as Record<string, any>);
-  }
-
-  protected getKeysFromRecord(record: Record<string, any>) {
-    return {
-      id: record.id
-    }
+    this.insertSchema = options.insertSchema;
+    this.updateSchema = options.updateSchema;
+    this.keysSchema = options.keysSchema;
+    this.queryParamsSchema = options.queryParamsSchema;
+    this.db = options.db;
   }
 
   /****************************************************************************
    * Read operations
    ***************************************************************************/
 
+  /**
+   * Reads a single record by keys
+   * @param keys - Keys to identify the record
+   */
   public async read (
-    keys: Static<typeof this.keysSchema>,
+    key: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const lookups = this.getLookups(keys);
-    const result: Record<string, any>[] = await this.buildBaseQuery()
-      .$dynamic()
-      .where(lookups.all)
-      .execute();
+    const queryResult = await this.buildQuery(key);
 
-    return this.buildReturn({
-      success: true,
-      payload: { data: result[0] } 
-    });
-  }
+    if (queryResult.length > 0) {
+      return this.buildReturn({
+        success: true,
+        payload: { data: queryResult[0] } 
+      });
+    } else {
+      throw new APIError({
+        message: "Resource was not found",
+        code: 400
+      })
+    }
 
-  /*
-  public async read (
-    keys: Static<typeof this.keysSchema>
-  ): Promise<LayersReturnType<PayloadSingle<any>>> 
-  {
-    return await this._read(keys);
   }
-  */
 
   /****************************************************************************
    * List operations
    ***************************************************************************/
 
-  protected buildBaseQuery(
-    queryParams: Record<string, any> = {},
-  ): PgSelectDynamic<any>
-  {
-    return this.db
-     .select(this.buildSelectFields())
-     .from(this.table);
-  }
-
-  protected buildSelectFields (): SelectedFields
-  {
-    return this.table;
-  }
-
-  protected validateQueryParams(
-    queryParams: Static<typeof this.queryParamsSchema>
-  ): Record<string, any> 
-  {
-    this.validateSchema(this.queryParamsSchema, queryParams as Record<string, any>);
-    return queryParams as any;
-  }
-
-  protected defaultQueryParamsObject = { 
-    cursor: "", 
-    limit: settings.PAGINATION_DEFAULT_LIMIT 
-  }
-  protected defaultQueryParams(
-    queryParams: Static<typeof this.queryParamsSchema>
-  ) {
-    return this.defaults(queryParams, this.defaultQueryParamsObject)
-  }
-
+  /**
+   * Lists records with cursor-based pagination
+   * @param _queryParams - Query parameters including cursor and limit
+   */
   public async list (
-    _queryParams: Static<typeof this.queryParamsSchema>,
+    _query: Record<string, any>,
+    _options: Partial<{
+      usePagination: boolean;
+    }> = {},
   ): Promise<LayersReturnType<PayloadMany<any>>>
   {
-    let queryParams: Record<string, any> = this.validateQueryParams(_queryParams);
-    queryParams = this.defaultQueryParams(queryParams);
-    const decodedCursorArtifacts = this.decodeCursorArtifacts(queryParams.cursor, queryParams.limit);
-    const baseQuery = this.buildBaseQuery();
-    const cursorPaginatedQuery = this.withCursorPagination(baseQuery, decodedCursorArtifacts);
-    const result = await cursorPaginatedQuery.execute(queryParams);
-    const encodedCursorArtifacts = this.encodeCursorArtifacts(result, decodedCursorArtifacts);
+    const options: {
+      usePagination: boolean;
+    } = this.defaults(_options, { usePagination: true });
+
+    let queryParams: Record<string, any> = this.validateQueryParams(_query, { usePagination: false });
+    queryParams = this.defaultQueryParams(queryParams, { usePagination: false });
+
+    const decodedCursorData = options.usePagination  
+      ? this.decodeCursor(queryParams.cursor) 
+      : null;
+    const queryResult = await this.buildQuery({
+      ...queryParams,
+      ...decodedCursorData,
+    });
+    const encodedCursor = options.usePagination 
+      ? this.encodeCursor(queryResult, queryParams.limit) 
+      : null;
+    
     return this.buildReturn({
       success: true,
       payload: {
-        items: result,
-        cursor: encodedCursorArtifacts.data.cursor,
-        hasMore: encodedCursorArtifacts.data.hasMore,
+        items: queryResult,
+        cursor: encodedCursor,
+        hasMore: encodedCursor !== null,
       }      
     });
   }
-
-  /*
-  public async list (
-    queryParams: Static<typeof this.queryParamsSchema>,
-  ): Promise<LayersReturnType<PayloadMany<any>>> 
-  {
-    return await this._list(queryParams);
-  }
-  */
 
   /****************************************************************************
    * Create operations
    ***************************************************************************/
 
-  protected validateCreateData(
-    data: Record<string, any>,
-    schema=this.insertSchema
-  ): Record<string, any>
-  {
-    return this.validateSchema(schema, data);
-  }
-
+  /**
+   * Executes create operation
+   * @param data - Validated data to insert
+   */
   protected async executeCreate(
     data: Record<string, any>
   ): Promise<Record<string, any>> {
@@ -205,84 +175,75 @@ export class CoreAccessor extends LayersCore {
     return result[0];
   }
 
+  /**
+   * Creates a new record
+   * @param data - Data for new record
+   */
   public async create(
     data: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
-    const coercedData = this.validateCreateData(data);
+    const coercedData = this.validate(this.insertSchema, data);
     const mutatedRecord = await this.executeCreate(coercedData);
-    const readKeys = this.getKeysFromRecord(mutatedRecord);
-    const payload = await this.read(readKeys);
-    return payload;
+    return await this.read({ id: mutatedRecord.id });
   }
-
-  /*
-  public async create (
-    data: Record<string, any>,
-  ): Promise<LayersReturnType<PayloadSingle<any>>> 
-  {
-    return await this._create(data);
-  }
-  */
 
   /****************************************************************************
    * Update operations
    ***************************************************************************/
 
-  protected validateUpdateData(
-    data: Record<string, any>,
-    schema=this.updateSchema,
-  ): Record<string, any>
-  {
-    return this.validateSchema(schema, data);
-  }
-
+  /**
+   * Executes update operation
+   * @param data - Validated update data
+   * @param lookups - Lookup conditions to identify record(s)
+   */
   protected async executeUpdate(
+    key: Record<string, any>,
     data: Record<string, any>,
-    lookups: LookupsObject,
   ) {
     const result = await this.db
       .update(this.table)
       .set(data)
-      .where(lookups.all)
+      .where(op.and(...this.buildKeyQueryWhere(key, { usePagination: false })))
       .returning();
 
-  return result[0];
+    return result[0];
   }
 
   public async update(
-    keys: Static<typeof this.keysSchema>,
+    key: Record<string, any>,
     data: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const lookups = this.getLookups(keys);
-    const coercedData = this.validateUpdateData(data);
-    const mutatedRecord = await this.executeUpdate(coercedData, lookups);
-    const readKeys = this.getKeysFromRecord(mutatedRecord);
-    const payload = await this.read(readKeys);
-    return payload;
+    const coercedData = this.validate(this.updateSchema, data);
+    const mutatedRecord = await this.executeUpdate(key, coercedData);
+    return await this.read({ id: mutatedRecord.id });
   }
-
-  /*
-  public async update (
-    keys: Static<typeof this.keysSchema>,
-    data: Record<string, any>,
-  ): Promise<LayersReturnType<PayloadSingle<any>>> 
-  {
-    return await this._update(keys, data);
-  }
-  */
 
   /****************************************************************************
    * Delete operations
    ***************************************************************************/
 
+  /**
+   * Executes a delete operation on the database
+   * 
+   * @param lookups - Lookup conditions to identify the record(s) to delete
+   * @returns Promise resolving to the deleted record
+   * @throws {APIError} If record is not found (404)
+   * 
+   * @example
+   * ```typescript
+   * const deletedRecord = await executeDelete({
+   *   all: eq(table.id, 123)
+   * });
+   * ```
+   */
   protected async executeDelete (
-    lookups: LookupsObject,
+    key: Record<string, any>,
   ) {
     const result = await this.db
       .delete(this.table)
-      .where(lookups.all)
+      .where(op.and(...this.buildKeyQueryWhere(key, { usePagination: false })))
       .returning();
 
     if (result.length === 0) {
@@ -291,26 +252,29 @@ export class CoreAccessor extends LayersCore {
     return result[0];
   }
 
+  /**
+   * Deletes a record by its keys and returns the deleted record
+   * 
+   * @param keys - Keys to identify the record to delete
+   * @returns Promise resolving to the deleted record wrapped in a LayersReturnType
+   * @throws {APIError} If record is not found (404)
+   * 
+   * @example
+   * ```typescript
+   * const deleted = await accessor.delete({ id: 123 });
+   * ```
+   */
   public async delete (
-    keys: Static<typeof this.keysSchema>,
+    key: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
-    const lookups = this.getLookups(keys);
-    const mutatedRecord = await this.executeDelete(lookups);
-    const readKeys = this.getKeysFromRecord(mutatedRecord);
-    const payload = await this.read(readKeys);
-    return payload;
+    const mutatedRecord = await this.executeDelete(key);
+    return this.buildReturn({
+      success: true,
+      payload: { data: mutatedRecord }
+    });
   }
-
-  /*
-  public async delete (
-    keys: Static<typeof this.keysSchema>,
-  ): Promise<LayersReturnType<PayloadSingle<any>>> 
-  {
-    return await this._delete(keys);
-  }
-  */
-
+  
   /****************************************************************************
    * Cursor pagination
    ***************************************************************************/
@@ -324,38 +288,59 @@ export class CoreAccessor extends LayersCore {
     id: Type.Number(),
   });
 
-  protected decodeCursorArtifacts (
+  /**
+   * Schema for validating cursor data structure
+   * 
+   * Defines the expected shape of cursor data with:
+   * - updatedAt: Either a Date object (from DB) or ISO date string (from cursor)
+   * - id: Numeric identifier
+   * 
+   * This schema is used to validate both cursor encoding and decoding operations
+   * to ensure data consistency in pagination.
+   * 
+   * @type {TSchema}
+   */
+  protected decodeCursor (
     cursor: string,
-    limit: number = this.paginationLimit,
-  ): DecodedCursorArtifacts
+  ): CursorData | null
   {
     const validCursor = typeof cursor && !!cursor; 
     if (validCursor) {
       const cursorData = decodeCursor(cursor);
       try {
-        this.validateSchema(this.cursorDataSchema, cursorData);
+        this.validate(this.cursorDataSchema, cursorData);
       } catch (error) {
         throw APIError.fromError(error, {
           code: 400,
           message: 'Cursor decoding is inconsistent with provided fields'
         });
       }
-
-      return {
-        validCursor: true,
-        data: cursorData,
-        limit,
-      };
+      return cursorData;
     }
 
-    return {
-      validCursor: false,
-      data: {},
-      limit,
-    };
+    return null;
   }
 
-  protected getEncodeCursorData (
+  /**
+   * Decodes cursor artifacts for pagination
+   * 
+   * Takes a cursor string and limit, validates and decodes the cursor data for use in pagination queries.
+   * 
+   * @param cursor - Base64 encoded cursor string containing pagination metadata
+   * @param limit - Maximum number of records to return (defaults to paginationLimit)
+   * @returns {DecodedCursorArtifacts} Object containing:
+   *   - validCursor: Boolean indicating if cursor is valid
+   *   - data: Decoded cursor data (empty object if cursor invalid)
+   *   - limit: Number of records to return
+   * @throws {APIError} If cursor data fails schema validation (400)
+   * 
+   * @example
+   * ```typescript
+   * const artifacts = accessor.decodeCursorArtifacts('base64cursor', 10);
+   * // Returns: { validCursor: true, data: { id: 1, updatedAt: '2024-01-01' }, limit: 10 }
+   * ```
+   */
+  protected mapCursorData (
     row: Record<string, any>
   ): Record<string, any> 
   {
@@ -365,51 +350,180 @@ export class CoreAccessor extends LayersCore {
     }
   }
 
-  protected encodeCursorArtifacts (
+  /**
+   * Gets the data needed to encode a cursor from a database row
+   * 
+   * Extracts the necessary fields (id and updatedAt) from a database row to create
+   * a cursor for pagination.
+   * 
+   * @param row - Database record containing at least id and updatedAt fields
+   * @returns Object containing id and updatedAt for cursor encoding
+   * 
+   * @example
+   * ```typescript
+   * const cursorData = accessor.getEncodeCursorData({
+   *   id: 123,
+   *   updatedAt: new Date(),
+   *   name: 'Test'
+   * });
+   * // Returns: { id: 123, updatedAt: '2024-01-01T00:00:00.000Z' }
+   * ```
+   */
+  protected encodeCursor (
     queryResult: Record<string, any>[],
-    decodedCursorArtifacts: DecodedCursorArtifacts,
-  ): {
-    data: {
-      items: Record<string, any>[];
-      cursor: string | null;
-      hasMore: boolean;
-    },
-
-  }  
+    limit: number = this.paginationLimit,
+  ): string | null
   {
-    const { limit } = decodedCursorArtifacts;
-    if (queryResult.length >= limit) {
-      const cursorItem = queryResult[limit - 1];
-      const cursorData = this.getEncodeCursorData(cursorItem);
-
-      try {
-        this.validateSchema(this.cursorDataSchema, cursorData);
-      } catch (error) {
-        throw APIError.fromError(error, {
-          code: 400,
-          message: 'Cursor encoding is inconsistent with provided fields'
-        });
-      }
-
-      const cursor = buildCursor(cursorData);
-      return {
-        data: {
-          items: queryResult.slice(0, limit - 1),
-          cursor,
-          hasMore: true,
-        }
-      }
+    if (queryResult.length < limit) {
+      return null;
     }
-    return {
-      data: {
-        items: queryResult,
-        cursor: null,
-        hasMore: false,
-      }
-    };
+    const cursorItem = queryResult[limit - 1];
+    const cursorData = this.mapCursorData(cursorItem);
+
+    try {
+      this.validate(this.cursorDataSchema, cursorData);
+    } catch (error) {
+      throw APIError.fromError(error, {
+        code: 400,
+        message: 'Cursor encoding is inconsistent with provided fields'
+      });
+    }
+
+    return buildCursor(cursorData);
   }
 
-  protected getCursorOrderBy(): op.SQL[]
+  /****************************************************************************
+   * Query building methods
+   ***************************************************************************/
+
+  /**
+   * Validates query parameters against schema
+   * @param queryParams - Query parameters to validate
+   */
+  protected validateQueryParams(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): Record<string, any> 
+  {
+    this.validate(this.queryParamsSchema, params as Record<string, any>);
+    return params as any;
+  }
+
+  protected defaultQueryParamsObject = { 
+    cursor: "", 
+    limit: settings.PAGINATION_DEFAULT_LIMIT 
+  }
+  protected defaultQueryParams(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ) {
+    return this.defaults(params, this.defaultQueryParamsObject)
+  }
+
+  protected buildQuerySelectFields (
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): Record<string, any>
+  {
+    return this.table;
+  }
+
+  protected buildQueryBaseSelect(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): PgSelectDynamic<any>
+  {
+    return this.db
+      .select(this.buildQuerySelectFields(params, options))
+      .from(this.table);
+  }
+
+  protected hasPaginationQueryParameters (
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): boolean
+  {
+    try {
+      this.validate(this.cursorDataSchema, params, { additionalProperties: true });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  protected buildPaginationQueryWhere(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): (op.SQL | undefined)[]
+  {
+    return [
+      op.or(
+        op.and(
+          op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) = ${params.updatedAt}`,
+          op.sql`${this.table.id} > ${params.id}`,
+        ),
+        op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) < ${params.updatedAt}`,
+      )
+    ]
+  }
+
+  protected buildKeyQueryWhere(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): (op.SQL | undefined)[]
+  {
+    let filters: (op.SQL | undefined)[] = [];
+
+    if (typeof params.id === 'number') {
+      filters.push(op.eq(this.table.id, params.id));
+    }
+
+    if (typeof params.key === 'string') {
+      filters.push(op.eq(this.table.key, params.key));
+    }
+
+    return filters;
+  }
+
+  protected buildQueryWhere(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): (op.SQL | undefined)[]
+  {
+    let filters: (op.SQL | undefined)[] = [];
+
+    filters = filters.concat(this.buildKeyQueryWhere(params, options));
+    
+    if (
+      options.usePagination &&
+      this.hasPaginationQueryParameters(params, options)
+    ) {
+      filters = filters.concat(this.buildPaginationQueryWhere(params, options));
+    }
+
+    return filters;
+  }
+
+  protected buildQueryHaving(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): (op.SQL | undefined)[]
+  {
+    return [];
+  }
+
+  protected buildQueryGroupBy(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): op.SQL[]
+  {
+    return [];
+  }
+
+  protected buildPaginationQueryOrderBy(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): op.SQL[]
   {
     return [
       op.desc(op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt})`),
@@ -417,48 +531,50 @@ export class CoreAccessor extends LayersCore {
     ];
   }
 
-  /**
-   * Gets the ORDER BY clauses for cursor-based pagination
-   * 
-   * Returns an array of SQL expressions for ordering results in cursor pagination.
-   * 
-   * Note: When implementing cursor pagination with not unique fields,
-   * it's essential to ensure that when the non-unique fields is equal to the one in the pointer
-   * use the unique to paginate, but if non-unique values are different just use this non-unique
-   * field to paginate.
-   *
-   * SQL example: 
-   * $ WHERE ("updated_at" = $1 and id > $2) OR ("updated_at" < $3)
-   * 
-   * @returns {op.SQL[]} Array of SQL ORDER BY expressions
-   * 
-   * @returns {op.SQL[]} Array of SQL ORDER BY expressions
-   */
-  protected getCursorQueryWhere (
-    cursorArtifacts: DecodedCursorArtifacts,
-  ): op.SQL | undefined
+  protected buildQueryOrderBy(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): op.SQL[]
   {
-    const { validCursor, data } = cursorArtifacts;
-    if (validCursor && data) {
-      return op.or(
-        op.and(
-          op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) = ${data.updatedAt}`,
-          op.sql`${this.table.id} > ${data.id}`,
-        ),
-        op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) < ${data.updatedAt}`,
-      );
+    let items: op.SQL[] = [];
+
+    if (options.usePagination) {
+      items = items.concat(this.buildPaginationQueryOrderBy(params, options))
     }
-    return undefined
+
+    return items;
   }
 
-  protected withCursorPagination(
-    query: PgSelectDynamic<any>,
-    decodedCursorArtifacts: DecodedCursorArtifacts,
-  ) {
-    return query.$dynamic()
-      .where(this.getCursorQueryWhere(decodedCursorArtifacts))
-      .orderBy(...this.getCursorOrderBy())
-      .limit(decodedCursorArtifacts.limit);
+  protected buildQuery(
+    params: Record<string, any>,
+    _options: Partial<BuildQueryOptions> = {}
+  ): PgSelectDynamic<any>
+  {
+    const options: BuildQueryOptions = this.defaults(_options, {
+      usePagination: true,
+    } as BuildQueryOptions);
+    
+    let query = this.buildQueryBaseSelect(params, options)
+      .where(op.and(...this.buildQueryWhere(params, options)))
+      .groupBy(...this.buildQueryGroupBy(params, options))
+      .having(op.and(...this.buildQueryHaving(params, options)))
+      .orderBy(...this.buildQueryOrderBy(params, options));
+
+    if (
+      options.usePagination && 
+      (typeof params.limit === 'number' && params.limit >= 0)
+    ) {
+      query = query.limit(params.limit)
+    }
+
+    if (
+      options.usePagination && 
+      (typeof params.offset === 'number' && params.offset >= 0)
+    ) {
+      query = query.offset(params.offset)
+    }
+
+    return query;
   }
 
 };

@@ -39,7 +39,7 @@ export const categoriesImages = pg.pgTable(
   "categories_images",
   {
     // Common columns
-    ...buildTimestamps(),
+    ...commonColumns(),
     ...buildFileColumns(),
     // Table specific columns
     categoryId: pg.integer().notNull().references(() => categories.id),

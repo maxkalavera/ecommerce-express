@@ -16,13 +16,14 @@
     "lint:fix": "npm run lint -- --fix",
     "clean": "rm -rf dist",
     "migrations:dev": "npx drizzle-kit --config=drizzle.dev.config.ts",
+    "migrations:dev:generate": "npx drizzle-kit --config=drizzle.dev.config.ts generate",
+    "migrations:dev:push": "npx drizzle-kit --config=drizzle.dev.config.ts push && npx drizzle-kit --config=drizzle.test.config.ts push",
     "migrations:test": "npx drizzle-kit --config=drizzle.test.config.ts",
-    "migrations:generate": "npx drizzle-kit --config=drizzle.dev.config.ts generate",
-    "migrations:push": "npx drizzle-kit --config=drizzle.dev.config.ts push && npx drizzle-kit --config=drizzle.test.config.ts push",
     "seed": "npm run build && node dist/src/seeds.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "docs:generate": "typedoc src/app.ts"
   },
   "keywords": [
     "express",
@@ -33,7 +34,7 @@
   "author": "Max Hernandez",
   "license": "MIT",
   "devDependencies": {
-    "@sinclair/typebox": "^0.34.33",
+    "@sinclair/typebox": "^0.34.38",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.17",
     "@types/dotenv-defaults": "^2.0.4",
@@ -46,6 +47,7 @@
     "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@types/traverse": "^0.6.37",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "compression": "^1.8.0",
@@ -69,6 +71,7 @@
     "swagger-ui-express": "^5.0.1",
     "ts-jest": "^29.3.4",
     "tsc-alias": "^1.8.13",
+    "typedoc": "^0.28.7",
     "typescript": "^5.8.2",
     "url-join": "^5.0.0"
   },
@@ -81,6 +84,7 @@
     "pg": "^8.14.1",
     "remove": "^0.1.5",
     "sharp": "^0.34.2",
-    "swagger-jsdoc": "^6.2.8"
+    "swagger-jsdoc": "^6.2.8",
+    "traverse": "^0.6.11"
   }
 }

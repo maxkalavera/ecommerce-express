@@ -13,6 +13,6 @@ export const UsersInsert = Type.Composite([
     email: Type.String({ maxLength: 255 }),
     password: Type.String({ maxLength: 255 }),
   })
-]);
+], { additionalProperties: false });
 
-export const UsersUpdate = Type.Partial(UsersInsert);
+export const UsersUpdate = Type.Partial(UsersInsert, { additionalProperties: false });

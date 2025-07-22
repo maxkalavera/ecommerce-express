@@ -13,10 +13,10 @@ export class CoreController extends LayersCore {
   }
 
   public register(router: Router) {
-    this._addRoutes();
+    this.addRoutes();
     router.use(`/${this.resourceName}`, this.router);
   }
 
-  protected _addRoutes() {}
+  protected addRoutes() {}
 
 }

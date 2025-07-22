@@ -11,9 +11,9 @@ export const OrdersInsert = Type.Composite([
   Type.Object({
     userId: Type.String({ maxLength: 255 }),
   })
-]);
+], { additionalProperties: false });
 
-export const OrdersUpdate = Type.Partial(OrdersInsert);
+export const OrdersUpdate = Type.Partial(OrdersInsert, { additionalProperties: false });
 
 /******************************************************************************
  * Orders Items
@@ -28,6 +28,6 @@ export const OrdersItemsInsert = Type.Composite([
     unitPriceAtPurchase: Type.String({ format: 'decimal' }),
     priceAtPurchase: Type.String({ format: 'decimal' }),
   })
-]);
+], { additionalProperties: false });
 
-export const OrdersItemsUpdate = Type.Partial(OrdersItemsInsert);
+export const OrdersItemsUpdate = Type.Partial(OrdersItemsInsert, { additionalProperties: false });

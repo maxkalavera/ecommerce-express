@@ -5,7 +5,7 @@ import { categoriesService } from '@/services/categories';
 export const categoriesController = new CRUDController(
   'categories', 
   {
-    operations: "view",
+    operations: "all",
     executers: {
       create: async (requestData) => {
         return await categoriesService.create(requestData);
@@ -17,7 +17,7 @@ export const categoriesController = new CRUDController(
         return await categoriesService.delete(requestData);
       },
       read: async (requestData) => {
-        return await categoriesService.create(requestData);
+        return await categoriesService.read(requestData);
       },
       list: async (requestData) => {
         return await categoriesService.list(requestData);

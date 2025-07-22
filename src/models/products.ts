@@ -53,7 +53,7 @@ export const productsImages = pg.pgTable(
   "products_images",
   {
     // Common columns
-    ...buildTimestamps(),
+    ...commonColumns(),
     ...buildFileColumns(), 
     // Table specific columns
     isCover: pg.boolean().notNull().default(false),

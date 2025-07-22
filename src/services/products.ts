@@ -1,4 +1,5 @@
-import { productsAccessor } from '@/accessors/products';
+import lodash from 'lodash';
+import { productsAccessor, productsItemsAccessor, productsImagesAccessor } from '@/accessors/products';
 import { CRUDService } from '@/utils/services/CRUDService';
 import * as ProductsSchemas from '@/typebox/services/products';
 
@@ -7,20 +8,53 @@ class ProductsService extends CRUDService {
   constructor() {
     super({
       executers: {
-        create: async (data, { buildReturn }) => {
-          return await productsAccessor.create(data.body!);
-        },
-        update: async (data, { buildReturn }) => {
-          return await productsAccessor.update(data.params, data.body!);
-        },
-        delete: async (data, { buildReturn }) => {
-          return await productsAccessor.delete(data.params);
+        read: async (data, {}) => {
+          const productsItemsPayload = await productsItemsAccessor.read(data.params);
+          if (productsItemsPayload.isSuccess()) {
+            const productData = productsItemsPayload.getPayload();
+            const productsImagesPayload = await productsImagesAccessor.list({ productId: productData.data.productId }, { usePagination: false });
+            if (productsImagesPayload.isSuccess()) {
+              const productImages = productsImagesPayload.getPayload();
+              return this.buildReturn({
+                success: true,
+                payload: {
+                  data: {
+                    ...productData.data,
+                    images: productImages.items
+                  }
+                }
+              })
+            }
+            throw productsImagesPayload.getError();
+          }
+          throw productsItemsPayload.getError();
         }, 
-        read: async (data, { buildReturn }) => {
-          return await productsAccessor.read(data.params);
-        }, 
-        list: async (data, { buildReturn }) => {
-          return await productsAccessor.list(data.query);
+        
+        list: async (data, {}) => {
+          // get products from items
+          const productsItemsPayload = await productsItemsAccessor.list(data.query);
+
+          if (productsItemsPayload.isSuccess()) {
+            const productsItems = productsItemsPayload.getPayload();
+            const ids = productsItems.items.map(item => (item.productId));
+            // Ger images for each product
+            const productsImagesPayload = await productsImagesAccessor.list({ productsIds: ids }, { usePagination: false });
+            if (productsImagesPayload.isSuccess()) {
+              const productsImages = productsImagesPayload.getPayload();
+              // Grouping and assigning the images to their products
+              const groupedImages = lodash.groupBy(productsImages.items, (item) => item.productId);
+              for (const productItem of productsItems.items) {
+                productItem.images = [...(groupedImages[productItem.productId] || [])];
+              }
+              // Return products
+              return this.buildReturn({
+                success: true,
+                payload: productsItems
+              });
+            }
+            throw productsImagesPayload.getError();
+          }
+          throw productsItemsPayload.getError();
         },
       },
       schemas: {
@@ -41,16 +75,29 @@ class ProductsService extends CRUDService {
       name: instance.name,
       description: instance.description,
       price: instance.price,
+      isFavorite: instance.isFavorite,
+      isOnCart: instance.isOnCart,
+      quantity: instance.quantity,
+      size: instance.size,
       color: {
         name: instance.color,
         hex: instance.colorHex,
       },
-      label: instance.isLabeled 
+      label: (
+        instance.isLabeled 
         ? {
           content: instance.labelContent,
           color: instance.labelColor,
         }
         : null
+      ),
+      images: (instance.images || []).map((item: Record<string, any>) => ({
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+        url: item.url,
+        mimetype: item.mimetype,
+        isCover: item.isCover,
+      }))
     };
   }
 

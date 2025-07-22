@@ -2,7 +2,7 @@
 import { Type, TSchema } from '@sinclair/typebox';
 import { OpenAPI } from '@/openapi';
 import { OpenAPIBuilder } from '@/utils/docs/OpenAPIBuilder';
-import { PayloadSingle, PayloadMany } from '@/typebox/commons';
+import { PayloadSingleSchema, PayloadManySchema } from '@/typebox/commons';
 
 
 type CRUDKeyword = "create" | "update" | "delete" | "read" | "list" | "view" | "mutate" | "all";
@@ -178,7 +178,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
         ...operationOptions,
         successResponseSchema: (
           successResponseSchema ||
-          (successItemSchema && PayloadSingle(successItemSchema))
+          (successItemSchema && PayloadSingleSchema(successItemSchema))
         ),
       }
     );
@@ -223,7 +223,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
         ...operationOptions,
         successResponseSchema: (
           successResponseSchema ||
-          (successItemSchema && PayloadSingle(successItemSchema))
+          (successItemSchema && PayloadSingleSchema(successItemSchema))
         ),
       }
     );
@@ -268,7 +268,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
         ...operationOptions,
         successResponseSchema: (
           successResponseSchema ||
-          (successItemSchema && PayloadSingle(successItemSchema))
+          (successItemSchema && PayloadSingleSchema(successItemSchema))
         ),
       }
     );
@@ -313,7 +313,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
         ...operationOptions,
         successResponseSchema: (
           successResponseSchema ||
-          (successItemSchema && PayloadSingle(successItemSchema))
+          (successItemSchema && PayloadSingleSchema(successItemSchema))
         ),
       }
     );
@@ -361,7 +361,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
         ],
         successResponseSchema: (
           successResponseSchema ||
-          (successItemSchema && PayloadMany(successItemSchema))
+          (successItemSchema && PayloadManySchema(successItemSchema))
         ),
       }
     );

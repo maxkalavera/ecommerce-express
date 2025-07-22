@@ -1,15 +1,16 @@
 import { Type, TSchema } from '@sinclair/typebox';
+import { Nullable } from '@/utils/typebox';
 
 
-export const PayloadSingle = <Instance extends TSchema>(Instance: Instance) => 
+export const PayloadSingleSchema = <Instance extends TSchema>(Instance: Instance) => 
   Type.Object({
     data: Instance,
   });
 
 
-export const PayloadMany = <Instance extends TSchema>(Instance: Instance) => 
+export const PayloadManySchema = <Instance extends TSchema>(Instance: Instance) => 
   Type.Object({
     items: Type.Array(Instance),
-    cursor: Type.Optional(Type.String()),
+    cursor: Nullable(Type.String()),
     hasMore: Type.Boolean(),
   });

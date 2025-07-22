@@ -8,6 +8,13 @@
       "when": 1750826181920,
       "tag": "0000_lazy_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1753127786057,
+      "tag": "0001_new_tiger_shark",
+      "breakpoints": true
     }
   ]
 }

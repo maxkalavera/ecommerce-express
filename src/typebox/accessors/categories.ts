@@ -14,7 +14,7 @@ export const CategoriesInsert = Type.Composite([
     parentId: Type.Optional(Type.Integer()),
     parentKey: Type.Optional(Type.String({ format: 'base64url' })),
   })
-]);
+], { additionalProperties: false });
 
 export const CategoriesUpdate = Type.Partial(CategoriesInsert);
 
@@ -29,6 +29,6 @@ export const CategoriesImagesInsert = Type.Composite([
     url: Type.String({ maxLength: 255 }),
     mimetype: Type.Union([Type.String({ maxLength: 255 }), Type.Null()]),
   })
-]);;
+], { additionalProperties: false });
 
 export const CategoriesImagesUpdate = Type.Partial(CategoriesImagesInsert);

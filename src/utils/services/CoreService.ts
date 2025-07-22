@@ -1,8 +1,8 @@
 import { Type, TSchema, Static } from '@sinclair/typebox';
 import { LayersCore } from '@/utils/layers/LayersCore';
-import { validate } from '@/utils/validator';
 import { LayersReturnType, PayloadSingle, PayloadMany } from '@/types/layers';
 import { RequestData, RequestDataSchemas, ServiceTaskSchemas, ServiceExecuter } from '@/types/services'
+import { PayloadSingleSchema, PayloadManySchema } from '@/typebox/commons';
 
 
 /******************************************************************************
@@ -15,15 +15,7 @@ export class CoreService extends LayersCore {
     super();
   }
 
-  protected _validateSchema(
-    schema: TSchema, data: Record<string, any>) {
-    return validate({
-      ...schema,
-      additionalProperties: false,
-    }, data);
-  }
-
-  protected _validateRequestParams(
+  protected validateRequestParams(
     _data: Partial<RequestData> = {},
     _schemas: Partial<RequestDataSchemas> = {}
   ) {
@@ -36,36 +28,34 @@ export class CoreService extends LayersCore {
       params: Type.Object({}),
       query: Type.Object({}),
       body: Type.Object({}),
-    })
+    });
 
-    this._validateSchema(schemas.params, data.params);
-    this._validateSchema(schemas.query, data.query);
-    this._validateSchema(schemas.body, data.body);
+    this.validate(schemas.params, data.params, { additionalProperties: 'strict-dev-only' });
+    data.query = this.coherce(schemas.query, data.query, { additionalProperties: 'strict-dev-only' });
+    data.body = this.coherce(schemas.body, data.body, { additionalProperties: 'strict-dev-only' });
   
     return data;
   }
 
-  protected _validatePayload<
+  protected validatePayload<
     PayloadType extends PayloadSingle<any> | PayloadMany<any>
   > (
+    schema: TSchema,
     data: LayersReturnType<PayloadType>,
-    validationSchema: TSchema = Type.Record(Type.String(), Type.Any())
   ): LayersReturnType<PayloadType>
   {
     data.onSuccessSync((payload) => {
-      if ((payload as PayloadSingle<any>).data !== undefined) {
-        this._validateSchema(validationSchema, (payload as PayloadSingle<any>).data);
-      } else if ((payload as PayloadMany<any>).items !== undefined) {
-        (payload as PayloadMany<any>).items.forEach((item) => {
-          this._validateSchema(validationSchema, item);
-        });
+      if ((payload as PayloadMany<any>).items !== undefined) {
+        this.validate(PayloadManySchema(schema), payload as PayloadMany<any>, { additionalProperties: 'strict-dev-only' });
+      } else {
+        this.validate(PayloadSingleSchema(schema), payload as PayloadSingle<any>, { additionalProperties: 'strict-dev-only' });
       }
     });
 
     return data;
   }
 
-  protected _reshapePayload<
+  protected executeReshapePayload<
     PayloadType extends PayloadSingle<any> | PayloadMany<any>
   > (
     data: LayersReturnType<PayloadType>,
@@ -112,7 +102,7 @@ export class CoreService extends LayersCore {
    * @protected
    * @async
    */
-  protected async _wrap<
+  protected async wrap<
     PayloadType extends PayloadSingle<any> | PayloadMany<any>
   > (
     _data: Partial<RequestData>,
@@ -128,14 +118,15 @@ export class CoreService extends LayersCore {
       payloadInstance: Type.Record(Type.String(), Type.Any()),
     });
     const data: RequestData = this.defaults(_data, { params: {}, query: {}, body: {}});
-    this._validateRequestParams(data, {
+    this.validateRequestParams(data, {
       params: schemas.params,
       query: schemas.query,
       body: schemas.body,
     });
     let result = await callback(data, { buildReturn: this.buildReturn });
-    result = this._reshapePayload(result as LayersReturnType<PayloadType>, mapper);
-    this._validatePayload(result, schemas.payloadInstance);
+    result = this.executeReshapePayload(result as LayersReturnType<PayloadType>, mapper);
+
+    this.validatePayload(schemas.payloadInstance, result);
 
     return result;
   }
