@@ -23,7 +23,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "docs:generate": "typedoc src/app.ts"
+    "docs:generate": "typedoc --out ./docs/classes src/app.ts"
   },
   "keywords": [
     "express",
