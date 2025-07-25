@@ -1,5 +1,5 @@
 import loadash from 'lodash';
-import { APIError, APIErrorParameters } from '@/utils/errors';
+import { APIError } from '@/utils/errors';
 import { LayersReturn } from "@/utils/layers/LayersReturn";
 import { ReturnData, PayloadSingle, PayloadMany } from '@/types/layers';
 import { validate, coherce } from '@/utils/validators';
@@ -15,19 +15,8 @@ export class LayersCore {
     return loadash.defaultsDeep(...args)
   }
 
-  protected async withErrors(
-    errorParams: APIErrorParameters,
-    callback: () => Promise<any>,
-  ) {
-    try {
-      return await callback();
-    } catch (error) {
-      throw APIError.fromError(error, errorParams);
-    }
-  }
-
-  protected buildError(params: APIErrorParameters) {
-    return new APIError(params);
+  protected buildError(...args: ConstructorParameters<typeof APIError>) {
+    return new APIError(...args);
   }
 
   protected buildReturn<

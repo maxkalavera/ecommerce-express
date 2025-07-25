@@ -1,5 +1,5 @@
 {
-  "id": "9b7d01e7-e614-4789-9024-8f48f024b3ea",
+  "id": "11d18931-6c4e-4ffb-a680-b0107e139329",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -251,6 +251,19 @@
       "name": "categories_images",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -301,7 +314,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "categories_images_key_unique": {
+          "name": "categories_images_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "file_url_check1": {
@@ -588,6 +609,12 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": false
+        },
+        "categoryKey": {
+          "name": "categoryKey",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -601,6 +628,19 @@
           ],
           "columnsTo": [
             "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "products_categoryKey_categories_key_fk": {
+          "name": "products_categoryKey_categories_key_fk",
+          "tableFrom": "products",
+          "tableTo": "categories",
+          "columnsFrom": [
+            "categoryKey"
+          ],
+          "columnsTo": [
+            "key"
           ],
           "onDelete": "restrict",
           "onUpdate": "no action"
@@ -637,6 +677,19 @@
       "name": "products_images",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -694,7 +747,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "products_images_key_unique": {
+          "name": "products_images_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "file_url_check1": {

@@ -30,11 +30,14 @@ CREATE TABLE "categories" (
 );
 --> statement-breakpoint
 CREATE TABLE "categories_images" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"key" uuid DEFAULT gen_random_uuid() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"url" varchar(255) NOT NULL,
 	"mimetype" varchar(255),
 	"categoryId" integer NOT NULL,
+	CONSTRAINT "categories_images_key_unique" UNIQUE("key"),
 	CONSTRAINT "file_url_check1" CHECK ("categories_images"."url" ~ '^https?:\/\/(?:www\.)?[-\w@:%._\+~#=]+(\.[a-zA-Z]+)?(?:[-\w@:%_\+.~#?&\/\/=]*)$')
 );
 --> statement-breakpoint
@@ -77,6 +80,7 @@ CREATE TABLE "products" (
 	"labelContent" varchar(255) DEFAULT '',
 	"labelColor" varchar(7) DEFAULT '#000000',
 	"categoryId" integer,
+	"categoryKey" uuid,
 	CONSTRAINT "products_key_unique" UNIQUE("key"),
 	CONSTRAINT "label_color_hex" CHECK ("products"."labelColor" ~ '^#[0-9a-fA-F]{6}$'),
 	CONSTRAINT "color_hex" CHECK ("products"."colorHex" ~ '^#[0-9a-fA-F]{6}$'),
@@ -84,12 +88,15 @@ CREATE TABLE "products" (
 );
 --> statement-breakpoint
 CREATE TABLE "products_images" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"key" uuid DEFAULT gen_random_uuid() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"url" varchar(255) NOT NULL,
 	"mimetype" varchar(255),
 	"isCover" boolean DEFAULT false NOT NULL,
 	"product_id" integer NOT NULL,
+	CONSTRAINT "products_images_key_unique" UNIQUE("key"),
 	CONSTRAINT "file_url_check1" CHECK ("products_images"."url" ~ '^https?:\/\/(?:www\.)?[-\w@:%._\+~#=]+(\.[a-zA-Z]+)?(?:[-\w@:%_\+.~#?&\/\/=]*)$')
 );
 --> statement-breakpoint
@@ -129,5 +136,23 @@ ALTER TABLE "orders" ADD CONSTRAINT "orders_userId_users_id_fk" FOREIGN KEY ("us
 ALTER TABLE "orders_items" ADD CONSTRAINT "orders_items_orderId_orders_id_fk" FOREIGN KEY ("orderId") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "orders_items" ADD CONSTRAINT "orders_items_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_categoryId_categories_id_fk" FOREIGN KEY ("categoryId") REFERENCES "public"."categories"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "products_categoryKey_categories_key_fk" FOREIGN KEY ("categoryKey") REFERENCES "public"."categories"("key") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products_images" ADD CONSTRAINT "products_images_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "products_items" ADD CONSTRAINT "products_items_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "products_items" ADD CONSTRAINT "products_items_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+
+
+-- products to categories reference key trigger
+  CREATE OR REPLACE FUNCTION validate_product_categories_reference()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    IF NEW.categoryKey != (SELECT key FROM categories WHERE id = NEW.category_id) THEN
+      RAISE EXCEPTION 'Product category UUID key does not match category ID reference';
+    END IF;
+    RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+
+  CREATE TRIGGER check_product_categories_reference
+  BEFORE INSERT OR UPDATE ON products
+  FOR EACH ROW EXECUTE FUNCTION validate_product_categories_reference();
+

@@ -2,6 +2,8 @@ import * as pg from "drizzle-orm/pg-core";
 import { sql, relations } from "drizzle-orm";
 import { commonColumns,  buildFileColumns, buildTimestamps, buildFileCheckers } from "@/models/commons";
 import { categories } from "@/models/categories";
+import { urlFriendlyUUID } from "@/utils/drizzle-orm/types/urlFriendlyUUID";
+
 
 /******************************************************************************
  * Products
@@ -25,6 +27,7 @@ export const products = pg.pgTable(
     labelColor: pg.varchar({ length: 7 }).default("#000000"),
     // References
     categoryId: pg.integer().references(() => categories.id, { onDelete: 'restrict' }),
+    categoryKey: urlFriendlyUUID().references(() => categories.key, { onDelete: 'restrict' }),
   },
   (table) => [
     pg.check('label_color_hex', sql`${table.labelColor} ~ '^#[0-9a-fA-F]{6}$'`),

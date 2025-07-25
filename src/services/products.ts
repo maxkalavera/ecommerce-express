@@ -37,6 +37,7 @@ class ProductsService extends CRUDService {
           if (productsItemsPayload.isSuccess()) {
             const productsItems = productsItemsPayload.getPayload();
             const ids = productsItems.items.map(item => (item.productId));
+
             // Ger images for each product
             const productsImagesPayload = await productsImagesAccessor.list({ productsIds: ids }, { usePagination: false });
             if (productsImagesPayload.isSuccess()) {

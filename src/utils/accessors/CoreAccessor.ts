@@ -1,6 +1,6 @@
 import * as op from 'drizzle-orm';
-import { PgSelectDynamic, PgTableWithColumns, SelectedFields } from 'drizzle-orm/pg-core';
-import { Type, TSchema, Static } from '@sinclair/typebox';
+import { PgSelectDynamic, PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { Type, TSchema } from '@sinclair/typebox';
 import { LayersCore } from '@/utils/layers/LayersCore'; 
 import { PayloadSingle, PayloadMany, LayersReturnType } from '@/types/layers';
 import { Database } from '@/types/db';
@@ -106,9 +106,11 @@ export class CoreAccessor extends LayersCore {
         payload: { data: queryResult[0] } 
       });
     } else {
-      throw new APIError({
+      throw this.buildError({
         message: "Resource was not found",
         code: 400
+      }, {
+        message: "Resource was not found",
       })
     }
 
@@ -120,7 +122,7 @@ export class CoreAccessor extends LayersCore {
 
   /**
    * Lists records with cursor-based pagination
-   * @param _queryParams - Query parameters including cursor and limit
+   * @param _query - Query parameters including cursor and limit
    */
   public async list (
     _query: Record<string, any>,
@@ -133,8 +135,20 @@ export class CoreAccessor extends LayersCore {
       usePagination: boolean;
     } = this.defaults(_options, { usePagination: true });
 
-    let queryParams: Record<string, any> = this.validateQueryParams(_query, { usePagination: false });
-    queryParams = this.defaultQueryParams(queryParams, { usePagination: false });
+    let queryParams: Record<string, any>;
+    queryParams = this.defaultQueryParams(_query, { usePagination: false });
+    const queryParamsValidation = this.validate(this.queryParamsSchema, _query);
+    if (!queryParamsValidation.success) {
+      throw this.buildError({
+        message: 'Error found while validating accessor list query parameters',
+        code: 400,          
+      }, {
+        message: 'Error found while validating accessor list query parameters',
+        details: queryParamsValidation.errors
+      });
+    }
+    queryParams = queryParamsValidation.data;
+
 
     const decodedCursorData = options.usePagination  
       ? this.decodeCursor(queryParams.cursor) 
@@ -146,7 +160,7 @@ export class CoreAccessor extends LayersCore {
     const encodedCursor = options.usePagination 
       ? this.encodeCursor(queryResult, queryParams.limit) 
       : null;
-    
+
     return this.buildReturn({
       success: true,
       payload: {
@@ -183,8 +197,21 @@ export class CoreAccessor extends LayersCore {
     data: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
-    const coercedData = this.validate(this.insertSchema, data);
-    const mutatedRecord = await this.executeCreate(coercedData);
+    const cohersion = this.coherce(this.insertSchema, data);
+    if (!cohersion.success) {
+      throw this.buildError({
+        message: "There was an error validating insert data",
+        code: 400,
+      }, {
+        message: "There was an error validating insert data",
+        details: cohersion.errors
+
+      }, {
+        
+      });
+    }
+
+    const mutatedRecord = await this.executeCreate(cohersion.data);
     return await this.read({ id: mutatedRecord.id });
   }
 
@@ -215,8 +242,17 @@ export class CoreAccessor extends LayersCore {
     data: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const coercedData = this.validate(this.updateSchema, data);
-    const mutatedRecord = await this.executeUpdate(key, coercedData);
+    const cohersion = this.coherce(this.updateSchema, data);
+    if (!cohersion.success) {
+      throw this.buildError({
+        message: "There was an error validatin update data",
+        code: 400,
+      }, {
+        message: "There was an error validatin update data",
+        details: cohersion.errors
+      })
+    }
+    const mutatedRecord = await this.executeUpdate(key, cohersion.data);
     return await this.read({ id: mutatedRecord.id });
   }
 
@@ -247,7 +283,7 @@ export class CoreAccessor extends LayersCore {
       .returning();
 
     if (result.length === 0) {
-      throw new APIError({ code: 404, message: 'Record not found' });
+      throw this.buildError({ code: 404, message: 'Record not found' }, { message: 'Record not found' });
     }
     return result[0];
   }
@@ -307,14 +343,14 @@ export class CoreAccessor extends LayersCore {
     const validCursor = typeof cursor && !!cursor; 
     if (validCursor) {
       const cursorData = decodeCursor(cursor);
-      try {
-        this.validate(this.cursorDataSchema, cursorData);
-      } catch (error) {
-        throw APIError.fromError(error, {
-          code: 400,
-          message: 'Cursor decoding is inconsistent with provided fields'
+      const validation = this.validate(this.cursorDataSchema, cursorData);
+      if (!validation.success) {
+        throw this.buildError({}, {
+          message: 'Cursor decoding is inconsistent with provided fields',
+          details: validation.errors,
         });
       }
+
       return cursorData;
     }
 
@@ -380,14 +416,16 @@ export class CoreAccessor extends LayersCore {
     const cursorItem = queryResult[limit - 1];
     const cursorData = this.mapCursorData(cursorItem);
 
-    try {
-      this.validate(this.cursorDataSchema, cursorData);
-    } catch (error) {
-      throw APIError.fromError(error, {
-        code: 400,
-        message: 'Cursor encoding is inconsistent with provided fields'
+    const encodeValidation = this.validate(this.cursorDataSchema, cursorData);
+    if (!encodeValidation.success) {
+      throw new APIError({
+
+      }, {
+        message: 'Cursor encoding is inconsistent with provided fields',
+        details: encodeValidation.errors,
       });
     }
+
 
     return buildCursor(cursorData);
   }
@@ -395,19 +433,6 @@ export class CoreAccessor extends LayersCore {
   /****************************************************************************
    * Query building methods
    ***************************************************************************/
-
-  /**
-   * Validates query parameters against schema
-   * @param queryParams - Query parameters to validate
-   */
-  protected validateQueryParams(
-    params: Record<string, any>,
-    options: BuildQueryOptions
-  ): Record<string, any> 
-  {
-    this.validate(this.queryParamsSchema, params as Record<string, any>);
-    return params as any;
-  }
 
   protected defaultQueryParamsObject = { 
     cursor: "", 
@@ -443,12 +468,8 @@ export class CoreAccessor extends LayersCore {
     options: BuildQueryOptions
   ): boolean
   {
-    try {
-      this.validate(this.cursorDataSchema, params, { additionalProperties: true });
-      return true;
-    } catch (error) {
-      return false;
-    }
+    const validation = this.validate(this.cursorDataSchema, params, { additionalProperties: true });
+    return validation.success;
   }
 
   protected buildPaginationQueryWhere(

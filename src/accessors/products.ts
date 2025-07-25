@@ -1,6 +1,7 @@
 import * as op from 'drizzle-orm';
 import CoreAccessor, { type BuildQueryOptions } from '@/utils/accessors/CoreAccessor';
 import { products, productsItems, productsImages } from '@/models/products';
+import { categoriesAccessor } from '@/accessors/categories';
 import { ImageAccessorComposer } from '@/utils/accessors/ImageAccessorComposer';
 import {
   ProductsInsert, ProductsUpdate, 
@@ -63,7 +64,16 @@ export class ProductsItemsAccessor extends CoreAccessor {
 
   protected buildQuerySelectFields() {
     return {
-      ...this.table as Record<string, any>,
+      id: this.table.id,
+      key: this.table.key,
+      createdAt: this.table.createdAt,
+      updatedAt: this.table.updatedAt,
+      isFavorite: this.table.isFavorite,
+      isOnCart: this.table.isOnCart,
+      quantity: this.table.quantity,
+      size: this.table.size,
+      productId: this.table.productId,
+
       name: products.name,
       description: products.description,
       price: products.price,
@@ -88,7 +98,7 @@ export class ProductsItemsAccessor extends CoreAccessor {
     options: BuildQueryOptions
   ) {
     const conditions = super.buildKeyQueryWhere(query, options);
-    const { search, newArrivals } = query;
+    const { search, newArrivals, category, color, size, fromPrice, toPrice } = query;
 
     if (typeof search === 'string' && search.length >= 3) {
       conditions.push(
@@ -104,6 +114,27 @@ export class ProductsItemsAccessor extends CoreAccessor {
     if (typeof newArrivals === 'boolean' && newArrivals) {
       conditions.push(
         op.gte(products.createdAt, op.sql`NOW() - INTERVAL '2 weeks'`)
+      );
+    }
+
+    if (typeof category === 'string' && category) {
+      conditions.push(
+        op.eq(products.categoryKey, category)
+      );
+    }
+
+    if (typeof color === 'string' && color) {
+      conditions.push(
+        op.or(
+          op.eq(op.sql`LOWER(TRIM(${products.color}))`, op.sql`LOWER(TRIM(${color}))`),
+          op.eq(op.sql`LOWER(${products.colorHex})`, op.sql`LOWER(${color})`)
+        )
+      );
+    }
+
+    if (typeof size === 'string' && size) {
+      conditions.push(
+        op.eq(op.sql`LOWER(${productsItems.size})`, op.sql`LOWER(${size})`)
       );
     }
 

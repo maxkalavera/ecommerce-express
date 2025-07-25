@@ -47,7 +47,7 @@ export const productsDocs = new OpenAPICRUDBuilder('products')
       {
         name: 'category',
         in: 'query',
-        description: 'Category ID encoded in Base64URL format',
+        description: 'Category Key encoded in Base64URL format',
         schema: {
           type: 'string',
           format: 'base64url'

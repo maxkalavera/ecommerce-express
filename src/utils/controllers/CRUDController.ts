@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CoreController } from '@/utils/controllers/CoreController'; 
 import { RequestData, ControllerExecuters } from '@/types/controllers';
+import { APIError } from '@/utils/errors';
 
 
 type CRUDKeyword = "create" | "update" | "delete" | "read" | "list" | "view" | "mutate" | "all";
@@ -85,56 +86,55 @@ export class CRUDController extends CoreController {
    * Create operations
    ***************************************************************************/
 
-  protected async _create(
-    req: Request, res: Response, next: NextFunction,
-    _options: Partial<{
-      executer: ControllerExecuters['create'];
-    }> = {}
-  ) {
-    const options = this.defaults(_options, {
-      executer: this.executers.create,
-    });
-
-    await this.withErrors({ message: "Error creating resource" }, async () => {
+  protected async create(
+    req: Request, 
+    res: Response, 
+    next: NextFunction,
+  )
+  {
+    try {
       const data = this.buildRequestData(req);
-      const result = await options.executer(data, { buildReturn: this.buildReturn });
+      const result = await this.executers.create(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        return res.status(201).json(result.getPayload());        
+        res.status(201).json(result.getPayload());
+        return;
       }
       return next(result.getError());
-    });
-  }
-
-  public async create(req: Request, res: Response, next: NextFunction) {
-    return await this._create(req, res, next);
+    } catch (error) {
+      throw this.buildError({
+        message: "Error creating resource",
+        code: 500,        
+      }, { 
+        message: "Error creating resource",
+      }, error);
+    }
   }
 
   /****************************************************************************
    * Update operations
    ***************************************************************************/
   
-  protected async _update(
-    req: Request, res: Response, next: NextFunction,
-    _options: Partial<{
-      executer: ControllerExecuters['update'];
-    }> = {}
+  protected async update(
+    req: Request, 
+    res: Response, 
+    next: NextFunction,
   ) {
-    const options = this.defaults(_options, {
-      executer: this.executers.update,
-    });
-
-    await this.withErrors({ message: "Error updating resource" }, async () => {
+    try {
       const data = this.buildRequestData(req);
-      const result = await options.executer(data, { buildReturn: this.buildReturn });
+      const result = await this.executers.update(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        return res.status(201).json(result.getPayload());        
+        res.status(201).json(result.getPayload());
+        return;
       }
       return next(result.getError());
-    });
-  }
-
-  public async update(req: Request, res: Response, next: NextFunction) {
-    return await this._update(req, res, next);
+    } catch (error) {
+      throw this.buildError({
+        message: "Error updating resource",
+        code: 500,
+      }, {
+        message: "Error updating resource",
+      }, error);
+    };
   }
 
   /****************************************************************************
@@ -146,14 +146,22 @@ export class CRUDController extends CoreController {
       res: Response, 
       next: NextFunction,
     ) {
-      await this.withErrors({ message: "Error deleting resource" }, async () => {
+      try {
         const data = this.buildRequestData(req);
         const result = await this.executers.delete(data, { buildReturn: this.buildReturn });
         if (result.isSuccess()) {
-          return res.status(201).json(result.getPayload());        
+          res.status(201).json(result.getPayload());
+          return;
         }
         return next(result.getError());
-      });
+      } catch (error) {
+        throw this.buildError({
+            message: "Error deleting resource",
+            code: 500,
+          }, {
+            message: "Error deleting resource",
+          }, error);
+      }
     };
 
   /****************************************************************************
@@ -165,14 +173,22 @@ export class CRUDController extends CoreController {
     res: Response, 
     next: NextFunction,
   ) {
-    await this.withErrors({ message: "Error reading resource" }, async () => {
+    try {
       const data = this.buildRequestData(req);
       const result = await this.executers.read(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        return res.status(201).json(result.getPayload());        
+        res.status(201).json(result.getPayload());
+        return;
       }
       return next(result.getError());
-    });
+    } catch (error) {
+      throw this.buildError({
+        message: "Error reading resource",
+        code: 500,
+      }, {
+        message: "Error reading resource",
+      }, error);
+    }
   }
 
   /****************************************************************************
@@ -184,14 +200,22 @@ export class CRUDController extends CoreController {
     res: Response, 
     next: NextFunction,
   ) {
-    await this.withErrors({ message: "Error listing resource" }, async () => {
+    try {
       const data = this.buildRequestData(req);
       const result = await this.executers.list(data, { buildReturn: this.buildReturn });
       if (result.isSuccess()) {
-        return res.status(201).json(result.getPayload());        
+        res.status(201).json(result.getPayload());
+        return;
       }
       return next(result.getError());
-    });
+    } catch (error) {
+      throw this.buildError({
+        message: "Error listing resource",
+        code: 500,
+      }, {
+        message: "Error listing resource",
+      }, error);
+    }
   }
   
 }

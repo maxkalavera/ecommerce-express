@@ -7,71 +7,109 @@ import lodash from 'lodash';
  * Types
  *****************************************************************************/
 
-export type APIErrorParameters = {
+export type APIErrorPublicPayload = {
   message: string;
+  details: Record<string, string[]>;
+  code: number;
+  timestamp: Date;
+};
+
+
+export type APIErrorSensitiveParameters = {
+  message: string;
+  details: Record<string, string[]>;
+  //timestamp: Date;
+};
+
+/*
+export type APIErrorParameters = {
+  message?: string;
   details?: Record<string, string[]>;
   code?: number;
-  errorStack?: (Error | Record<string, any>)[];
+  timestamp?: Date;
 }
+*/
 
 /******************************************************************************
  * Errors
  *****************************************************************************/
 
+/*
 const APIErrorParamsDefaults: Required<APIErrorParameters> = {
-  message: "Internal server error",
+  message: "",
   details: {},
   code: 500,
-  errorStack: [],
+  timestamp: new Date(),
 }
+*/
 
 export class APIError extends Error {
+  public publicPayload: APIErrorPublicPayload;
+
+  public message: string;
+  public details: Record<string, string[]>;
+  public code: number;
+  public timestamp: Date;
+  public errorStack: (Error | Record<string, any> | string)[] = [];
+  //protected privatePayload: APIErrorPrivatePayload;
+
+
+  /*
   public message: string;
   public details: Record<string, string[]>;
   public statusCode: number;
   public timestamp: Date;
-  public errorStack: (Error | Record<string, any>)[];
-
-  static fromError (
-    error: Error | unknown, 
-    params: Omit<APIErrorParameters, "errorStack">
-  ) {
-    if (error instanceof APIError) {
-      return new APIError({ 
-        ...error,
-        ...params
-      });
-    } else if (error instanceof Error) {
-      return new APIError({ 
-        ...params,
-        errorStack: [
-          {
-            message: error.message,
-            stack: error.stack
-          }
-        ]
-      });
-    }
-    throw new Error (`Error parameter should be of error type: ${error}`);
-  }
+  public errorStack: (Error | Record<string, any> | string)[] = [];
+  */
 
   constructor (
-    _params: APIErrorParameters
+    publicPayload: Partial<APIErrorPublicPayload> = {},
+    _sensitive: Partial<APIErrorSensitiveParameters> = {},
+    error: Error | unknown = new Error(),
   ) {
     super();
-    const params = lodash.defaultsDeep(_params, APIErrorParamsDefaults) as Required<APIErrorParameters>;
 
-    this.statusCode = params.code;
-    this.name = http.STATUS_CODES[params.code] || "Unknown Error";
-    this.message = params.message;
-    this.details = params.details;
-    this.timestamp = new Date();
-    this.errorStack = [...params.errorStack];
+    this.publicPayload = lodash.defaults(publicPayload, {
+      message: "",
+      details: {},
+      code: 500,
+      timestamp: new Date(),
+    } as APIErrorPublicPayload);
+    
+    const sensitive = lodash.defaults(_sensitive, {
+      message: "",
+      details: {},
+    });
+
+    this.message = sensitive.message;
+    this.details = lodash.merge(sensitive.details, this.publicPayload.details);
+    this.code = this.publicPayload.code;
+    this.timestamp = this.publicPayload.timestamp;
+
+    if (error instanceof APIError) {
+      this.errorStack = [
+        error.toObject('sensitive'),
+        ...error.errorStack
+      ];
+    } else if (error instanceof Error) {
+      this.message = error.message ? error.message : this.message;
+      this.errorStack = [{
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      }];
+    }
+
   }
 
-  public addTypeboxValidationErrors (errors: ValidateFunction<any>['errors']) {
+  public addTypeboxValidationErrors (
+    errors: ValidateFunction<any>['errors'], 
+    mode: 'public' | 'sensitive'
+  ) {
+    const details: Record<string, string[]> = {};
+
     if (errors) {
-      errors.forEach((error) => {
+      for (const error of errors) {
         let attr = '_';
         if (error.instancePath === '' && error.params!.additionalProperty) {
           attr = error.params!.additionalProperty;          
@@ -79,44 +117,61 @@ export class APIError extends Error {
           attr = error.instancePath.slice(1);
         }
 
-        if (this.details[attr] === undefined) {
-          this.details[attr] = [error.message || ""];
+        if (details[attr] === undefined) {
+          details[attr] = [error.message || ""];
         } else {
-          this.details[attr].push(error.message || "");
+          details[attr].push(error.message || "");
         }
-      })
+      }
     }
+
+    if (mode === 'public') {
+      lodash.merge(this.publicPayload.details, details);
+      lodash.merge(this.details, details);
+    } else {
+      lodash.merge(this.details, details);
+    }
+
     return this;
   }
 
-  public toResponseObject () {
-    return {
-      message: this.message,
-      details: this.details,
-      timestamp: this.timestamp,
-    };
+  public toObject (mode: 'public' | 'sensitive') {
+    if (mode === 'public') {
+      return this.publicPayload;
+    } else {
+      return {
+        name: this.name,
+        stack: this.stack,
+        message: this.message,
+
+      };
+    }
   }
 
-  public toHTMLContext () {
-    return {
-      statusCode: this.statusCode,
-      message: this.message.slice(0, 100),
-      details: JSON.stringify(this.details, null, 2),
-      timestamp: this.timestamp,
-      stack: this.stack,
-    };
+  public toHTMLContext (mode: 'public' | 'sensitive') {
+    if (mode === 'public') {
+      return {
+        code: this.publicPayload.code,
+        message: this.publicPayload.message.slice(0, 100),
+        details: JSON.stringify(this.publicPayload.details, null, 2),
+        timestamp: this.publicPayload.timestamp,
+        stack: [],
+      };
+    } else {
+      return {
+        code: this.code,
+        message: this.message.slice(0, 100),
+        details: JSON.stringify(this.details, null, 2),
+        timestamp: this.timestamp,
+        stack: this.stack,
+      };
+    }
+
+
   }
 
-  public toLoggerText () {
-    return JSON.stringify({ 
-      statusCode: this.statusCode, 
-      message: this.message,
-      details: this.details,
-      timestamp: this.timestamp,
-      stack: this.stack,
-    }, null, 2);
-  }
 }
+
 
 export class AccessorError extends Error {
   public message: string;

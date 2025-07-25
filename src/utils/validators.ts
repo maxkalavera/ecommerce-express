@@ -1,4 +1,4 @@
-import Ajv, { Options } from "ajv";
+import Ajv, { Options, ErrorObject } from "ajv";
 import traverse from "traverse";
 import lodash from "lodash";
 import addFormats from "ajv-formats";
@@ -42,6 +42,15 @@ type CoherceOptions = {
   additionalProperties: boolean | 'strict' | 'strict-dev-only'
 };
 
+type ValidationReturned = {
+    success: true,
+    data: Record<string, any>
+  } |
+  {
+    success: false,
+    errors: Record<string, string[]>
+  };
+
 const validator = buildValidator({
   allErrors: true,
   strict: true,
@@ -58,7 +67,7 @@ export function validate(
   schema: TSchema, 
   data: Record<string, any>,
   _options: Partial<ValidateOptions> = {}
-): Record<string, any>
+): ValidationReturned
 {
   const options: ValidateOptions = lodash.defaults(_options, {
     additionalProperties: true,
@@ -74,10 +83,16 @@ export function validate(
 
   const validate = validator.compile(schema);
   if (validate(data)) {
-    return data;
+    return {
+      success: true,
+      data,
+    };
+  } else {
+    return {
+      success: false,
+      errors: castTypeboxToErrorList(validate.errors || [])
+    }
   }
-  throw new APIError({ code: 400, message: 'Invalid data' })
-    .addTypeboxValidationErrors(validate.errors);
 }
 
 
@@ -95,7 +110,8 @@ export function coherce(
   schema: TSchema, 
   data: Record<string, any>,
   _options: Partial<CoherceOptions> = {},
-) {
+): ValidationReturned 
+{
   const options: CoherceOptions = lodash.defaults(_options, {
     additionalProperties: true,
   } as CoherceOptions);
@@ -110,11 +126,17 @@ export function coherce(
 
   const coherce = coercer.compile(schema);
   const copiedData = lodash.cloneDeep(data);
-  if (coherce(copiedData)) {
-    return copiedData;
+  if (coherce(data)) {
+    return {
+      success: true,
+      data: copiedData,
+    };
+  } else {
+    return {
+      success: false,
+      errors: castTypeboxToErrorList(coherce.errors || [])
+    }
   }
-  throw new APIError({ code: 400, message: 'Invalid data' })
-    .addTypeboxValidationErrors(coherce.errors);
 }
 
 
@@ -136,4 +158,25 @@ function makeSchemaStrict(schema: TSchema) {
     }
   });
   return clonedSchema;
+}
+
+function castTypeboxToErrorList (errors: ErrorObject<string, Record<string, any>, unknown>[]) {
+  const result: Record<string, string[]> = {};
+
+  for (const error of errors) {
+    let attr = '_';
+    if (error.instancePath === '' && error.params!.additionalProperty) {
+      attr = error.params!.additionalProperty;          
+    } else if (error.instancePath !== ''){
+      attr = error.instancePath.slice(1);
+    }
+
+    if (result[attr] === undefined) {
+      result[attr] = [error.message || ""];
+    } else {
+      result[attr].push(error.message || "");
+    }
+  }
+
+  return result;
 }

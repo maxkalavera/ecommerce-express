@@ -54,17 +54,11 @@ export async function seedProducts(tx: any) {
 
   for (const row of productsJson) {
     const { key: productKey, categoryKey, ...restRow } = row;
-    const categoryReturned = await categoriesAccessor.read({ key: base64url.encode(categoryKey) });
 
-    if (!categoryReturned.isSuccess()) {
-      throw new Error(`Category ${row.categoryKey} not found`);
-    }
-
-    const categoryPayload = categoryReturned.getPayload();
     const productReturned = await productsAccessor.create({
       ...restRow,
       key: base64url.encode(productKey),
-      categoryId: categoryPayload.data.id,
+      categoryKey: base64url.encode(categoryKey),
     });
 
     if (productReturned.isSuccess()) {

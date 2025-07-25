@@ -18,8 +18,8 @@ export const ProductsInsert = Type.Composite([
     isLabeled: Type.Optional(Type.Boolean()),
     labelContent: Type.Optional(Type.String({ maxLength: 255 })),
     labelColor: Type.Optional(Type.String({ maxLength: 7 })),
-    categoryId: Type.Integer(),
-    categoryKey: Type.Optional(Type.String({ format: 'base64url' })),
+    categoryId: Type.Optional(Type.Integer()),
+    categoryKey: Type.String({ format: 'base64url' }),
   })
 ], { additionalProperties: false });
 

@@ -35,9 +35,10 @@ export class ImageAccessorComposer {
         url: buildMediaURL(imageInfo.path),
         mimetype: imageInfo.mimetype,
       });
-    } catch (err) {
-      console.error(err);
-      throw APIError.fromError(err, { code: 500, message: 'Failed to store image in database' });
+    } catch (error) {
+      throw new APIError({}, { 
+        message: 'Failed to store image in database', 
+      }, error);
     }
   }
 
@@ -54,8 +55,10 @@ export class ImageAccessorComposer {
         url: buildMediaURL(imageInfo.path),
         mimetype: imageInfo.mimetype,
       });
-    } catch (err) {
-      throw APIError.fromError(err, { code: 500, message: 'Failed to update image in database' });
+    } catch (error) {
+      throw new APIError({}, {
+        message: 'Failed to update image in database',
+      }, error);
     }
   }
 
@@ -69,8 +72,10 @@ export class ImageAccessorComposer {
         await deleteImage(this.domain, payload.data.key);
       });
       return result;
-    } catch (err) {
-      throw APIError.fromError(err, { code: 500, message: 'Failed to delete image in database' });
+    } catch (error) {
+      throw new APIError({}, {
+        message: 'Failed to delete image in database',
+      }, error);
     }
   }
 

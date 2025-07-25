@@ -30,9 +30,36 @@ export class CoreService extends LayersCore {
       body: Type.Object({}),
     });
 
-    this.validate(schemas.params, data.params, { additionalProperties: 'strict-dev-only' });
-    data.query = this.coherce(schemas.query, data.query, { additionalProperties: 'strict-dev-only' });
-    data.body = this.coherce(schemas.body, data.body, { additionalProperties: 'strict-dev-only' });
+    const paramsValidation = this.validate(schemas.params, data.params, { additionalProperties: 'strict-dev-only' });
+    if (!paramsValidation.success) {
+      throw this.buildError({}, {
+        message: 'Error while validating params data',
+        details: paramsValidation.errors,
+      });
+    }
+    data.params = paramsValidation.data;
+
+    const queryCohersion = this.coherce(schemas.query, data.query, { additionalProperties: 'strict-dev-only' });
+    if (!queryCohersion.success) {
+      throw this.buildError({
+
+      }, {
+        message: 'Error while validating query data',
+        details: queryCohersion.errors,
+      });
+    }
+    data.query = queryCohersion.data;
+
+    const bodyCohersion = this.coherce(schemas.body, data.body, { additionalProperties: 'strict-dev-only' });
+    if (!bodyCohersion.success) {
+      throw this.buildError({
+
+      }, {
+        message: 'Error while validating body data',
+        details: bodyCohersion.errors,
+      });
+    }
+    data.body = bodyCohersion.data;
   
     return data;
   }
@@ -46,9 +73,23 @@ export class CoreService extends LayersCore {
   {
     data.onSuccessSync((payload) => {
       if ((payload as PayloadMany<any>).items !== undefined) {
-        this.validate(PayloadManySchema(schema), payload as PayloadMany<any>, { additionalProperties: 'strict-dev-only' });
+        for (const item of (payload as PayloadMany<any>).items) {
+          const itemValidation = this.validate(schema, item, { additionalProperties: 'strict-dev-only' });
+          if (!itemValidation.success) {
+            throw this.buildError({}, {
+              message: 'Error while validating service payload',
+              details: itemValidation.errors
+            });
+          }
+        }
       } else {
-        this.validate(PayloadSingleSchema(schema), payload as PayloadSingle<any>, { additionalProperties: 'strict-dev-only' });
+        const validation = this.validate(schema, (payload as PayloadSingle<any>).data, { additionalProperties: 'strict-dev-only' });
+        if (!validation.success) {
+          throw this.buildError({}, {
+            message: 'Error while validating service payload',
+            details: validation.errors
+          });
+        }
       }
     });
 
@@ -125,7 +166,6 @@ export class CoreService extends LayersCore {
     });
     let result = await callback(data, { buildReturn: this.buildReturn });
     result = this.executeReshapePayload(result as LayersReturnType<PayloadType>, mapper);
-
     this.validatePayload(schemas.payloadInstance, result);
 
     return result;

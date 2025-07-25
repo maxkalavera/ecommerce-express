@@ -1,3 +1,4 @@
+import util from 'node:util';
 import { Request, Response, NextFunction } from 'express';
 import { APIError } from '@/utils/errors';
 import settings from "@/settings";
@@ -13,17 +14,26 @@ export default function error (
   next: NextFunction
 ): void 
 {
-  console.error(err);
+  console.log(util.inspect(err, {
+    showHidden: false, // show non-enumerable properties
+    depth: null, // recurse indefinitely
+    colors: true, // ANSI color output
+    compact: false, // break into multiple lines
+    maxArrayLength: null, // show all array items
+    breakLength: Infinity, // don't break long lines
+    sorted: true // sort object keys alphabetically
+  }));
+  
   if (res.headersSent) {
     next();
   } else {
-    const apiError = err !instanceof APIError ? err : APIError.fromError(err, { message: 'Internal server error' });
+    const apiError = err !instanceof APIError ? err : new APIError({}, err);
     const acceptedTypes = req.accepts(['json', 'html']);
 
     if (acceptedTypes === 'html') {
-      res.status(apiError.statusCode).render('error', apiError.toHTMLContext());
+      res.status(apiError.code).render('error', apiError.toHTMLContext('public'));
     } else {
-      res.status(apiError.statusCode).json(apiError.toResponseObject());
+      res.status(apiError.code).json(apiError.toObject('public'));
     }
     next();
   }
