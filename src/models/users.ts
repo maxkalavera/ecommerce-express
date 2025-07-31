@@ -15,9 +15,9 @@ export const users = pg.pgTable(
     // Common columns
     ...commonColumns(),
     // Table specific columns
-    username: pg.varchar({ length: 255 }).notNull().unique(),
-    email: pg.varchar({ length: 255 }).notNull().unique(),
-    password: pg.varchar({ length: 255 }).notNull(),
+    username: pg.varchar("username", { length: 255 }).notNull().unique(),
+    email: pg.varchar("email", { length: 255 }).notNull().unique(),
+    password: pg.varchar("password", { length: 255 }).notNull(),
   },
   (table) => []
 );

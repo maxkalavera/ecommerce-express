@@ -39,8 +39,10 @@ export function buildCursor (
     const cursor = base64url.encodeBase64urlFromBuffer(Buffer.concat([iv, encrypted]));
     return cursor
   } catch (error) {
-    throw new APIError({}, {
-      message: 'Could not generate pagination cursor',
+    throw new APIError({
+      sensitive: {
+        message: 'Could not generate pagination cursor',
+      }
     }, error);
   }
 }
@@ -72,8 +74,10 @@ export function decodeCursor (
     // Deserialize back to object
     return deserializeObject(decrypted);
   } catch (error) {
-    throw new APIError({}, {
-      message: 'Invalid cursor',
+    throw new APIError({
+      sensitive: {
+        message: 'Invalid cursor',
+      }
     }, error); 
   }
 }

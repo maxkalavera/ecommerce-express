@@ -5,6 +5,7 @@ import * as productsSchemas from '@/typebox/services/products';
 export const productsDocs = new OpenAPICRUDBuilder('products')
   .setAllowedOperations("view")
   .setDefaultSuccessItemSchema(productsSchemas.Product)
+  .setDefaultTags(["Products"])
   .addCreateOperation({
     requestBodySchema: productsSchemas.ProductInsert,
   })

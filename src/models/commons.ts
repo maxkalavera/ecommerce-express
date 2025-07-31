@@ -9,16 +9,6 @@ import { toPostgreSQLRegex, URL_REGEX } from "@/utils/regex";
  * When columns are defined directly as an object, drizzle-orm may encounter problems with 'this' binding
  * during schema compilation. Using a function ensures proper scoping and prevents these reference errors.
  */
-/*
-export const buildCommonColumns = () => {
-  return {
-    id: op.serial("id").primaryKey().notNull(),
-    key: urlFriendlyUUID("key").default(sql`gen_random_uuid()`).unique().notNull(),
-    createdAt: op.timestamp("created_at").notNull().defaultNow(),
-    updatedAt: op.timestamp("updated_at").notNull().defaultNow(),
-  };
-};
-*/
 
 export const buildIdentifierColumns = () => {
   return {
@@ -36,8 +26,8 @@ export const buildTimestamps = () => {
 
 export const buildFileColumns = () => {
   return {
-    url: pg.varchar({ length: 255 }).notNull(),
-    mimetype: pg.varchar({ length: 255 }),
+    url: pg.varchar("url", { length: 255 }).notNull(),
+    mimetype: pg.varchar("mimetype", { length: 255 }),
   };
 }
 

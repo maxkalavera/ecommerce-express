@@ -10,19 +10,19 @@ export class OpenAPIBuilder {
     openapi: '3.0.1',
   } as OpenAPI.Document;
 
-  protected _defaults(...args: Parameters<typeof lodash.defaults>) {
+  protected defaults(...args: Parameters<typeof lodash.defaults>) {
     return lodash.defaults(...args);    
   }
 
-    protected _defaultsDeep(...args: Parameters<typeof lodash.defaultsDeep>) {
+    protected defaultsDeep(...args: Parameters<typeof lodash.defaultsDeep>) {
     return lodash.defaultsDeep(...args);    
   }
 
-  protected _mergeDeep(...params: Parameters<typeof mergeDeep>) {
+  protected mergeDeep(...params: Parameters<typeof mergeDeep>) {
     return mergeDeep(...params);
   }
 
-  protected _getcommonKeys<
+  protected getcommonKeys<
     T extends Record<string, any>, 
     U extends Record<string, any>
   > (
@@ -39,7 +39,7 @@ export class OpenAPIBuilder {
     docs: OpenAPI.Document
   )
   {
-    this.document = this._mergeDeep({
+    this.document = this.mergeDeep({
       openapi: '3.0.1',
     }, docs);
 
@@ -67,12 +67,12 @@ export class OpenAPIBuilder {
     }
 
     if (this.document.paths[path] !== undefined) {
-      const commonKeys = this._getcommonKeys(this.document.paths[path], pathItem);
+      const commonKeys = this.getcommonKeys(this.document.paths[path], pathItem);
       if (commonKeys.length > 0) {
         throw new Error(`Path "${path}" with method "${commonKeys}" already exist`);
       }
     }
-    this.document.paths[path] = this._mergeDeep(
+    this.document.paths[path] = this.mergeDeep(
       this.document.paths[path],
       pathItem
     );

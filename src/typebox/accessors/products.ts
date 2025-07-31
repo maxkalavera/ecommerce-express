@@ -19,7 +19,7 @@ export const ProductsInsert = Type.Composite([
     labelContent: Type.Optional(Type.String({ maxLength: 255 })),
     labelColor: Type.Optional(Type.String({ maxLength: 7 })),
     categoryId: Type.Optional(Type.Integer()),
-    categoryKey: Type.String({ format: 'base64url' }),
+    categoryKey: Type.Optional(Type.String({ format: 'base64url' })),
   })
 ], { additionalProperties: false });
 
@@ -37,7 +37,7 @@ export const ProductsItemsInsert = Type.Composite([
     // specific attributes
     quantity: Type.Integer(),
     size: Type.String({ maxLength: 255 }),
-    productId: Type.Integer(),
+    productId: Type.Optional(Type.Integer()),
     productKey: Type.Optional(Type.String({ format: 'base64url' })),
   })
 ], { additionalProperties: false });

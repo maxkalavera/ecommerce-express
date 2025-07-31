@@ -95,10 +95,10 @@ export class CoreAccessor extends LayersCore {
    * @param keys - Keys to identify the record
    */
   public async read (
-    key: Record<string, any>,
+    params: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const queryResult = await this.buildQuery(key);
+    const queryResult = await this.buildQuery(params);
 
     if (queryResult.length > 0) {
       return this.buildReturn({
@@ -107,10 +107,13 @@ export class CoreAccessor extends LayersCore {
       });
     } else {
       throw this.buildError({
-        message: "Resource was not found",
-        code: 400
-      }, {
-        message: "Resource was not found",
+        public: {
+          message: "Resource was not found",
+          code: 400,
+        }, 
+        sensitive: {
+          message: "Resource was not found",
+        }
       })
     }
 
@@ -140,11 +143,14 @@ export class CoreAccessor extends LayersCore {
     const queryParamsValidation = this.validate(this.queryParamsSchema, _query);
     if (!queryParamsValidation.success) {
       throw this.buildError({
-        message: 'Error found while validating accessor list query parameters',
-        code: 400,          
-      }, {
-        message: 'Error found while validating accessor list query parameters',
-        details: queryParamsValidation.errors
+        public: {
+          message: 'Error found while validating accessor list query parameters',
+          code: 400,          
+        }, 
+        sensitive: {
+          message: 'Error found while validating accessor list query parameters',
+          details: queryParamsValidation.errors
+        }
       });
     }
     queryParams = queryParamsValidation.data;
@@ -200,14 +206,14 @@ export class CoreAccessor extends LayersCore {
     const cohersion = this.coherce(this.insertSchema, data);
     if (!cohersion.success) {
       throw this.buildError({
-        message: "There was an error validating insert data",
-        code: 400,
-      }, {
+        public: {
+          message: "There was an error validating insert data",
+          code: 400,
+        }, 
+        sensitive: {
         message: "There was an error validating insert data",
         details: cohersion.errors
-
-      }, {
-        
+        }
       });
     }
 
@@ -225,34 +231,37 @@ export class CoreAccessor extends LayersCore {
    * @param lookups - Lookup conditions to identify record(s)
    */
   protected async executeUpdate(
-    key: Record<string, any>,
+    params: Record<string, any>,
     data: Record<string, any>,
   ) {
     const result = await this.db
       .update(this.table)
       .set(data)
-      .where(op.and(...this.buildKeyQueryWhere(key, { usePagination: false })))
+      .where(op.and(...this.buildKeyQueryWhere(params, { usePagination: false })))
       .returning();
 
     return result[0];
   }
 
   public async update(
-    key: Record<string, any>,
+    params: Record<string, any>,
     data: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
     const cohersion = this.coherce(this.updateSchema, data);
     if (!cohersion.success) {
       throw this.buildError({
-        message: "There was an error validatin update data",
-        code: 400,
-      }, {
-        message: "There was an error validatin update data",
-        details: cohersion.errors
+        public: {
+          message: "There was an error validatin update data",
+          code: 400,
+        }, 
+        sensitive: {
+          message: "There was an error validatin update data",
+          details: cohersion.errors
+        }
       })
     }
-    const mutatedRecord = await this.executeUpdate(key, cohersion.data);
+    const mutatedRecord = await this.executeUpdate(params, cohersion.data);
     return await this.read({ id: mutatedRecord.id });
   }
 
@@ -275,15 +284,18 @@ export class CoreAccessor extends LayersCore {
    * ```
    */
   protected async executeDelete (
-    key: Record<string, any>,
+    params: Record<string, any>,
   ) {
     const result = await this.db
       .delete(this.table)
-      .where(op.and(...this.buildKeyQueryWhere(key, { usePagination: false })))
+      .where(op.and(...this.buildKeyQueryWhere(params, { usePagination: false })))
       .returning();
 
     if (result.length === 0) {
-      throw this.buildError({ code: 404, message: 'Record not found' }, { message: 'Record not found' });
+      throw this.buildError({ 
+        public: { code: 404, message: 'Record not found' }, 
+        sensitive: { message: 'Record not found' }}
+      );
     }
     return result[0];
   }
@@ -301,10 +313,10 @@ export class CoreAccessor extends LayersCore {
    * ```
    */
   public async delete (
-    key: Record<string, any>,
+    params: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
-    const mutatedRecord = await this.executeDelete(key);
+    const mutatedRecord = await this.executeDelete(params);
     return this.buildReturn({
       success: true,
       payload: { data: mutatedRecord }

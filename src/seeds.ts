@@ -5,6 +5,7 @@ import { testConnection, clearData } from '@/utils/db';
 import { seedCategories } from "@seeds/categories";
 import { seedUsers } from "@seeds/users";
 import { seedProducts } from "@seeds/products";
+import { seedCarts } from "@seeds/carts";
 
 
 /******************************************************************************
@@ -15,6 +16,7 @@ await runSeeds(async (tx) => {
   await seedUsers(tx);
   await seedCategories(tx); 
   await seedProducts(tx);
+  await seedCarts(tx);
 })
 
 /******************************************************************************

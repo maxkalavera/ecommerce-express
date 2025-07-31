@@ -15,10 +15,10 @@ export const categories: pg.PgTableWithColumns<any> = pg.pgTable(
     // Common columns
     ...commonColumns(),
     // Table specific columns
-    name: pg.varchar({ length: 255 }).notNull(),
-    description: pg.text().notNull().default(""),
+    name: pg.varchar("name", { length: 255 }).notNull(),
+    description: pg.text("description").notNull().default(""),
     //parentId: pg.integer().references(() => categories.id, { onDelete: "set null" }),
-    parentKey: urlFriendlyUUID().references(() => categories.key, { onDelete: "set null" }),
+    parentKey: urlFriendlyUUID("parent_key").references(() => categories.key, { onDelete: "set null" }),
   },
   (table) => []
 );
@@ -42,7 +42,7 @@ export const categoriesImages = pg.pgTable(
     ...commonColumns(),
     ...buildFileColumns(),
     // Table specific columns
-    categoryId: pg.integer().notNull().references(() => categories.id),
+    categoryId: pg.integer("category_id").notNull().references(() => categories.id),
   },
   (table) => [
     ...buildFileCheckers(table),

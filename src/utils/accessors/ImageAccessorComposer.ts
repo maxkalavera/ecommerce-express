@@ -26,7 +26,9 @@ export class ImageAccessorComposer {
     try {
       const key = data.key || base64url.encodeBase64url(crypto.randomUUID());
       if (await imageExists(this.domain, key)) {  
-        throw new APIError({ code: 400, message: `There is already an image associated with ${key}` });
+        throw new APIError({
+          sensitive: { message: `There is already an image associated with ${key}` }
+        });
       }
       const imageInfo = await storeImage(this.domain, key, image);
       return await this.context.create({
@@ -36,8 +38,10 @@ export class ImageAccessorComposer {
         mimetype: imageInfo.mimetype,
       });
     } catch (error) {
-      throw new APIError({}, { 
-        message: 'Failed to store image in database', 
+      throw new APIError({
+        sensitive: { 
+          message: 'Failed to store image in database', 
+        }
       }, error);
     }
   }
@@ -56,8 +60,10 @@ export class ImageAccessorComposer {
         mimetype: imageInfo.mimetype,
       });
     } catch (error) {
-      throw new APIError({}, {
-        message: 'Failed to update image in database',
+      throw new APIError({
+        sensitive: {
+          message: 'Failed to update image in database',
+        }
       }, error);
     }
   }
@@ -73,8 +79,10 @@ export class ImageAccessorComposer {
       });
       return result;
     } catch (error) {
-      throw new APIError({}, {
-        message: 'Failed to delete image in database',
+      throw new APIError({
+        sensitive: {
+          message: 'Failed to delete image in database',
+        }
       }, error);
     }
   }

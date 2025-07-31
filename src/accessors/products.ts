@@ -10,6 +10,7 @@ import {
 } from "@/typebox/accessors/products";
 
 
+
 /******************************************************************************
  * Products
  *****************************************************************************/
@@ -24,6 +25,28 @@ export class ProductsAccessor extends CoreAccessor {
         updateSchema: ProductsUpdate,
       }
     );
+  }
+
+  async create(
+    data: Record<string, any>
+  ) {
+    let { categoryId, categoryKey } = data;
+    if (categoryKey && !categoryId) {
+      const categoryPayload = await categoriesAccessor.read({ key: categoryKey });
+      if (!categoryPayload.isSuccess()) {
+        throw this.buildError({
+          sensitive: { message: `Category ${categoryKey} could not get retrieved` }
+        }, categoryPayload.getError());
+      }
+      const category = categoryPayload.getPayload().data;
+      categoryId = category.id;
+    }
+
+    return await super.create({
+      ...data,
+      categoryId: categoryId,
+      categoryKey: categoryKey,
+    });
   }
 
   protected buildQuerySelectFields() {
@@ -147,9 +170,6 @@ export class ProductsItemsAccessor extends CoreAccessor {
   ): op.SQL[]
   {
     const orderBy = super.buildPaginationQueryOrderBy(params, options);
-
-
-
     return orderBy;
   }
 

@@ -14,94 +14,90 @@ export type APIErrorPublicPayload = {
   timestamp: Date;
 };
 
+export type APIErrorSensitivePayalod = {
+  message: string;
+  details: Record<string, string[]>;
+  timestamp: Date;
+  stack: any;
+};
 
 export type APIErrorSensitiveParameters = {
   message: string;
   details: Record<string, string[]>;
-  //timestamp: Date;
 };
-
-/*
-export type APIErrorParameters = {
-  message?: string;
-  details?: Record<string, string[]>;
-  code?: number;
-  timestamp?: Date;
-}
-*/
 
 /******************************************************************************
  * Errors
  *****************************************************************************/
 
-/*
-const APIErrorParamsDefaults: Required<APIErrorParameters> = {
-  message: "",
-  details: {},
-  code: 500,
-  timestamp: new Date(),
-}
-*/
-
 export class APIError extends Error {
-  public publicPayload: APIErrorPublicPayload;
+  protected publicPayload: APIErrorPublicPayload | null = null;
+  protected sensitivePayload: APIErrorSensitivePayalod | null = null;
+  public publicPayloadStack: APIErrorPublicPayload[] = [];
+  private sensitivePayloadStack: APIErrorSensitivePayalod[] = [];
 
+  /*
   public message: string;
   public details: Record<string, string[]>;
   public code: number;
   public timestamp: Date;
   public errorStack: (Error | Record<string, any> | string)[] = [];
-  //protected privatePayload: APIErrorPrivatePayload;
-
-
-  /*
-  public message: string;
-  public details: Record<string, string[]>;
-  public statusCode: number;
-  public timestamp: Date;
-  public errorStack: (Error | Record<string, any> | string)[] = [];
   */
 
   constructor (
-    publicPayload: Partial<APIErrorPublicPayload> = {},
-    _sensitive: Partial<APIErrorSensitiveParameters> = {},
+    _params: Partial<{
+      public: Partial<APIErrorPublicPayload>,
+      sensitive: Partial<APIErrorSensitiveParameters>
+    }> = {},
     error: Error | unknown = new Error(),
   ) {
     super();
 
-    this.publicPayload = lodash.defaults(publicPayload, {
-      message: "",
-      details: {},
-      code: 500,
-      timestamp: new Date(),
-    } as APIErrorPublicPayload);
+    if (typeof _params.public === 'object') {
+      this.publicPayload = lodash.defaults(_params.public, {
+        message: "",
+        details: {},
+        code: 500,
+        timestamp: new Date(),
+      } as APIErrorPublicPayload);
+      this.publicPayloadStack = [ this.publicPayload  ];
+    }
     
-    const sensitive = lodash.defaults(_sensitive, {
-      message: "",
-      details: {},
-    });
-
-    this.message = sensitive.message;
-    this.details = lodash.merge(sensitive.details, this.publicPayload.details);
-    this.code = this.publicPayload.code;
-    this.timestamp = this.publicPayload.timestamp;
-
-    if (error instanceof APIError) {
-      this.errorStack = [
-        error.toObject('sensitive'),
-        ...error.errorStack
-      ];
-    } else if (error instanceof Error) {
-      this.message = error.message ? error.message : this.message;
-      this.errorStack = [{
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      }];
+    if (typeof _params.sensitive === 'object') {
+      this.sensitivePayload = lodash.defaults(typeof _params.sensitive, {
+        message: "",
+        details: {},
+        timestamp: new Date(),
+        stack: undefined,
+      });
+      this.sensitivePayloadStack = [ this.sensitivePayload ];
     }
 
+    if (error instanceof APIError) {
+      this.publicPayloadStack = [
+        ...this.publicPayloadStack,
+        ...error.publicPayloadStack,
+      ];
+      this.sensitivePayloadStack = [
+        ...this.sensitivePayloadStack,
+        ...error.sensitivePayloadStack,
+      ];
+    } else if (error instanceof Error) { 
+      this.sensitivePayloadStack = [
+        ...this.sensitivePayloadStack,
+        {
+          message: error.message,
+          stack: error.stack,
+          details: {},
+          timestamp: new Date(),
+        }
+      ];
+    }
   }
 
+
+
+  /*
   public addTypeboxValidationErrors (
     errors: ValidateFunction<any>['errors'], 
     mode: 'public' | 'sensitive'
@@ -127,52 +123,44 @@ export class APIError extends Error {
 
     if (mode === 'public') {
       lodash.merge(this.publicPayload.details, details);
-      lodash.merge(this.details, details);
+      //lodash.merge(this.details, details);
     } else {
-      lodash.merge(this.details, details);
+      lodash.merge(this.sensitivePayload.details, details);
     }
 
     return this;
   }
+  */
+
+  public toPublicObject() {
+    return this.publicPayloadStack[this.publicPayloadStack.length - 1] || {
+      message: "Internal Server Error",
+      details: {},
+      code: 500,
+      timestamp: new Date(),
+    }; 
+  }
+
+  public toSensitiveObject() {
+    return lodash.clone(this.sensitivePayloadStack);
+  }
 
   public toObject (mode: 'public' | 'sensitive') {
     if (mode === 'public') {
-      return this.publicPayload;
+      return this.publicPayloadStack[this.publicPayloadStack.length - 1] || {
+        message: "Internal Server Error",
+        details: {},
+        code: 500,
+        timestamp: new Date(),
+      }; 
     } else {
-      return {
-        name: this.name,
-        stack: this.stack,
-        message: this.message,
-
-      };
+      return lodash.clone(this.sensitivePayloadStack);
     }
   }
-
-  public toHTMLContext (mode: 'public' | 'sensitive') {
-    if (mode === 'public') {
-      return {
-        code: this.publicPayload.code,
-        message: this.publicPayload.message.slice(0, 100),
-        details: JSON.stringify(this.publicPayload.details, null, 2),
-        timestamp: this.publicPayload.timestamp,
-        stack: [],
-      };
-    } else {
-      return {
-        code: this.code,
-        message: this.message.slice(0, 100),
-        details: JSON.stringify(this.details, null, 2),
-        timestamp: this.timestamp,
-        stack: this.stack,
-      };
-    }
-
-
-  }
-
 }
 
 
+/*
 export class AccessorError extends Error {
   public message: string;
   private field: string;
@@ -197,3 +185,4 @@ export class AccessorError extends Error {
     return errors.map((error) => AccessorError.fromAjvError(error));
   }
 }
+*/

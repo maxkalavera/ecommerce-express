@@ -5,6 +5,7 @@ import { cartsItemsService } from '@/services/carts';
 export const CartsItemsController = new CRUDController(
   'carts/items', 
   {
+    operations: ['create', 'delete', 'list'],
     executers: {
       create: async (requestData) => {
         return await cartsItemsService.create(requestData);

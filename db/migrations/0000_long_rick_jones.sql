@@ -140,19 +140,3 @@ ALTER TABLE "products" ADD CONSTRAINT "products_categoryKey_categories_key_fk" F
 ALTER TABLE "products_images" ADD CONSTRAINT "products_images_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products_items" ADD CONSTRAINT "products_items_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 
-
--- products to categories reference key trigger
-  CREATE OR REPLACE FUNCTION validate_product_categories_reference()
-  RETURNS TRIGGER AS $$
-  BEGIN
-    IF NEW.categoryKey != (SELECT key FROM categories WHERE id = NEW.category_id) THEN
-      RAISE EXCEPTION 'Product category UUID key does not match category ID reference';
-    END IF;
-    RETURN NEW;
-  END;
-  $$ LANGUAGE plpgsql;
-
-  CREATE TRIGGER check_product_categories_reference
-  BEFORE INSERT OR UPDATE ON products
-  FOR EACH ROW EXECUTE FUNCTION validate_product_categories_reference();
-

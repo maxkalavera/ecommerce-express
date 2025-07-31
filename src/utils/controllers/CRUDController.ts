@@ -102,10 +102,13 @@ export class CRUDController extends CoreController {
       return next(result.getError());
     } catch (error) {
       throw this.buildError({
-        message: "Error creating resource",
-        code: 500,        
-      }, { 
-        message: "Error creating resource",
+        public: {
+          message: "Error creating resource",
+          code: 500,        
+        }, 
+        sensitive: {
+          message: "Error creating resource",
+        }
       }, error);
     }
   }
@@ -129,10 +132,13 @@ export class CRUDController extends CoreController {
       return next(result.getError());
     } catch (error) {
       throw this.buildError({
-        message: "Error updating resource",
-        code: 500,
-      }, {
-        message: "Error updating resource",
+        public: {
+          message: "Error updating resource",
+          code: 500,
+        }, 
+        sensitive: {
+          message: "Error updating resource",
+        }
       }, error);
     };
   }
@@ -156,11 +162,14 @@ export class CRUDController extends CoreController {
         return next(result.getError());
       } catch (error) {
         throw this.buildError({
+          public: {
             message: "Error deleting resource",
             code: 500,
-          }, {
+          }, 
+          sensitive: {
             message: "Error deleting resource",
-          }, error);
+          }
+        }, error);
       }
     };
 
@@ -183,10 +192,13 @@ export class CRUDController extends CoreController {
       return next(result.getError());
     } catch (error) {
       throw this.buildError({
+        public: {
         message: "Error reading resource",
         code: 500,
-      }, {
+      }, 
+      sensitive: {
         message: "Error reading resource",
+      }
       }, error);
     }
   }
@@ -210,10 +222,13 @@ export class CRUDController extends CoreController {
       return next(result.getError());
     } catch (error) {
       throw this.buildError({
+        public: {
         message: "Error listing resource",
         code: 500,
-      }, {
+      }, 
+      sensitive: {
         message: "Error listing resource",
+      }
       }, error);
     }
   }

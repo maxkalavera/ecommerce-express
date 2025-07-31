@@ -41,6 +41,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
     },
   ];
   protected defaultSuccessItemSchema: TSchema = Type.Object({});
+  protected defaultTags: string[] = [];
 
   constructor(
     resourceName: string, 
@@ -52,6 +53,11 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
   setDefaultSuccessItemSchema(schema: TSchema) 
   {
     this.defaultSuccessItemSchema = schema;
+    return this;
+  }
+
+  setDefaultTags(tags: string[]) {
+    this.defaultTags = tags;
     return this;
   }
 
@@ -69,7 +75,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
     _options: Partial<AddOperationOptions> = {}
   ) 
   {
-    const options: AddOperationOptions = this._defaults(_options, {
+    const options: AddOperationOptions = this.defaults(_options, {
       mode: 'soft',
       parameters: undefined,
       requestBody: undefined,
@@ -80,7 +86,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
     }as AddOperationOptions);
 
     if (options.mode === 'soft') {
-      const pathItem = this._mergeDeep(
+      const pathItem = this.mergeDeep(
         {
           [method]: {}
         } as OpenAPI.PathItemObject,
@@ -154,22 +160,24 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       return this;
     }
 
-    const options = this._defaults({
+    const options = this.defaults(_options, {
       path: `/${this.resourceName}`,
       method: 'post',
       operation: {},
       successItemSchema: this.defaultSuccessItemSchema,
-    }, _options);
+    });
+    
     const { 
       path, method, operation, 
       successItemSchema, successResponseSchema, 
       ...operationOptions 
     } = options;
+
     return this.addOperation(
       path, 
       method, 
       {
-        tags: [`${this.resourceName}`],
+        tags: [...this.defaultTags],
         summary: `Create a ${this.resourceName}`,
         description: `Create a new ${this.resourceName}`,
         ...operation
@@ -198,13 +206,13 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       return this;
     }
 
-    const options = this._defaults({
+    const options = this.defaults(_options, {
       path: `/${this.resourceName}/{${this.defaultIdentifierParameter.name}}`,
       method: 'put',
       operation: {},
       parameters: [this.defaultIdentifierParameter],
       successItemSchema: this.defaultSuccessItemSchema,
-    }, _options);
+    });
     const { 
       path, method, operation, 
       successItemSchema, successResponseSchema, 
@@ -214,7 +222,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       path, 
       method, 
       {
-        tags: [`${this.resourceName}`],
+        tags: [...this.defaultTags],
         summary: `Update a ${this.resourceName}`,
         description: `Update an existing ${this.resourceName} by ${this.defaultIdentifierParameter.name}`,
         ...operation
@@ -243,13 +251,13 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       return this;
     }
 
-    const options = this._defaults({
+    const options = this.defaults(_options, {
       path: `/${this.resourceName}/{${this.defaultIdentifierParameter.name}}`,
       method: 'delete',
       operation: {},
       parameters: [this.defaultIdentifierParameter],
       successItemSchema: this.defaultSuccessItemSchema,
-    }, _options);
+    });
     const { 
       path, method, operation, 
       successItemSchema, successResponseSchema, 
@@ -259,7 +267,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       path, 
       method, 
       {
-        tags: [`${this.resourceName}`],
+        tags: [...this.defaultTags],
         summary: `Delete a ${this.resourceName}`,
         description: `Delete an existing ${this.resourceName} by ${this.defaultIdentifierParameter.name}`,
         ...operation
@@ -288,13 +296,13 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       return this;
     }
 
-    const options = this._defaults({
+    const options = this.defaults(_options, {
       path: `/${this.resourceName}/{${this.defaultIdentifierParameter.name}}`,
       method: 'get',
       operation: {},
       parameters: [this.defaultIdentifierParameter],
       successItemSchema: this.defaultSuccessItemSchema,
-    }, _options);
+    });
     const { 
       path, method, operation, 
       successItemSchema, successResponseSchema, 
@@ -304,7 +312,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       path, 
       method, 
       {
-        tags: [`${this.resourceName}`],
+        tags: [...this.defaultTags],
         summary: `Get a ${this.resourceName}`,
         description: `Get an existing ${this.resourceName} by ${this.defaultIdentifierParameter.name}`,
         ...operation
@@ -333,12 +341,12 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       return this;
     }
 
-    const options = this._defaults({
+    const options = this.defaults(_options, {
       path: `/${this.resourceName}`,
       method: 'get',
       operation: {},
       successItemSchema: this.defaultSuccessItemSchema,
-    }, _options);
+    });
     const { 
       path, method, operation, 
       parameters, successItemSchema, successResponseSchema, 
@@ -348,7 +356,7 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       path, 
       method, 
       {
-        tags: [`${this.resourceName}`],
+        tags: [...this.defaultTags],
         summary: `List ${this.resourceName}`,
         description: `List all ${this.resourceName}`,
         ...operation
@@ -380,10 +388,10 @@ function coalesce<Args extends any[]>(
 }
 
 function multipleContains(
-  arr: string[], 
+  container: string[], 
   values: string[]
 ) {
   // Check if array contains any of the given values
-  return values.some(value => arr.includes(value));
+  return container.some(item => values.includes(item));
 
 }

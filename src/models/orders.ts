@@ -21,7 +21,7 @@ export const orders = pg.pgTable(
     // Common columns
     ...commonColumns(),
     // Table specific columns
-    userId: pg.integer().notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: pg.integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   }
 );
 
@@ -45,9 +45,9 @@ export const ordersItems = pg.pgTable(
     // Common columns
     ...commonColumns(),
     // Table specific columns
-    orderId: pg.integer().notNull().references(() => orders.id, { onDelete: 'cascade' }),
-    productId: pg.integer().notNull().references(() => products.id, { onDelete: 'cascade' }),
-    quantity: pg.integer().notNull(),
+    orderId: pg.integer("order_id").notNull().references(() => orders.id, { onDelete: 'cascade' }),
+    productId: pg.integer("product_id").notNull().references(() => products.id, { onDelete: 'cascade' }),
+    quantity: pg.integer("quantity").notNull(),
     unitPriceAtPurchase: pg.numeric('unit_price_at_purchase', { precision: 20, scale: 2 }).notNull(),
     priceAtPurchase: pg.numeric('price_at_purchase', { precision: 20, scale: 2 }).notNull(),
   },

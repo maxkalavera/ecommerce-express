@@ -27,14 +27,10 @@ export default function error (
   if (res.headersSent) {
     next();
   } else {
+    //const acceptedTypes = req.accepts(['json', 'html']);
     const apiError = err !instanceof APIError ? err : new APIError({}, err);
-    const acceptedTypes = req.accepts(['json', 'html']);
-
-    if (acceptedTypes === 'html') {
-      res.status(apiError.code).render('error', apiError.toHTMLContext('public'));
-    } else {
-      res.status(apiError.code).json(apiError.toObject('public'));
-    }
+    const apiErrorResponse = apiError.toPublicObject();
+    res.status(apiErrorResponse.code).json(apiErrorResponse);
     next();
   }
 };

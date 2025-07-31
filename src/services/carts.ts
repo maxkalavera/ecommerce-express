@@ -1,7 +1,9 @@
-import { CartsAccessor, CartsItemsAccessor } from '@/accessors/carts';
+import { cartsAccessor, cartsItemsAccessor } from '@/accessors/carts';
 import { CRUDService } from '@/utils/services/CRUDService';
 import * as CartsSchemas from '@/typebox/services/carts';
+import base64url from 'base64url';
 
+const DEFAULT_CART_KEY = base64url.encode("e108d29a-87ae-425c-bbc4-b38d10437f0a");
 
 class CartsItemsService extends CRUDService {
 
@@ -9,24 +11,27 @@ class CartsItemsService extends CRUDService {
     super({
       executers: {
         create: async (data, { buildReturn }) => {
-          // return await ___Accessor.create(data.body!);
-          return buildReturn({ success: true, payload: { data: {} }});
+          return await cartsItemsAccessor.create({
+            cartKey: DEFAULT_CART_KEY,
+            productItemKey: data.body.productKey
+          });
         },
         update: async (data, { buildReturn }) => {
-          // return await ___Accessor.update(data.params, data.body!);
-          return buildReturn({ success: true, payload: { data: {} }});
+          return await cartsItemsAccessor.update(data.params, {
+            productItemKey: data.body.productKey
+          });
         },
         delete: async (data, { buildReturn }) => {
-          // return await ___Accessor.delete(data.params);
-          return buildReturn({ success: true, payload: { data: {} }});
+          return await cartsItemsAccessor.delete(data.params);
         }, 
         read: async (data, { buildReturn }) => {
-          // return await ___Accessor.read(data.params);
-          return buildReturn({ success: true, payload: { data: {} }});
+          return await cartsItemsAccessor.read(data.params);
         }, 
         list: async (data, { buildReturn }) => {
-          // return await ___Accessor.list(data.query);
-          return buildReturn({ success: true, payload: { items: [], cursor: null, hasMore: false }});
+          return await cartsItemsAccessor.list({
+            ...data.query,
+            cartKey: DEFAULT_CART_KEY,
+          });
         },
       },
       schemas: {
@@ -44,6 +49,7 @@ class CartsItemsService extends CRUDService {
       key: instance.key,
       createdAt: instance.createdAt.toISOString(),
       updatedAt: instance.updatedAt.toISOString(),
+      productKey: instance.productItemKey,
     };
   }
 
