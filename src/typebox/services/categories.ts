@@ -1,5 +1,5 @@
 import { Type } from '@sinclair/typebox';
-import { Nullable, Base64URL } from '@/utils/typebox';
+import { Nullable, Base64URL, Decimal } from '@/utils/typebox';
 
 
 export const Category = Type.Object({
@@ -12,8 +12,12 @@ export const Category = Type.Object({
   display: Nullable(Type.Object({
     url: Type.String(),
     mimetype: Type.String(),
-  }))
-});
+  })),
+  breadcrumbs: Nullable(Type.Array(Type.Object({
+    key: Base64URL(),
+    name: Type.String(),
+  }))),
+}, { additionalProperties: false });
 
 export const CategoryInsert = Type.Object({
   name: Type.String(),

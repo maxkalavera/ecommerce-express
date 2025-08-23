@@ -3,7 +3,7 @@ import { APIError } from '@/utils/errors';
 import { LayersReturnType } from '@/types/layers';
 import CoreAccessor from '@/utils/accessors/CoreAccessor';
 import { storeImage, deleteImage, imageExists } from '@/utils/db/images';
-import base64url from '@/utils/base64url';
+import base64url from 'base64url';
 import { buildMediaURL } from '@/utils/urls';
 
 export class ImageAccessorComposer {
@@ -24,7 +24,7 @@ export class ImageAccessorComposer {
   ): Promise<LayersReturnType> 
   {
     try {
-      const key = data.key || base64url.encodeBase64url(crypto.randomUUID());
+      const key = data.key || base64url.encode(crypto.randomUUID());
       if (await imageExists(this.domain, key)) {  
         throw new APIError({
           sensitive: { message: `There is already an image associated with ${key}` }
@@ -52,7 +52,7 @@ export class ImageAccessorComposer {
   ): Promise<LayersReturnType>  
   {
     try {
-      const key = base64url.encodeBase64url(crypto.randomUUID());
+      const key = base64url.encode(crypto.randomUUID());
       const imageInfo = await storeImage(this.domain, key, image, { force: true });
       return await this.context.update(identifiers, {
         key: key,

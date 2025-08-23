@@ -36,19 +36,13 @@ export class APIError extends Error {
   public publicPayloadStack: APIErrorPublicPayload[] = [];
   private sensitivePayloadStack: APIErrorSensitivePayalod[] = [];
 
-  /*
-  public message: string;
-  public details: Record<string, string[]>;
-  public code: number;
-  public timestamp: Date;
-  public errorStack: (Error | Record<string, any> | string)[] = [];
-  */
-
   constructor (
-    _params: Partial<{
-      public: Partial<APIErrorPublicPayload>,
-      sensitive: Partial<APIErrorSensitiveParameters>
-    }> = {},
+    _params: {
+      public?: Partial<APIErrorPublicPayload>,
+      sensitive: Partial<APIErrorSensitiveParameters> & {
+        message: string;
+      }
+    },
     error: Error | unknown = new Error(),
   ) {
     super();
@@ -64,7 +58,7 @@ export class APIError extends Error {
     }
     
     if (typeof _params.sensitive === 'object') {
-      this.sensitivePayload = lodash.defaults(typeof _params.sensitive, {
+      this.sensitivePayload = lodash.defaults(_params.sensitive, {
         message: "",
         details: {},
         timestamp: new Date(),
@@ -95,43 +89,6 @@ export class APIError extends Error {
     }
   }
 
-
-
-  /*
-  public addTypeboxValidationErrors (
-    errors: ValidateFunction<any>['errors'], 
-    mode: 'public' | 'sensitive'
-  ) {
-    const details: Record<string, string[]> = {};
-
-    if (errors) {
-      for (const error of errors) {
-        let attr = '_';
-        if (error.instancePath === '' && error.params!.additionalProperty) {
-          attr = error.params!.additionalProperty;          
-        } else if (error.instancePath !== ''){
-          attr = error.instancePath.slice(1);
-        }
-
-        if (details[attr] === undefined) {
-          details[attr] = [error.message || ""];
-        } else {
-          details[attr].push(error.message || "");
-        }
-      }
-    }
-
-    if (mode === 'public') {
-      lodash.merge(this.publicPayload.details, details);
-      //lodash.merge(this.details, details);
-    } else {
-      lodash.merge(this.sensitivePayload.details, details);
-    }
-
-    return this;
-  }
-  */
-
   public toPublicObject() {
     return this.publicPayloadStack[this.publicPayloadStack.length - 1] || {
       message: "Internal Server Error",
@@ -142,7 +99,20 @@ export class APIError extends Error {
   }
 
   public toSensitiveObject() {
-    return lodash.clone(this.sensitivePayloadStack);
+    return lodash.clone([
+      {
+        message: this.message,
+        stack: this.stack && this.stack.split('\n'),
+        details: {},
+        timestamp: new Date(),
+      },
+      ...this.sensitivePayloadStack.map((item) => ({
+        message: item.message,
+        details: item.details,
+        stack: item.stack && item.stack.split('\n'),
+        timestamp: item.timestamp,
+      }))
+    ]);
   }
 
   public toObject (mode: 'public' | 'sensitive') {
@@ -157,32 +127,5 @@ export class APIError extends Error {
       return lodash.clone(this.sensitivePayloadStack);
     }
   }
+
 }
-
-
-/*
-export class AccessorError extends Error {
-  public message: string;
-  private field: string;
-  private value: any;
-
-  constructor (message: string, field: string = "_", value: any = null) {
-    super();
-    this.name = 'APIError';
-    this.message = message;
-    this.field = field;
-    this.value = value;
-  }
-
-  public static fromAjvError (error: ErrorObject): AccessorError {
-    return new AccessorError(
-      error.message || "", 
-      error.propertyName || "", 
-      error.data
-    );
-  }
-  public static fromAjvErrors(errors: ErrorObject[]): AccessorError[] {
-    return errors.map((error) => AccessorError.fromAjvError(error));
-  }
-}
-*/

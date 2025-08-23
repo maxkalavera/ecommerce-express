@@ -86,3 +86,18 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER check_unique_product_in_cart
 BEFORE INSERT OR UPDATE ON carts_items
 FOR EACH ROW EXECUTE FUNCTION validate_unique_product_in_cart();
+
+-----------> 
+CREATE FUNCTION validate_categories_parent_reference()
+RETURNS TRIGGER AS $$
+BEGIN
+	IF NEW.parent_key IS DISTINCT FROM (SELECT key FROM categories WHERE id = NEW.parent_id) THEN
+		RAISE EXCEPTION 'Parent UUID key does not match parent ID reference';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+-- Create the trigger
+CREATE TRIGGER check_categories_parent_reference
+BEFORE INSERT OR UPDATE ON categories
+FOR EACH ROW EXECUTE FUNCTION validate_categories_parent_reference();

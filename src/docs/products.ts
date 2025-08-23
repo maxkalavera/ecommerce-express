@@ -56,7 +56,7 @@ export const productsDocs = new OpenAPICRUDBuilder('products')
         required: false
       },
       {
-        name: 'sort',
+        name: 'sortBy',
         in: 'query',
         description: 'Sorting method for products',
         schema: {
@@ -90,7 +90,7 @@ export const productsDocs = new OpenAPICRUDBuilder('products')
         required: false
       },
       {
-        name: 'fromPrice',
+        name: 'minPrice',
         in: 'query',
         description: 'Minimum price filter',
         schema: {
@@ -100,7 +100,7 @@ export const productsDocs = new OpenAPICRUDBuilder('products')
         required: false
       },
       {
-        name: 'toPrice',
+        name: 'maxPrice',
         in: 'query',
         description: 'Maximum price filter',
         schema: {

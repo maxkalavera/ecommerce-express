@@ -17,3 +17,7 @@ DROP FUNCTION validate_carts_items_products_reference;
 ----------->
 DROP TRIGGER check_unique_product_in_cart ON carts_items;
 DROP FUNCTION validate_unique_product_in_cart;
+
+----------->
+DROP TRIGGER check_categories_parent_reference ON categories;
+DROP FUNCTION validate_categories_parent_reference;

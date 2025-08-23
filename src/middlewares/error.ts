@@ -14,7 +14,12 @@ export default function error (
   next: NextFunction
 ): void 
 {
-  console.log(util.inspect(err, {
+  const apiError = err !instanceof APIError ? err : new APIError({ 
+    public: { message: 'Internal server error', code: 500 }, 
+    sensitive: { message: err.message }
+  }, err);
+
+  console.log(util.inspect(apiError.toSensitiveObject(), {
     showHidden: false, // show non-enumerable properties
     depth: null, // recurse indefinitely
     colors: true, // ANSI color output
@@ -27,8 +32,6 @@ export default function error (
   if (res.headersSent) {
     next();
   } else {
-    //const acceptedTypes = req.accepts(['json', 'html']);
-    const apiError = err !instanceof APIError ? err : new APIError({}, err);
     const apiErrorResponse = apiError.toPublicObject();
     res.status(apiErrorResponse.code).json(apiErrorResponse);
     next();

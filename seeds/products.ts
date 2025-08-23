@@ -1,5 +1,5 @@
 import base64url from 'base64url';
-import { getFiles } from '@/utils/seeds';
+import { getFiles, getFile } from '@/utils/seeds';
 import { 
   productsAccessor, 
   productsItemsAccessor, 
@@ -7,7 +7,8 @@ import {
 } from "@/accessors/products";
 import { categoriesAccessor } from "@/accessors/categories";
 import productsJson from '@assets/fixtures/products.json' with { type: 'json' };
-import productsItemsJson from '@assets/fixtures/productsItems.json' with { type: 'json' };
+import productsItemsJson from '@assets/fixtures/products-items.json' with { type: 'json' };
+import productsImagesJson from '@assets/fixtures/products-images.json' with { type: 'json' };
 
 async function seedProductItem (
   productKey: string,
@@ -66,18 +67,24 @@ export async function seedProducts(tx: any) {
       // Seed items
       const relatedProductsItems = productsItems.filter((item) => item.productKey === productKey);
       for (const item of relatedProductsItems) {
-        const { ...restItem } = item;
+        const { color, ...restItem } = item;
         await seedProductItem(productKey, {
           ...restItem,
+          color: color[0],
+          colorHex: color[1],
           productId: productPayload.data.id,
         });
       }
 
-      // Seed product images
-      const images = await getFiles('products', productKey, ['jpg', 'png']);
-      for (const image of images) {
-        productsImagesAccessor.images.addImage(
-          { productId: productPayload.data.id }, 
+      const imagesData = productsImagesJson.filter((item) => item.productKey === productKey);
+      for (const imageData of imagesData) {
+        const { domain, key, isCover } = imageData;
+        const image = await getFile(domain, key);
+        await productsImagesAccessor.images.addImage(
+          { 
+            productId: productPayload.data.id,
+            isCover
+          }, 
           image,
         );
       }

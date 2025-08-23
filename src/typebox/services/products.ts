@@ -23,12 +23,32 @@ export const Product = Type.Object({
   quantity: Type.Number({ minimum: 0 }),
   size: Type.String(),
   images: Type.Array(Type.Object({
+    key: Base64URL(),
     createdAt: Type.String({ format: 'date-time' }),
     updatedAt: Type.String({ format: 'date-time' }),
     url: Type.String({ format: 'uri' }),
     mimetype: Type.String(),
     isCover: Type.Boolean(),
-  }))
+  })),
+  category: Nullable(Type.Object({
+    key: Base64URL(),
+    createdAt: Type.String({ format: 'date-time' }),
+    updatedAt: Type.String({ format: 'date-time' }),
+    name: Type.String(),
+    description: Type.String(),
+  })),
+  categoryBreadcrumbs: Nullable(Type.Array(Type.Object({
+    key: Base64URL(),
+    name: Type.String(),
+  }))),
+  inventory: Nullable(Type.Array(Type.Object({
+    productKey: Base64URL(),
+    quantity: Type.Integer(),
+    size: Type.String(),
+    color: Type.String(),
+    colorHex: Type.String(),
+  }))),
+  maxAvailability: Type.Number(),
 });
 
 
@@ -64,10 +84,10 @@ export const ProductQueryParams = Type.Partial(Type.Composite([
     newArrivals: Type.Boolean(),
     //saleItems: Type.Boolean(),
     category: Base64URL(),
-    sort: Type.String({ enum: ['relevance', 'trending', 'latest-arrival', 'price-low-high', 'price-high-low'] }),
+    sortBy: Type.String({ enum: ['relevance', 'trending', 'latest-arrival', 'price-low-high', 'price-high-low'] }),
     color: Type.String(),
     size: Type.String(),
-    fromPrice: Decimal(),
-    toPrice: Decimal(),
+    minPrice: Decimal(),
+    maxPrice: Decimal(),
   })
 ]));

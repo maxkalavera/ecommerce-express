@@ -1,4 +1,5 @@
 import Ajv, { Options, ErrorObject } from "ajv";
+import base64url from 'base64url';
 import traverse from "traverse";
 import lodash from "lodash";
 import addFormats from "ajv-formats";

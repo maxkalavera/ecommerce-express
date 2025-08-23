@@ -17,7 +17,7 @@ export const categories: pg.PgTableWithColumns<any> = pg.pgTable(
     // Table specific columns
     name: pg.varchar("name", { length: 255 }).notNull(),
     description: pg.text("description").notNull().default(""),
-    //parentId: pg.integer().references(() => categories.id, { onDelete: "set null" }),
+    parentId: pg.integer("parent_id").references(() => categories.id, { onDelete: "set null" }),
     parentKey: urlFriendlyUUID("parent_key").references(() => categories.key, { onDelete: "set null" }),
   },
   (table) => []

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import fg from 'fast-glob';
 
+
 export async function resetSerialSequence(db: any, table: PgTable, column: PgColumn) {
   const tableName = (table as any)[Symbol.for('drizzle:Name')];
   await db.execute(`
@@ -10,6 +11,14 @@ export async function resetSerialSequence(db: any, table: PgTable, column: PgCol
       (SELECT MAX(${column.name}) FROM ${tableName})
     );
   `);
+}
+
+export async function getFile (
+  domain: string,
+  key: string,
+) {
+  const paths = await fg([`assets/images/${domain}/${key}.*`]);
+  return await fs.readFile(paths[0]);
 }
 
 export async function getFiles (
@@ -30,6 +39,6 @@ export async function getFilesPaths (
   domain: string,
   key: string,
   extensions: string[],
-) {  
-  return await fg([`assets/images/${domain}/${key}-*.{${extensions.join(',')}}`]);
+) {
+  return await fg([`assets/images/${domain}/${key}(-*|).{${extensions.join(',')}}`]);
 }

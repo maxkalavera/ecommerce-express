@@ -7,7 +7,8 @@ import { Database } from '@/types/db';
 import { getDatabase } from '@/db';
 import settings from '@/settings';
 import { APIError } from '@/utils/errors';
-import { buildCursor, decodeCursor } from '@/utils/accessors/cursorPagination';
+// @ts-ignore
+import { buildCursor, decodeCursor } from '@/utils/accessors/CursorPagination';
 
 
 /******************************************************************************
@@ -58,6 +59,7 @@ export class CoreAccessor extends LayersCore {
   protected updateSchema: TSchema;
   protected keysSchema: TSchema;
   protected queryParamsSchema: TSchema;
+    protected paginationLimit = settings.PAGINATION_DEFAULT_LIMIT;
 
   constructor (
     table: PgTableWithColumns<any>,
@@ -98,12 +100,20 @@ export class CoreAccessor extends LayersCore {
     params: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const queryResult = await this.buildQuery(params);
+    const query = await this.buildQuery(params, { usePagination: false });
+    if (!query.isSuccess()) {
+      throw this.buildError({
+        sensitive: {
+          message: "Error retrieving resource from database",
+        }
+      });
+    }
 
-    if (queryResult.length > 0) {
+    const payload = query.getPayload();
+    if (payload.items.length > 0) {
       return this.buildReturn({
         success: true,
-        payload: { data: queryResult[0] } 
+        payload: { data: payload.items[0] } 
       });
     } else {
       throw this.buildError({
@@ -114,7 +124,7 @@ export class CoreAccessor extends LayersCore {
         sensitive: {
           message: "Resource was not found",
         }
-      })
+      });
     }
 
   }
@@ -155,26 +165,39 @@ export class CoreAccessor extends LayersCore {
     }
     queryParams = queryParamsValidation.data;
 
+    return await this.buildQuery({
+      ...queryParams,
+      //...decodedCursorData,
+      //cursorData: decodedCursorData,
+    }, options);
 
+    /*
     const decodedCursorData = options.usePagination  
       ? this.decodeCursor(queryParams.cursor) 
       : null;
     const queryResult = await this.buildQuery({
       ...queryParams,
-      ...decodedCursorData,
+      //...decodedCursorData,
+      cursorData: decodedCursorData,
     });
     const encodedCursor = options.usePagination 
       ? this.encodeCursor(queryResult, queryParams.limit) 
       : null;
-
+    const items = options.usePagination 
+      ? queryResult.slice(0, queryParams.limit)
+      : queryResult;
+    */
+    
+    /*
     return this.buildReturn({
       success: true,
       payload: {
-        items: queryResult,
+        items: items,
         cursor: encodedCursor,
         hasMore: encodedCursor !== null,
       }      
     });
+    */
   }
 
   /****************************************************************************
@@ -327,15 +350,6 @@ export class CoreAccessor extends LayersCore {
    * Cursor pagination
    ***************************************************************************/
 
-  protected paginationLimit = settings.PAGINATION_DEFAULT_LIMIT;
-  protected cursorDataSchema = Type.Object({
-    updatedAt: Type.Union([
-      Type.Record(Type.String(), Type.Any()), // When the date is retrived from db is a Date() object
-      Type.String({ format: 'date-time' }), // When deciphered from cursor it retrieves a string
-    ]),
-    id: Type.Number(),
-  });
-
   /**
    * Schema for validating cursor data structure
    * 
@@ -350,52 +364,33 @@ export class CoreAccessor extends LayersCore {
    */
   protected decodeCursor (
     cursor: string,
+    cursorDataSchema: TSchema = Type.Record(Type.String(), Type.Any()),
   ): CursorData | null
   {
     const validCursor = typeof cursor && !!cursor; 
     if (validCursor) {
-      const cursorData = decodeCursor(cursor);
-      const validation = this.validate(this.cursorDataSchema, cursorData);
-      if (!validation.success) {
-        throw this.buildError({}, {
-          message: 'Cursor decoding is inconsistent with provided fields',
-          details: validation.errors,
-        });
-      }
+      try {
+        const cursorData = decodeCursor(cursor);
+        const validation = this.validate(cursorDataSchema, cursorData);
+        if (!validation.success) {
+          throw this.buildError({
+            sensitive: {
+              message: 'Cursor decoding is inconsistent with provided fields',
+              details: validation.errors,
+            }
+          });
+        }
 
-      return cursorData;
+        return cursorData;
+      } catch (error) {
+        throw this.buildError({
+          public: { code: 400, message: 'Invalid cursor' },
+          sensitive: { message: 'Invalid cursor' }
+        }, error);
+      }
     }
 
     return null;
-  }
-
-  /**
-   * Decodes cursor artifacts for pagination
-   * 
-   * Takes a cursor string and limit, validates and decodes the cursor data for use in pagination queries.
-   * 
-   * @param cursor - Base64 encoded cursor string containing pagination metadata
-   * @param limit - Maximum number of records to return (defaults to paginationLimit)
-   * @returns {DecodedCursorArtifacts} Object containing:
-   *   - validCursor: Boolean indicating if cursor is valid
-   *   - data: Decoded cursor data (empty object if cursor invalid)
-   *   - limit: Number of records to return
-   * @throws {APIError} If cursor data fails schema validation (400)
-   * 
-   * @example
-   * ```typescript
-   * const artifacts = accessor.decodeCursorArtifacts('base64cursor', 10);
-   * // Returns: { validCursor: true, data: { id: 1, updatedAt: '2024-01-01' }, limit: 10 }
-   * ```
-   */
-  protected mapCursorData (
-    row: Record<string, any>
-  ): Record<string, any> 
-  {
-    return {
-      id: row.id,
-      updatedAt: row.updatedAt,
-    }
   }
 
   /**
@@ -418,28 +413,21 @@ export class CoreAccessor extends LayersCore {
    * ```
    */
   protected encodeCursor (
-    queryResult: Record<string, any>[],
-    limit: number = this.paginationLimit,
+    data: Record<string, any>,
+    cursorDataSchema: TSchema = Type.Record(Type.String(), Type.Any()),
   ): string | null
   {
-    if (queryResult.length < limit) {
-      return null;
-    }
-    const cursorItem = queryResult[limit - 1];
-    const cursorData = this.mapCursorData(cursorItem);
-
-    const encodeValidation = this.validate(this.cursorDataSchema, cursorData);
+    const encodeValidation = this.validate(cursorDataSchema, data);
     if (!encodeValidation.success) {
-      throw new APIError({
-
-      }, {
-        message: 'Cursor encoding is inconsistent with provided fields',
-        details: encodeValidation.errors,
+      throw this.buildError({
+        sensitive: {
+          message: 'Cursor encoding is inconsistent with provided fields',
+          details: encodeValidation.errors,
+        }
       });
     }
 
-
-    return buildCursor(cursorData);
+    return buildCursor(data);
   }
 
   /****************************************************************************
@@ -475,31 +463,6 @@ export class CoreAccessor extends LayersCore {
       .from(this.table);
   }
 
-  protected hasPaginationQueryParameters (
-    params: Record<string, any>,
-    options: BuildQueryOptions
-  ): boolean
-  {
-    const validation = this.validate(this.cursorDataSchema, params, { additionalProperties: true });
-    return validation.success;
-  }
-
-  protected buildPaginationQueryWhere(
-    params: Record<string, any>,
-    options: BuildQueryOptions
-  ): (op.SQL | undefined)[]
-  {
-    return [
-      op.or(
-        op.and(
-          op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) = ${params.updatedAt}`,
-          op.sql`${this.table.id} > ${params.id}`,
-        ),
-        op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) < ${params.updatedAt}`,
-      )
-    ]
-  }
-
   protected buildKeyQueryWhere(
     params: Record<string, any>,
     options: BuildQueryOptions
@@ -523,14 +486,9 @@ export class CoreAccessor extends LayersCore {
     options: BuildQueryOptions
   ): (op.SQL | undefined)[]
   {
-    let filters: (op.SQL | undefined)[] = [];
+    let filters: (op.SQL | undefined)[] = this.buildKeyQueryWhere(params, options);
 
-    filters = filters.concat(this.buildKeyQueryWhere(params, options));
-    
-    if (
-      options.usePagination &&
-      this.hasPaginationQueryParameters(params, options)
-    ) {
+    if (options.usePagination && params.cursorData !== null) {
       filters = filters.concat(this.buildPaginationQueryWhere(params, options));
     }
 
@@ -553,17 +511,6 @@ export class CoreAccessor extends LayersCore {
     return [];
   }
 
-  protected buildPaginationQueryOrderBy(
-    params: Record<string, any>,
-    options: BuildQueryOptions
-  ): op.SQL[]
-  {
-    return [
-      op.desc(op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt})`),
-      op.asc(this.table.id),
-    ];
-  }
-
   protected buildQueryOrderBy(
     params: Record<string, any>,
     options: BuildQueryOptions
@@ -578,36 +525,127 @@ export class CoreAccessor extends LayersCore {
     return items;
   }
 
-  protected buildQuery(
+  protected async buildQuery(
     params: Record<string, any>,
     _options: Partial<BuildQueryOptions> = {}
-  ): PgSelectDynamic<any>
+  ): Promise<LayersReturnType<PayloadMany<any>>>
   {
     const options: BuildQueryOptions = this.defaults(_options, {
       usePagination: true,
     } as BuildQueryOptions);
+    const limit = params.limit || this.paginationLimit;
     
+    if (
+      options.usePagination
+      && typeof params.cursor === 'string' 
+      && params.cursor 
+    ) {
+      params.cursorData = this.decodeCursor(params.cursor);
+    } else {
+      params.cursorData = null;
+    }
+
     let query = this.buildQueryBaseSelect(params, options)
       .where(op.and(...this.buildQueryWhere(params, options)))
       .groupBy(...this.buildQueryGroupBy(params, options))
       .having(op.and(...this.buildQueryHaving(params, options)))
       .orderBy(...this.buildQueryOrderBy(params, options));
 
-    if (
-      options.usePagination && 
-      (typeof params.limit === 'number' && params.limit >= 0)
-    ) {
-      query = query.limit(params.limit)
-    }
+    if (options.usePagination) {
+      if (typeof limit === 'number' && limit >= 0) {
+        query = query.limit(limit + 1);
+      }
 
-    if (
-      options.usePagination && 
-      (typeof params.offset === 'number' && params.offset >= 0)
-    ) {
-      query = query.offset(params.offset)
-    }
+      if (typeof params.offset === 'number' && params.offset >= 0) {
+        query = query.offset(params.offset);
+      }
 
-    return query;
+      const queryResult = await query;
+
+      let cursor: string | null = null;
+      if (queryResult.length >= limit) {
+        const cursorItem = queryResult[limit];
+        const resultCursorData = this.buildCursorData(cursorItem, params, options);
+        cursor = this.encodeCursor(resultCursorData);
+      }      
+      const items = queryResult.slice(0, limit);
+      return this.buildReturn({
+        success: true,
+        payload: {
+          items: items,
+          cursor: cursor,
+          hasMore: cursor !== null,
+        }
+      });
+    } else {
+      const queryResult = await query;
+      return this.buildReturn({
+        success: true,
+        payload: {
+          items: queryResult,
+          hasMore: false,
+          cursor: null,
+        }
+      });
+    }
+  }
+
+  /*
+   * Cursor Pagination query methods
+   ****************************************************************************/
+
+  //protected hasPaginationQueryParameters (
+  /*
+  protected validatePaginationCursorData(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): boolean
+  {
+    return this.validate(
+      this.cursorDataSchema, params.cursorData || {}, 
+      { additionalProperties: true }
+    ).success;
+  }
+  */
+
+  protected buildCursorData (
+    row: Record<string, any>,
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): Record<string, any> 
+  {
+    return {
+      id: row.id,
+      updatedAt: row.updatedAt.toISOString(),
+    }
+  }
+
+  protected buildPaginationQueryOrderBy(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): op.SQL[]
+  {
+    return [
+      op.desc(op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt})`),
+      op.asc(this.table.id),
+    ];
+  }
+
+  protected buildPaginationQueryWhere(
+    params: Record<string, any>,
+    options: BuildQueryOptions
+  ): (op.SQL | undefined)[]
+  {
+    const { cursorData: { updatedAt, id }} = params;
+    return [
+      op.or(
+        op.and(
+          op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) = ${updatedAt}`,
+          op.sql`${this.table.id} > ${id}`,
+        ),
+        op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) <= ${updatedAt}`,
+      )
+    ];
   }
 
 };

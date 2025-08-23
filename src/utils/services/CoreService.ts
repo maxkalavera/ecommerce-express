@@ -30,33 +30,35 @@ export class CoreService extends LayersCore {
       body: Type.Object({}),
     });
 
-    const paramsValidation = this.validate(schemas.params, data.params, { additionalProperties: 'strict-dev-only' });
+    const paramsValidation = this.validate(schemas.params, data.params, { additionalProperties: 'strict' });
     if (!paramsValidation.success) {
-      throw this.buildError({}, {
-        message: 'Error while validating params data',
-        details: paramsValidation.errors,
+      throw this.buildError({
+        sensitive: {
+          message: 'Error while validating params data',
+          details: paramsValidation.errors,
+        }
       });
     }
     data.params = paramsValidation.data;
 
-    const queryCohersion = this.coherce(schemas.query, data.query, { additionalProperties: 'strict-dev-only' });
+    const queryCohersion = this.coherce(schemas.query, data.query, { additionalProperties: 'strict' });
     if (!queryCohersion.success) {
       throw this.buildError({
-
-      }, {
-        message: 'Error while validating query data',
-        details: queryCohersion.errors,
+        sensitive: {
+          message: 'Error while validating query data',
+          details: queryCohersion.errors,
+        }
       });
     }
     data.query = queryCohersion.data;
 
-    const bodyCohersion = this.coherce(schemas.body, data.body, { additionalProperties: 'strict-dev-only' });
+    const bodyCohersion = this.coherce(schemas.body, data.body, { additionalProperties: 'strict' });
     if (!bodyCohersion.success) {
       throw this.buildError({
-
-      }, {
-        message: 'Error while validating body data',
-        details: bodyCohersion.errors,
+        sensitive: {
+          message: 'Error while validating body data',
+          details: bodyCohersion.errors,
+        }
       });
     }
     data.body = bodyCohersion.data;
@@ -76,18 +78,22 @@ export class CoreService extends LayersCore {
         for (const item of (payload as PayloadMany<any>).items) {
           const itemValidation = this.validate(schema, item, { additionalProperties: 'strict-dev-only' });
           if (!itemValidation.success) {
-            throw this.buildError({}, {
-              message: 'Error while validating service payload',
-              details: itemValidation.errors
+            throw this.buildError({
+              sensitive: {
+                message: 'Error while validating service payload',
+                details: itemValidation.errors
+              }
             });
           }
         }
       } else {
         const validation = this.validate(schema, (payload as PayloadSingle<any>).data, { additionalProperties: 'strict-dev-only' });
         if (!validation.success) {
-          throw this.buildError({}, {
-            message: 'Error while validating service payload',
-            details: validation.errors
+          throw this.buildError({
+            sensitive: {
+              message: 'Error while validating service payload',
+              details: validation.errors
+            }
           });
         }
       }
@@ -153,10 +159,10 @@ export class CoreService extends LayersCore {
   ) 
   {
     const schemas = this.defaults(_schemas, {
-      params: Type.Record(Type.String(), Type.Any()),
-      query: Type.Record(Type.String(), Type.Any()),
-      body: Type.Record(Type.String(), Type.Any()),
-      payloadInstance: Type.Record(Type.String(), Type.Any()),
+      params: Type.Object({}),
+      query: Type.Object({}),
+      body: Type.Object({}),
+      payloadInstance: Type.Object({}),
     });
     const data: RequestData = this.defaults(_data, { params: {}, query: {}, body: {}});
     this.validateRequestParams(data, {

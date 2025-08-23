@@ -1,0 +1,104 @@
+[
+  {
+    "domain": "products",
+    "key": "61b7a0f8-1a7c-426b-a2bf-c6989661b81f",
+    "productKey": "3ce90e5e-1a3c-4e7f-b76d-e5fc44aa9d87",
+    "isCover": true
+  },
+  {
+    "domain": "products",
+    "key": "c760fc2c-cccb-45d0-843a-0cfe9ab4416b",
+    "productKey": "3ce90e5e-1a3c-4e7f-b76d-e5fc44aa9d87",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "2f8c899f-e173-457c-b0cb-33a24bc4a993",
+    "productKey": "3ce90e5e-1a3c-4e7f-b76d-e5fc44aa9d87",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "1a5ed81a-658a-46f6-8572-f11b61f2657e",
+    "productKey": "3f580ba1-3f82-4c01-bfa0-a5a84d9f4ec6",
+    "isCover": true
+  },
+  {
+    "domain": "products",
+    "key": "b04e8ff7-6cef-4b23-8977-75a678dea9c9",
+    "productKey": "3f580ba1-3f82-4c01-bfa0-a5a84d9f4ec6",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "f31257bc-78b0-4a68-b02b-02c55e1714b8",
+    "productKey": "3f580ba1-3f82-4c01-bfa0-a5a84d9f4ec6",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "6ed26224-18b6-4ea2-83a7-5064bdec36a1",
+    "productKey": "17a43931-a6ec-42a4-ac88-cd33a4503d25",
+    "isCover": true
+  },
+  {
+    "domain": "products",
+    "key": "9fb786ab-e131-4c78-af62-8faff75825d6",
+    "productKey": "17a43931-a6ec-42a4-ac88-cd33a4503d25",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "2840d8f8-4356-4a29-9988-ddb7ef66f69d",
+    "productKey": "7076c2aa-6d78-4c43-94f1-034f5da61006",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "a61d67ab-8f1a-4d25-a560-39dcc1ebcabc",
+    "productKey": "7076c2aa-6d78-4c43-94f1-034f5da61006",
+    "isCover": true
+  },
+  {
+    "domain": "products",
+    "key": "195be5d3-a088-438a-aaff-66cb049c7c2f",
+    "productKey": "b1acc1de-1c41-4146-96df-fb5e4625bca9",
+    "isCover": true
+  },
+  {
+    "domain": "products",
+    "key": "f65a9644-4190-404e-9be3-37fe5a174fbf",
+    "productKey": "b1acc1de-1c41-4146-96df-fb5e4625bca9",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "8695d2b9-a23b-416a-a7cf-840473340740",
+    "productKey": "b1acc1de-1c41-4146-96df-fb5e4625bca9",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "b3dcfdcd-dab2-4897-badb-952b7d304a24",
+    "productKey": "b1acc1de-1c41-4146-96df-fb5e4625bca9",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "e32a0fe8-2c18-41bf-b1ef-e6e6b1683720",
+    "productKey": "fa822e13-3cb1-4c0d-a1d1-92188ad0ba09",
+    "isCover": true
+  },
+  {
+    "domain": "products",
+    "key": "3fe0cad2-aee1-401d-96b8-9fb0f0b2d4a7",
+    "productKey": "fa822e13-3cb1-4c0d-a1d1-92188ad0ba09",
+    "isCover": false
+  },
+  {
+    "domain": "products",
+    "key": "16e62d31-8f43-454f-8c8f-3ba3b971c428",
+    "productKey": "fa822e13-3cb1-4c0d-a1d1-92188ad0ba09",
+    "isCover": false
+  }
+]

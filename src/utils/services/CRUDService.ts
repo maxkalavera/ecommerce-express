@@ -39,11 +39,11 @@ export class CRUDService extends CoreService {
         },
       },
       schemas: {
-        instance: Type.Record(Type.String(), Type.Any()),
-        insert: Type.Record(Type.String(), Type.Any()),
-        update: Type.Record(Type.String(), Type.Any()),
-        identifiers: Type.Record(Type.String(), Type.Any()),
-        queryParams: Type.Record(Type.String(), Type.Any()),
+        instance: Type.Object({}),
+        insert: Type.Object({}),
+        update: Type.Object({}),
+        identifiers: Type.Object({}),
+        queryParams: Type.Object({}),
       },
     });
   }

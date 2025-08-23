@@ -103,6 +103,9 @@ export class CartsItemsAccessor extends CoreAccessor {
           public: {
             message: `Received product is already in selected cart`,
             code: 400,
+          },
+          sensitive: {
+            message: `Received product is already in selected cart`,
           }
         }, error);
       }

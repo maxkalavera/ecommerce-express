@@ -12,8 +12,6 @@ export const ProductsInsert = Type.Composite([
     name: Type.String({ maxLength: 255 }),
     description: Type.String(),
     price: Type.String({ format: 'decimal' }),
-    color: Type.String({ maxLength: 255 }),
-    colorHex: Type.String({ maxLength: 7 }),
     // Label
     isLabeled: Type.Optional(Type.Boolean()),
     labelContent: Type.Optional(Type.String({ maxLength: 255 })),
@@ -37,6 +35,9 @@ export const ProductsItemsInsert = Type.Composite([
     // specific attributes
     quantity: Type.Integer(),
     size: Type.String({ maxLength: 255 }),
+    color: Type.String({ maxLength: 255 }),
+    colorHex: Type.String({ maxLength: 7 }),
+    // relations
     productId: Type.Optional(Type.Integer()),
     productKey: Type.Optional(Type.String({ format: 'base64url' })),
   })

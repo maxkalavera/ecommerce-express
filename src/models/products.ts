@@ -18,9 +18,6 @@ export const products = pg.pgTable(
     name: pg.varchar("name", { length: 255 }).notNull(),
     description: pg.text("description").notNull().default(""),
     price: pg.numeric('price', { precision: 20, scale: 2 }).notNull().default("0.0"),
-    // Color
-    color: pg.varchar("color", { length: 255 }).notNull().default(""),
-    colorHex: pg.varchar("color_hex", { length: 7 }).notNull().default("#000000"),
     // Label
     isLabeled: pg.boolean("is_labeled").default(false),
     labelContent: pg.varchar("label_content", { length: 255 }).default(""),
@@ -31,7 +28,6 @@ export const products = pg.pgTable(
   },
   (table) => [
     pg.check('label_color_hex', sql`${table.labelColor} ~ '^#[0-9a-fA-F]{6}$'`),
-    pg.check('color_hex', sql`${table.colorHex} ~ '^#[0-9a-fA-F]{6}$'`),
     pg.check('positive_price', sql`${table.price} >= 0`),
   ]
 );
@@ -93,11 +89,15 @@ export const productsItems = pg.pgTable(
     // specific attributes
     quantity: pg.integer("quantity").notNull().default(1),
     size: pg.varchar("size", { length: 255 }).notNull().default(""),
+    // Color
+    color: pg.varchar("color", { length: 255 }).notNull().default(""),
+    colorHex: pg.varchar("color_hex", { length: 7 }).notNull().default("#000000"),
     // References
     productId: pg.integer().notNull().references(() => products.id, { onDelete: 'cascade' }),
   },
   (table) => [
     pg.check('positive_quantity', sql`${table.quantity} >= 0`),
+    pg.check('color_hex', sql`${table.colorHex} ~ '^#[0-9a-fA-F]{6}$'`),
   ]
 );
 

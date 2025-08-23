@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import util from 'node:util';
 import { Database } from '@/types/db';
 import { getDatabase } from "@/db";
 import { testConnection, clearData } from '@/utils/db';
@@ -24,7 +25,6 @@ await runSeeds(async (tx) => {
  *****************************************************************************/
 
 async function runSeeds (
-  //...args: Parameters<(typeof db.transaction)>
   ...args: Parameters<Database['transaction']>
 ) {
   const db = getDatabase();
@@ -42,7 +42,16 @@ async function runSeeds (
   try {
     await db.transaction(...args);
   } catch (err) {
-    console.error('❌ There was an error seeding values to the database and rolled back:', err);
+    console.error('❌ There was an error seeding values to the database and rolled back:', );
+    console.log(util.inspect(err, {
+      showHidden: false, // show non-enumerable properties
+      depth: null, // recurse indefinitely
+      colors: true, // ANSI color output
+      compact: false, // break into multiple lines
+      maxArrayLength: null, // show all array items
+      breakLength: Infinity, // don't break long lines
+      sorted: true // sort object keys alphabetically
+    }));
   }
   
   console.log('✅ Database seeded!');

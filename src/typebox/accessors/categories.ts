@@ -1,11 +1,13 @@
 import { Type } from '@sinclair/typebox';
 import { categories, categoriesImages } from '@/models/categories';
+import { Nullable, Base64URL } from '@/utils/typebox';
 import { BaseSchema } from '@/typebox/accessors/commons';
 
 /******************************************************************************
  * Categories schemas
  *****************************************************************************/
 
+/*
 export const CategoriesInsert = Type.Composite([
   BaseSchema,
   Type.Object({
@@ -17,6 +19,12 @@ export const CategoriesInsert = Type.Composite([
 ], { additionalProperties: false });
 
 export const CategoriesUpdate = Type.Partial(CategoriesInsert);
+
+export const CategoriesQueryParams = Type.Object({
+  childrenOf: Type.Optional(Base64URL()),
+  ids: Type.Optional(Type.Array(Type.Integer())),
+});
+*/
 
 /******************************************************************************
  * Categories images schemas

@@ -1,7 +1,7 @@
 import settings from '@/settings';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { APIError } from '@/utils/errors';
-import base64url from '@/utils/base64url';
+import base64url from 'base64url';
 
 const ENCRYPTION_KEY = Buffer.from(settings.SECRET_KEY, "hex").subarray(0, 16);
 const ENCRYPTION_IV_LENGTH = 16;
@@ -36,7 +36,7 @@ export function buildCursor (
     ]);
 
     // Combine IV + encrypted data and return as Base64
-    const cursor = base64url.encodeBase64urlFromBuffer(Buffer.concat([iv, encrypted]));
+    const cursor = base64url.encode(Buffer.concat([iv, encrypted]));
     return cursor
   } catch (error) {
     throw new APIError({
@@ -52,7 +52,7 @@ export function decodeCursor (
 ): Record<string, any>
 { 
   try {
-    const buffer = base64url.decodeBase64urlToBuffer(cursor);
+    const buffer = base64url.toBuffer(cursor);
     const iv = buffer.subarray(0, ENCRYPTION_IV_LENGTH);
   
     // Extract encrypted data (remaining bytes)
