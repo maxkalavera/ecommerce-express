@@ -1,3 +1,4 @@
+import lodash from 'lodash';
 import { APIError } from '@/utils/errors';
 import { ReturnData, PayloadSingle, PayloadMany } from '@/types/layers';
 
@@ -11,16 +12,39 @@ export class LayersReturn<
     this.data = data;
   }
 
-  public async onSuccess<
-    Return extends any
+  static buildReturn<
+    Payload extends PayloadSingle<any> | PayloadMany<any> = PayloadSingle<any> | PayloadMany<any>,
   > (
-    callback: (payload: Payload) => Promise<Return>
-  ): Promise<void | Return>
+    returned: ReturnData<Payload>
+  ) {
+    return new LayersReturn<Payload>(returned);
+  }
+
+  public async onSuccess<
+    Return extends LayersReturn<any> | void
+  > (
+    callback: (payload: Payload, options: { buildReturn: (typeof LayersReturn)['buildReturn'] }) => Promise<Return>,
+    _options: Partial<{
+      raiseExceptions: boolean;
+    }> = {}
+  ): Promise<Return>
   {
+    const options = lodash.defaults(_options, {
+      raiseExceptions: true,
+    });
     if (this.data.success) {
-      return await callback(this.data.payload);
+      return await callback(this.data.payload, {
+        buildReturn: LayersReturn.buildReturn,
+      });
     }
-    return;
+    if (options.raiseExceptions) {
+      throw this.data.error;
+    }
+    return (new LayersReturn<any>({
+      success: false,
+      error: this.data.error,
+      payload: null,
+    })) as Return;
   }
 
   public onSuccessSync<

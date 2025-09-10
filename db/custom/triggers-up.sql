@@ -60,6 +60,7 @@ BEFORE INSERT OR UPDATE ON carts_items
 FOR EACH ROW EXECUTE FUNCTION validate_carts_items_products_reference();
 
 -----------> 
+-- Check that a Product Item is only in a Cart once
 CREATE FUNCTION validate_unique_product_in_cart()
 RETURNS TRIGGER AS $$
 BEGIN

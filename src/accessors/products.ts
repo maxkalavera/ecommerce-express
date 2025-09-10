@@ -193,6 +193,15 @@ export class ProductsItemsAccessor extends CoreAccessor {
     const conditions = super.buildQueryWhere(query, options);
     const { search, newArrivals, category, color, size, maxPrice, minPrice } = query;
 
+    if (Array.isArray(query.ids) && query.ids.length > 0) {
+      conditions.push(
+        op.inArray(
+          productsItems.id,
+          query.ids,
+        )
+      );
+    }
+
     if (typeof search === 'string' && search.length >= 3) {
       conditions.push(
         op.or(
@@ -301,31 +310,55 @@ export class ProductsItemsAccessor extends CoreAccessor {
       const { cursorData: { updatedAt, id }} = params;
       return [
         op.or(
+          op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) < ${updatedAt}`,
           op.and(
             op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) = ${updatedAt}`,
-            op.sql`${this.table.id} > ${id}`,
+            op.sql`${this.table.id} >= ${id}`,
           ),
-          op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) <= ${updatedAt}`,
         )
       ];
     } else if (params.sortBy === 'latest-arrival') {
-      const { cursorData: { id }} = params;
-      return [];
+      const { cursorData: { createdAt, id }} = params;
+      return [
+        op.or(
+          op.sql`DATE_TRUNC('milliseconds', ${this.table.createdAt}) < ${createdAt}`,
+          op.and(
+            op.sql`DATE_TRUNC('milliseconds', ${this.table.createdAt}) = ${createdAt}`,
+            op.sql`${this.table.id} >= ${id}`,
+          ),
+        )
+      ];
     } else if (params.sortBy === 'price-low-high') {
-      const { cursorData: { id }} = params;
-      return [];
+      const { cursorData: { price, id }} = params;
+      return [
+        op.or(
+          op.sql`DATE_TRUNC('milliseconds', ${this.table.price}) > ${price}`,
+          op.and(
+            op.sql`DATE_TRUNC('milliseconds', ${this.table.price}) = ${price}`,
+            op.sql`${this.table.id} >= ${id}`,
+          ),
+        )
+      ];
     } else if (params.sortBy === 'price-high-low') {
-      const { cursorData: { id }} = params;
-      return [];
+      const { cursorData: { price, id }} = params;
+      return [
+        op.or(
+          op.sql`DATE_TRUNC('milliseconds', ${this.table.price}) < ${price}`,
+          op.and(
+            op.sql`DATE_TRUNC('milliseconds', ${this.table.price}) = ${price}`,
+            op.sql`${this.table.id} >= ${id}`,
+          ),
+        )
+      ];
     } else if (params.sortBy === 'relevance' || true) {
       const { cursorData: { updatedAt, id }} = params;
       return [
         op.or(
+          op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) < ${updatedAt}`,
           op.and(
             op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) = ${updatedAt}`,
-            op.sql`${this.table.id} > ${id}`,
+            op.sql`${this.table.id} >= ${id}`,
           ),
-          op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) <= ${updatedAt}`,
         )
       ];
     }

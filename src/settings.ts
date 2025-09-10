@@ -32,6 +32,7 @@ export type Settings = {
   MEDIA_STORAGE_FOLDER: string;
   SECRET_KEY: string;
   PAGINATION_DEFAULT_LIMIT: number;
+  MAX_QUERY_LIMIT: number;
   PRODUCT_MAX_PUBLIC_AVAILABILITY: number;
 };
 
@@ -55,7 +56,8 @@ const initials: Settings = {
   MEDIA_STORAGE_FOLDER: path.resolve(process.cwd(), ".runtime/media/"),
   SECRET_KEY: "",
   PAGINATION_DEFAULT_LIMIT: 20,
-  PRODUCT_MAX_PUBLIC_AVAILABILITY: 5,
+  MAX_QUERY_LIMIT: 500,
+  PRODUCT_MAX_PUBLIC_AVAILABILITY: 1000,
 };
 
 const fromEnvSettings: Partial<Settings> = {
@@ -77,6 +79,7 @@ const fromEnvSettings: Partial<Settings> = {
   },
   SECRET_KEY: envs.SECRET_KEY,
   PAGINATION_DEFAULT_LIMIT: safeParseInt(envs.PAGINATION_DEFAULT_LIMIT, initials.PAGINATION_DEFAULT_LIMIT),
+  MAX_QUERY_LIMIT: safeParseInt(envs.MAX_QUERY_LIMIT, initials.MAX_QUERY_LIMIT),
   PRODUCT_MAX_PUBLIC_AVAILABILITY: safeParseInt(envs.PRODUCT_MAX_PUBLIC_AVAILABILITY, initials.PRODUCT_MAX_PUBLIC_AVAILABILITY),
   RUNTIME_FOLDER: envs.RUNTIME_FOLDER,
   BASE_URL: envs.BASE_URL,

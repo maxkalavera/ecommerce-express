@@ -345,11 +345,12 @@ export class OpenAPICRUDBuilder extends OpenAPIBuilder {
       path: `/${this.resourceName}`,
       method: 'get',
       operation: {},
+      parameters: [],
       successItemSchema: this.defaultSuccessItemSchema,
+      successResponseSchema: Type.Record(Type.String(), Type.Any()),
     });
     const { 
-      path, method, operation, 
-      parameters, successItemSchema, successResponseSchema, 
+      path, method, operation, parameters, successItemSchema, successResponseSchema, 
       ...operationOptions 
     } = options;
     return this.addOperation(

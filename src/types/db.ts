@@ -1,4 +1,4 @@
-import { NodePgDatabase, NodePgClient } from 'drizzle-orm/node-postgres';
+import { NodePgDatabase, NodePgClient, NodePgTransaction } from 'drizzle-orm/node-postgres';
 import * as schema from "@/schema";
 
 export interface DatabaseConfig {
@@ -12,3 +12,7 @@ export interface DatabaseConfig {
 export type Database = NodePgDatabase<typeof schema> & {
   $client: NodePgClient;
 };
+
+export type Transaction = NodePgTransaction<Record<string, any>, Record<string, any>>;
+
+export type DBConnection = Database | Transaction;

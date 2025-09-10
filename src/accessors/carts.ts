@@ -1,6 +1,7 @@
 import * as op from 'drizzle-orm';
-import { APIError } from '@/utils/errors';
+import settings from '@/settings';
 import CoreAccessor, { BuildQueryOptions } from '@/utils/accessors/CoreAccessor';
+import { PayloadSingle, PayloadMany, LayersReturnType } from '@/types/layers';
 import { carts, cartsItems } from '@/schema';
 import {
   CartsInsert, CartsUpdate,
@@ -8,6 +9,7 @@ import {
 } from '@/typebox/accessors/carts';
 import { usersAccessor } from "@/accessors/users";
 import { productsItemsAccessor } from "@/accessors/products";
+import { DBConnection } from '@/types/db';
 
 
 
@@ -65,10 +67,13 @@ export class CartsItemsAccessor extends CoreAccessor {
     );
   }
 
-  async create(
-    data: Record<string, any>
-  ) {
-    let { cartId, cartKey, productItemId, productItemKey } = data;
+  async validateCreateData(
+    data: Record<string, any>,
+    conn: DBConnection = this.db,
+  ): Promise<Record<string, any>>
+  {
+
+    let { cartId, cartKey, productItemId, productItemKey, quantity } = data;
     // Assign cartId ussing cartKey
     if (cartKey && !cartId) {
       const cartPayload = await cartsAccessor.read({ key: cartKey });
@@ -80,37 +85,42 @@ export class CartsItemsAccessor extends CoreAccessor {
     }
 
     // Assign productItemId using productItemKey
+    let productItem: Record<string, any> = {};
     if (productItemKey && !productItemId) {
       const productItemPayload = await productsItemsAccessor.read({ key: productItemKey });
       if (!productItemPayload.isSuccess()) {
         throw this.buildError({ sensitive: { message: `Product item ${productItemKey} could not get retrieved` } }, productItemPayload.getError());
       }
-      const productItem = productItemPayload.getPayload().data;
-      productItemId = productItem.id;
+      productItem = productItemPayload.getPayload().data;
+    } else if (productItemId) {
+      const productItemPayload = await productsItemsAccessor.read({ id: productItemId });
+      if (!productItemPayload.isSuccess()) {
+        throw this.buildError({ sensitive: { message: `Product item ${productItemId} could not get retrieved` } }, productItemPayload.getError());
+      }
+      productItem = productItemPayload.getPayload().data;
+    } else {
+      throw this.buildError({ sensitive: { message: `Product item requires product item id or key to be created` } });
     }
 
-    try {
-      return await super.create({
-        ...data,
-        cartId,
-        cartKey,
-        productItemId,
-        productItemKey,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("#I4dOnz8ONyBG")) {
-        throw this.buildError({
-          public: {
-            message: `Received product is already in selected cart`,
-            code: 400,
-          },
-          sensitive: {
-            message: `Received product is already in selected cart`,
-          }
-        }, error);
-      }
-      throw error;
+    return {
+      ...data,
+      cartId,
+      cartKey,
+      productItemId: productItem.id,
+      productItemKey,
+      quantity,
+      unitPrice: productItem.price,
     }
+  }
+
+  protected buildQueryBaseSelect(
+    query: Record<string, any>,
+    options: BuildQueryOptions,
+  ) {
+    return this.db
+      .select(this.buildQuerySelectFields(query, options))
+      .from(this.table)
+      .leftJoin(carts, op.eq(cartsItems.cartId, carts.id));
   }
 
   protected buildQueryWhere(
@@ -126,6 +136,60 @@ export class CartsItemsAccessor extends CoreAccessor {
     }
 
     return filters;
+  }
+
+  /****************************************************************************
+   * Custom queries
+   ***************************************************************************/
+
+  public async countItems(
+    params: {
+      cartKey: string;
+    }
+  ): Promise<LayersReturnType<PayloadSingle<{ count: number }>>>
+  {
+    const count = await this.db
+      .select({
+        count: op.count(),
+      })
+      .from(this.table)
+      .where(
+        op.eq(this.table.cartKey, params.cartKey)
+      )
+      .execute();
+    return this.buildReturn({  
+      success: true,
+      payload: {
+        data: {
+          count: count[0].count,
+        }
+      }
+    });
+  }
+
+  public async createOrUpdate (
+    params: Record<string, any>,
+    data: Record<string, any>,
+  ): Promise<LayersReturnType<PayloadSingle<any>>> 
+  {
+    let success = true;
+    try {
+      const cartItemPayload = await this.read(params);
+      success = cartItemPayload.isSuccess();
+      if (success) {
+        data.quantity = data.quantity + cartItemPayload.getPayload().data.quantity;
+      }
+    } catch (error) {
+      success = false;
+    }
+
+    return await this.db.transaction(async (tx) => {
+      if (success) {
+        return await this.update(params, data, tx);
+      } else {
+        return await this.create(data, tx);
+      }
+    });
   }
 
 }

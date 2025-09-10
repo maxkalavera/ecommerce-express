@@ -1,15 +1,34 @@
 import lodash from 'lodash';
 import settings from '@/settings';
 import { productsAccessor, productsItemsAccessor, productsImagesAccessor } from '@/accessors/products';
+import { cartsAccessor, cartsItemsAccessor } from '@/accessors/carts';
 import { CRUDService } from '@/utils/services/CRUDService';
 import * as ProductsSchemas from '@/typebox/services/products';
 import { categoriesAccessor } from '@/accessors/categories';
+import base64url from 'base64url';
+
+
+const DEFAULT_CART_KEY = base64url.encode("e108d29a-87ae-425c-bbc4-b38d10437f0a");
 
 class ProductsService extends CRUDService {
 
   constructor() {
     super({
       executers: {
+        create: async (data) => {
+          return await productsAccessor.create(data.body!);
+        },
+        update: async (data) => {
+          const productsAccess = await productsAccessor.update(data.params, data.body!);
+          return await productsAccess.onSuccess(async (payload) => {
+            return await productsAccessor.read({
+              id: payload.data.id,
+            });
+          });
+        },
+        delete: async (data) => {
+          return await productsAccessor.delete(data.params);
+        }, 
         read: async (data, {}) => {
           const productsItemsAccess = await productsItemsAccessor.read(data.params);
           if (productsItemsAccess.isSuccess()) {
@@ -48,6 +67,16 @@ class ProductsService extends CRUDService {
             }
             const inventory = inventoryAccess.getPayload().items;
 
+            // Check if product is in Cart
+            let isInCart = true;
+            try {
+              const cartItemAccess = await cartsItemsAccessor.read({ cartKey: DEFAULT_CART_KEY });
+              isInCart = cartItemAccess.isSuccess();
+            } catch (error) {
+              isInCart = false;
+            }
+
+
             return this.buildReturn({
               success: true,
               payload: {
@@ -57,6 +86,7 @@ class ProductsService extends CRUDService {
                   category: category,
                   categoryBreadcrumbs: categoryBreadcrumbs,
                   inventory: inventory,
+                  isInCart: isInCart,
                 }
               }
             });
@@ -147,9 +177,30 @@ class ProductsService extends CRUDService {
       })) : null,
       inventory: instance.inventory ? instance.inventory : null,
       maxAvailability: settings.PRODUCT_MAX_PUBLIC_AVAILABILITY,
+      isInCart: instance.isInCart === undefined ? null : instance.isInCart,
     };
   }
 
 };
+
 export const productsService = new ProductsService();
 
+
+class FavoriesProductsService extends CRUDService {
+constructor() {
+  super({
+    executers: {
+      //list: async (data, {}) => {},
+    },
+    schemas: {
+      instance: ProductsSchemas.Product,
+      insert: ProductsSchemas.ProductInsert,
+      update: ProductsSchemas.ProductUpdate,
+      identifiers: ProductsSchemas.ProductIdentifiers,
+      queryParams: ProductsSchemas.ProductQueryParams,
+    }
+  });
+}
+};
+
+export const favoritesProductsService = new FavoriesProductsService();

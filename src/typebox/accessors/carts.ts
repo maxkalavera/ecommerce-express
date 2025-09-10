@@ -1,5 +1,6 @@
 import { Type } from '@sinclair/typebox';
-import { Nullable, Base64URL } from '@/utils/typebox';
+import settings from '@/settings';
+import { Nullable, Base64URL, Decimal } from '@/utils/typebox';
 import { BaseSchema } from '@/typebox/accessors/commons';
 
 
@@ -28,6 +29,8 @@ export const CartsItemsInsert = Type.Composite([
     cartKey: Base64URL(),
     productItemId: Type.Optional(Type.Number()),
     productItemKey: Base64URL(),
+    quantity: Type.Integer({ minimum: 1, maximum: settings.PRODUCT_MAX_PUBLIC_AVAILABILITY }),
+    unitPrice: Decimal(),
   })
 ], { additionalProperties: false });
 

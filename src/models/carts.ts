@@ -48,8 +48,12 @@ export const cartsItems = pg.pgTable(
     cartKey: urlFriendlyUUID("cart_key").notNull().references(() => carts.key, { onDelete: 'cascade' }),
     productItemId: pg.integer("product_item_id").notNull().references(() => productsItems.id, { onDelete: 'cascade' }),
     productItemKey: urlFriendlyUUID("product_item_key").notNull().references(() => productsItems.key, { onDelete: 'cascade' }),
+    quantity: pg.integer("quantity").notNull(),
+    unitPrice: pg.numeric('unit_price', { precision: 20, scale: 2 }).notNull(),
   },
-  (table) => []
+  (table) => [
+    pg.check('positive_quantity', sql`${table.quantity} >= 1`),
+  ]
 );
 
 export const cartsItemsRelations = relations(

@@ -25,6 +25,7 @@ export type ReturnData<
   } | {
     success: false,
     error: APIError,
+    payload: null,
   }
 );
 

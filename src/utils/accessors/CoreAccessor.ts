@@ -6,8 +6,7 @@ import { PayloadSingle, PayloadMany, LayersReturnType } from '@/types/layers';
 import { Database } from '@/types/db';
 import { getDatabase } from '@/db';
 import settings from '@/settings';
-import { APIError } from '@/utils/errors';
-// @ts-ignore
+import { DBConnection } from '@/types/db';
 import { buildCursor, decodeCursor } from '@/utils/accessors/CursorPagination';
 
 
@@ -19,6 +18,7 @@ type CursorData = Record<string, any>;
 
 export type BuildQueryOptions = {
   usePagination: Boolean;
+  maxLimit: number;
 };
 
 /******************************************************************************
@@ -100,7 +100,7 @@ export class CoreAccessor extends LayersCore {
     params: Record<string, any>,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
-    const query = await this.buildQuery(params, { usePagination: false });
+    const query = await this.buildQuery(params, { usePagination: false, maxLimit: 1 });
     if (!query.isSuccess()) {
       throw this.buildError({
         sensitive: {
@@ -167,55 +167,31 @@ export class CoreAccessor extends LayersCore {
 
     return await this.buildQuery({
       ...queryParams,
-      //...decodedCursorData,
-      //cursorData: decodedCursorData,
     }, options);
+  }
 
-    /*
-    const decodedCursorData = options.usePagination  
-      ? this.decodeCursor(queryParams.cursor) 
-      : null;
-    const queryResult = await this.buildQuery({
-      ...queryParams,
-      //...decodedCursorData,
-      cursorData: decodedCursorData,
-    });
-    const encodedCursor = options.usePagination 
-      ? this.encodeCursor(queryResult, queryParams.limit) 
-      : null;
-    const items = options.usePagination 
-      ? queryResult.slice(0, queryParams.limit)
-      : queryResult;
-    */
-    
-    /*
-    return this.buildReturn({
-      success: true,
-      payload: {
-        items: items,
-        cursor: encodedCursor,
-        hasMore: encodedCursor !== null,
-      }      
-    });
-    */
+  /****************************************************************************
+   * Mutate operations
+   ***************************************************************************/
+
+  public async validateData(
+    data: Record<string, any>,
+    conn: DBConnection = this.db,
+  ): Promise<Record<string, any>>
+  {
+    return data;
   }
 
   /****************************************************************************
    * Create operations
    ***************************************************************************/
 
-  /**
-   * Executes create operation
-   * @param data - Validated data to insert
-   */
-  protected async executeCreate(
-    data: Record<string, any>
-  ): Promise<Record<string, any>> {
-    const result = await this.db
-      .insert(this.table)
-      .values(data)
-      .returning();
-    return result[0];
+  public async validateCreateData(
+    data: Record<string, any>,
+    conn: DBConnection = this.db,
+  ): Promise<Record<string, any>>
+  {
+    return data;
   }
 
   /**
@@ -224,8 +200,12 @@ export class CoreAccessor extends LayersCore {
    */
   public async create(
     data: Record<string, any>,
+    conn: DBConnection = this.db,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
+    data = await this.validateData(data, conn);
+    data = await this.validateCreateData(data, conn);
+
     const cohersion = this.coherce(this.insertSchema, data);
     if (!cohersion.success) {
       throw this.buildError({
@@ -240,37 +220,47 @@ export class CoreAccessor extends LayersCore {
       });
     }
 
-    const mutatedRecord = await this.executeCreate(cohersion.data);
-    return await this.read({ id: mutatedRecord.id });
+    const mutatedRecord = (
+      await conn
+        .insert(this.table)
+        .values(data)
+        .returning()
+    )[0];
+
+    return this.buildReturn({
+      success: true,
+      payload: { data: mutatedRecord } 
+    });
+    //return await this.read({ id: mutatedRecord.id });
   }
 
   /****************************************************************************
    * Update operations
    ***************************************************************************/
 
-  /**
-   * Executes update operation
-   * @param data - Validated update data
-   * @param lookups - Lookup conditions to identify record(s)
-   */
-  protected async executeUpdate(
+  public async validateUpdateData(
     params: Record<string, any>,
     data: Record<string, any>,
-  ) {
-    const result = await this.db
-      .update(this.table)
-      .set(data)
-      .where(op.and(...this.buildKeyQueryWhere(params, { usePagination: false })))
-      .returning();
-
-    return result[0];
+    conn: DBConnection = this.db,
+  ): Promise<Record<string, any>>
+  {
+    return data;
   }
 
+  /**
+   * Updates an existing record
+   * @param params - Keys to identify the record
+   * @param data - Data to update
+   */
   public async update(
     params: Record<string, any>,
     data: Record<string, any>,
+    conn: DBConnection = this.db,
   ): Promise<LayersReturnType<PayloadSingle<any>>>
   {
+    data = await this.validateData(data, conn);
+    data = await this.validateUpdateData(params, data, conn);
+
     const cohersion = this.coherce(this.updateSchema, data);
     if (!cohersion.success) {
       throw this.buildError({
@@ -284,7 +274,14 @@ export class CoreAccessor extends LayersCore {
         }
       })
     }
-    const mutatedRecord = await this.executeUpdate(params, cohersion.data);
+
+    const mutatedRecord = (
+      await conn
+        .update(this.table)
+        .set(data)
+        .where(op.and(...this.buildKeyQueryWhere(params, { usePagination: false })))
+        .returning()
+    )[0];
     return await this.read({ id: mutatedRecord.id });
   }
 
@@ -308,8 +305,9 @@ export class CoreAccessor extends LayersCore {
    */
   protected async executeDelete (
     params: Record<string, any>,
+    conn: DBConnection = this.db,
   ) {
-    const result = await this.db
+    const result = await conn
       .delete(this.table)
       .where(op.and(...this.buildKeyQueryWhere(params, { usePagination: false })))
       .returning();
@@ -337,9 +335,10 @@ export class CoreAccessor extends LayersCore {
    */
   public async delete (
     params: Record<string, any>,
+    conn: DBConnection = this.db,
   ): Promise<LayersReturnType<PayloadSingle<any>>> 
   {
-    const mutatedRecord = await this.executeDelete(params);
+    const mutatedRecord = await this.executeDelete(params, conn);
     return this.buildReturn({
       success: true,
       payload: { data: mutatedRecord }
@@ -440,14 +439,14 @@ export class CoreAccessor extends LayersCore {
   }
   protected defaultQueryParams(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ) {
     return this.defaults(params, this.defaultQueryParamsObject)
   }
 
   protected buildQuerySelectFields (
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): Record<string, any>
   {
     return this.table;
@@ -455,7 +454,7 @@ export class CoreAccessor extends LayersCore {
 
   protected buildQueryBaseSelect(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): PgSelectDynamic<any>
   {
     return this.db
@@ -465,7 +464,7 @@ export class CoreAccessor extends LayersCore {
 
   protected buildKeyQueryWhere(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): (op.SQL | undefined)[]
   {
     let filters: (op.SQL | undefined)[] = [];
@@ -483,7 +482,7 @@ export class CoreAccessor extends LayersCore {
 
   protected buildQueryWhere(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): (op.SQL | undefined)[]
   {
     let filters: (op.SQL | undefined)[] = this.buildKeyQueryWhere(params, options);
@@ -497,7 +496,7 @@ export class CoreAccessor extends LayersCore {
 
   protected buildQueryHaving(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): (op.SQL | undefined)[]
   {
     return [];
@@ -505,7 +504,7 @@ export class CoreAccessor extends LayersCore {
 
   protected buildQueryGroupBy(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): op.SQL[]
   {
     return [];
@@ -513,7 +512,7 @@ export class CoreAccessor extends LayersCore {
 
   protected buildQueryOrderBy(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): op.SQL[]
   {
     let items: op.SQL[] = [];
@@ -532,8 +531,8 @@ export class CoreAccessor extends LayersCore {
   {
     const options: BuildQueryOptions = this.defaults(_options, {
       usePagination: true,
+      maxLimit: settings.MAX_QUERY_LIMIT,
     } as BuildQueryOptions);
-    const limit = params.limit || this.paginationLimit;
     
     if (
       options.usePagination
@@ -552,8 +551,11 @@ export class CoreAccessor extends LayersCore {
       .orderBy(...this.buildQueryOrderBy(params, options));
 
     if (options.usePagination) {
+      const limit = params.limit || this.paginationLimit;
       if (typeof limit === 'number' && limit >= 0) {
         query = query.limit(limit + 1);
+      } else {
+        query = query.limit(options.maxLimit);
       }
 
       if (typeof params.offset === 'number' && params.offset >= 0) {
@@ -578,6 +580,7 @@ export class CoreAccessor extends LayersCore {
         }
       });
     } else {
+      query = query.limit(options.maxLimit);
       const queryResult = await query;
       return this.buildReturn({
         success: true,
@@ -594,24 +597,10 @@ export class CoreAccessor extends LayersCore {
    * Cursor Pagination query methods
    ****************************************************************************/
 
-  //protected hasPaginationQueryParameters (
-  /*
-  protected validatePaginationCursorData(
-    params: Record<string, any>,
-    options: BuildQueryOptions
-  ): boolean
-  {
-    return this.validate(
-      this.cursorDataSchema, params.cursorData || {}, 
-      { additionalProperties: true }
-    ).success;
-  }
-  */
-
   protected buildCursorData (
     row: Record<string, any>,
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): Record<string, any> 
   {
     return {
@@ -622,7 +611,7 @@ export class CoreAccessor extends LayersCore {
 
   protected buildPaginationQueryOrderBy(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): op.SQL[]
   {
     return [
@@ -633,17 +622,23 @@ export class CoreAccessor extends LayersCore {
 
   protected buildPaginationQueryWhere(
     params: Record<string, any>,
-    options: BuildQueryOptions
+    options: Partial<BuildQueryOptions>
   ): (op.SQL | undefined)[]
   {
     const { cursorData: { updatedAt, id }} = params;
     return [
+      // Pointer selected is located just at the begining of the next page
+      // So the row used as pointer also should be included in the next page
+      // for retrieving
       op.or(
+        // First remove or filter anything before the cursor value
+        op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) < ${updatedAt}`,
+        // If secondary cursor value is equal, filter using id witch is unique
+        // leaving the cursor id value, included in the next page.
         op.and(
           op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) = ${updatedAt}`,
-          op.sql`${this.table.id} > ${id}`,
+          op.sql`${this.table.id} >= ${id}`,
         ),
-        op.sql`DATE_TRUNC('milliseconds', ${this.table.updatedAt}) <= ${updatedAt}`,
       )
     ];
   }

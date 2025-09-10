@@ -20,7 +20,12 @@ class CategoriesService extends CRUDService {
           return await categoriesAccessor.create(data.body!);
         },
         update: async (data) => {
-          return await categoriesAccessor.update(data.params, data.body!);
+          const categoriesAccess = await categoriesAccessor.update(data.params, data.body!);
+          return await categoriesAccess.onSuccess(async (payload) => {
+            return await categoriesAccessor.read({
+              id: payload.data.id,
+            });
+          });
         },
         delete: async (data) => {
           return await categoriesAccessor.delete(data.params);

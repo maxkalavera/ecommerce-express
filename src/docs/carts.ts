@@ -3,7 +3,7 @@ import * as cartItemSchemas from '@/typebox/services/carts';
 
 
 export const cartsItemsDocs = new OpenAPICRUDBuilder('carts/items')
-  .setAllowedOperations(['create', 'delete', 'list'])
+  .setAllowedOperations(['create', 'update', 'delete', 'list'])
   .setDefaultSuccessItemSchema(cartItemSchemas.CartItem)
   .setDefaultTags(["Carts"])
   .addCreateOperation({
@@ -19,4 +19,23 @@ export const cartsItemsDocs = new OpenAPICRUDBuilder('carts/items')
   .addListOperation({
     parameters: [],
   })
+  .addOperation(
+    '/carts/items/count', 
+    'get', 
+    {
+      tags: ['Carts'],
+      summary: 'Count items in cart',
+      description: 'Count items in cart',
+    },
+    {
+      successResponseSchema: {
+        type: 'object',
+        properties: {
+          count: {
+            type: 'number',
+          },
+        },
+      },
+    },
+  )
   .buildDocument();

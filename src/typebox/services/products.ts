@@ -49,7 +49,8 @@ export const Product = Type.Object({
     colorHex: Type.String(),
   }))),
   maxAvailability: Type.Number(),
-});
+  isInCart: Nullable(Type.Boolean()),
+}, { additionalProperties: false });
 
 
 export const ProductInsert = Type.Object({

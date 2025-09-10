@@ -63,11 +63,12 @@ export const productsDocs = new OpenAPICRUDBuilder('products')
           type: 'string',
           enum: [
             'relevance',
-            'trending',
+            //'trending',
             'latest-arrival',
             'price-low-high',
             'price-high-low'
           ],
+          default: 'relevance'
         },
         required: false
       },
@@ -111,4 +112,20 @@ export const productsDocs = new OpenAPICRUDBuilder('products')
       }
     ]
   })
+  .buildDocument();
+
+
+export const favoritesProductsDocs = new OpenAPICRUDBuilder('products/favorites')
+  .setAllowedOperations("view")
+  .setDefaultSuccessItemSchema(productsSchemas.Product)
+  .setDefaultTags(["Products"])
+  .addCreateOperation({
+    requestBodySchema: productsSchemas.ProductInsert,
+  })
+  .addUpdateOperation({
+    requestBodySchema: productsSchemas.ProductUpdate,
+  })
+  .addDeleteOperation()
+  .addGetOperation()
+  .addListOperation()
   .buildDocument();
